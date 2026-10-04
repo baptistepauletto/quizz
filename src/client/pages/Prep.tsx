@@ -5,6 +5,7 @@ import { DifficultyChip } from '../components/ui';
 import { ApiError, api } from '../lib/api';
 import { BANKS } from '../../shared/types';
 import type { DraftFile, PackDetail, PackSummary, QuestionDto, QuestionStatus } from '../../shared/types';
+import samplePack from '../../../drafts/example.json';
 
 const EXAMPLE: DraftFile = {
   title: 'Friday night',
@@ -51,6 +52,22 @@ function PrepList() {
     const file = e.target.files?.[0];
     if (file) setText(await file.text());
     e.target.value = '';
+  }
+
+  const sample = samplePack as DraftFile;
+  const sampleAlready = packs?.find((p) => p.title === sample.title);
+
+  async function importSample() {
+    setProblems([]);
+    setBusy(true);
+    try {
+      const res = await api<{ id: number }>('POST', '/api/import', { draft: sample });
+      navigate(`/prep/${res.id}/swipe`);
+    } catch (err) {
+      setProblems(err instanceof ApiError && err.problems.length ? err.problems : [(err as Error).message]);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function doImport() {
@@ -109,13 +126,25 @@ function PrepList() {
         <p className="muted">
           Ask the Cursor agent to write the drafts from the players&apos; themes, then paste the JSON here or pick the file.
         </p>
+        {sampleAlready ? (
+          <Link to={`/prep/${sampleAlready.id}/swipe`} className="btn primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+            Review “{sample.title}”
+          </Link>
+        ) : (
+          <button className="btn primary" disabled={busy || packs === null} onClick={importSample}>
+            Import “{sample.title}” to review
+          </button>
+        )}
+        <p className="muted" style={{ margin: 0 }}>
+          That pack is the file <b>drafts/example.json</b> (6 sprint, 20 memory, 3 climax). The smoke test uses a smaller throwaway set inside <b>scripts/smoke.ts</b> and never saves it.
+        </p>
         <div className="row">
           <label className="btn ghost small">
             Choose file
             <input type="file" accept=".json,application/json" onChange={onFile} hidden />
           </label>
-          <button className="btn ghost small" onClick={() => setText(JSON.stringify(EXAMPLE, null, 2))}>
-            Insert example
+          <button className="btn ghost small" onClick={() => setText(JSON.stringify(sample, null, 2))}>
+            Show sample JSON
           </button>
         </div>
         <textarea

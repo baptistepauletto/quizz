@@ -48,7 +48,11 @@ Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is
 }
 ```
 
-`difficulty` is `easy | medium | hard`. See `drafts/example.json`. A pack can be marked ready only when each bank has at least one approved question.
+`difficulty` is `easy | medium | hard`. A ready-to-review pack is in `drafts/example.json` (29 questions). On `/prep`, **Import "Example night" to review** loads it straight into the swipe deck. The smoke test's questions live only inside `scripts/smoke.ts` and are thrown away with the test database. A pack can be marked ready only when each bank has at least one approved question.
+
+## Theme board
+
+Before a game night, friends open one page, set a nickname, and claim a theme. The list is stored in a Google Sheet. How to deploy it is in `signup/README.md`. The name you add is kept next to the nickname they choose.
 
 ## Testing
 

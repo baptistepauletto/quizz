@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f1020" />
+    <title>Quizz In</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0f1020;
+        color: #f1f2ff;
+      }
+      main {
+        text-align: center;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 12px;
+      }
+      h1 span {
+        color: #a78bfa;
+      }
+      p {
+        color: #9a9cc4;
+        margin: 0 0 18px;
+      }
+      a {
+        display: inline-block;
+        background: #7c5cff;
+        color: #f1f2ff;
+        text-decoration: none;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: 14px 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Quizz <span>In</span></h1>
+      <p id="status">Opening the board…</p>
+      <a id="go" href="#">Open the board</a>
+    </main>
+    <script>
+      // The web app URL from Apps Script, the one that ends in /exec.
+      var BOARD_URL = "https://script.google.com/macros/s/AKfycby-X0hj5zFkUFpM_OmYK5YaMntAkxydYVpBnJYDuh1yLQdPmHo2NP34g0RRpnq9vA/exec";
+
+      var status = document.getElementById("status");
+      var link = document.getElementById("go");
+      var ok = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?(?:\?.*)?$/.test(BOARD_URL);
+      if (!ok) {
+        status.textContent = "The board link is not set yet.";
+        link.hidden = true;
+      } else {
+        link.href = BOARD_URL;
+        location.replace(BOARD_URL);
+      }
+    </script>
+  </body>
+</html>

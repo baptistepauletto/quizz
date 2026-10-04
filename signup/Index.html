@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f1020" />
+    <title>Quizz In</title>
+    <style>
+      :root {
+        --bg: #0f1020;
+        --panel: #1a1b33;
+        --panel-2: #23244a;
+        --line: #2f3160;
+        --text: #f1f2ff;
+        --muted: #9a9cc4;
+        --accent: #7c5cff;
+        --accent-2: #a78bfa;
+        --ok: #2ecc71;
+        --bad: #ff4d6d;
+        --warn: #ffb020;
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; background: var(--bg); color: var(--text); }
+      body { min-height: 100%; }
+      button, input { font: inherit; color: inherit; }
+      button { cursor: pointer; touch-action: manipulation; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      h1, h2, p { margin: 0; }
+      .wrap { max-width: 440px; margin: 0 auto; padding: 22px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+      .brand { font-size: 1.7rem; letter-spacing: -0.03em; }
+      .brand span { color: var(--accent-2); }
+      .muted { color: var(--muted); }
+      .small { font-size: 0.85rem; line-height: 1.4; }
+      .warn { color: var(--warn); }
+      .error {
+        background: rgba(255, 77, 109, 0.12);
+        color: #ffd0da;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .banner {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card.out { opacity: 0.55; }
+      .card.needs { border-style: dashed; }
+      .card.shared { border-color: rgba(255, 176, 32, 0.7); }
+      .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+      .who { font-size: 1.25rem; font-weight: 700; }
+      .theme { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+      .chip {
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        background: var(--panel-2);
+        white-space: nowrap;
+      }
+      .chip.in { background: rgba(46, 204, 113, 0.18); color: var(--ok); }
+      .chip.out { background: rgba(255, 77, 109, 0.15); color: var(--bad); }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .grow { flex: 1; min-width: 0; }
+      .btn, .input {
+        border: 0;
+        border-radius: 12px;
+        background: var(--panel-2);
+        min-height: 44px;
+        padding: 10px 12px;
+      }
+      .btn.primary { background: var(--accent); font-weight: 700; }
+      .btn.ghost { background: transparent; border: 1px solid var(--line); }
+      .btn.bad { background: rgba(255, 77, 109, 0.18); color: #ffd0da; }
+      .seg { display: flex; gap: 6px; }
+      .seg button { flex: 1; border: 1px solid var(--line); background: transparent; border-radius: 12px; min-height: 42px; }
+      .seg button.on { background: var(--accent); border-color: transparent; font-weight: 700; }
+      label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+      .field { width: 100%; }
+      .host { border-top: 1px solid var(--line); padding-top: 8px; }
+      .person { display: flex; align-items: center; gap: 8px; }
+      .person b { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="wrap"></div>
+    <script>
+      var THEME_MAX = 28;
+      var DISPLAY_MAX = 32;
+      var PREVIEW_PIN = '1234';
+      var COMING_LABEL = { in: 'Coming', unsure: 'Not sure', out: "Can't" };
+      var state = {
+        board: null,
+        editing: null,
+        draft: null,
+        focusEdit: false,
+        savedId: '',
+        error: '',
+        pin: '',
+        pinInput: '',
+        hostOpen: false,
+        addName: '',
+        lockInput: '',
+        lockDirty: false,
+        busy: false,
+        preview: false,
+      };
+
+      function $(tag, props, kids) {
+        var node = document.createElement(tag);
+        Object.keys(props || {}).forEach(function (key) {
+          var value = props[key];
+          if (key === 'class') node.className = value;
+          else if (key === 'text') node.textContent = value;
+          else if (key.indexOf('on') === 0) node.addEventListener(key.slice(2).toLowerCase(), value);
+          else if (key in node && key !== 'list') node[key] = value;
+          else node.setAttribute(key, value);
+        });
+        (kids || []).forEach(function (kid) {
+          if (kid == null || kid === false) return;
+          node.appendChild(typeof kid === 'string' ? document.createTextNode(kid) : kid);
+        });
+        return node;
+      }
+
+      function nameKey(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      }
+
+      function claimsTheme(player) {
+        return player.coming !== 'out' && nameKey(player.theme);
+      }
+
+      function viewOf(player) {
+        if (state.editing === player.id && state.draft) {
+          return {
+            id: player.id,
+            inviteName: player.inviteName,
+            displayName: state.draft.displayName,
+            coming: state.draft.coming,
+            theme: state.draft.theme,
+          };
+        }
+        return player;
+      }
+
+      function othersNamed(player, pick) {
+        var key = nameKey(pick(viewOf(player)));
+        if (!key) return [];
+        return state.board.players.filter(function (other) {
+          if (other.id === player.id) return false;
+          var seen = viewOf(other);
+          return nameKey(pick(seen)) === key;
+        });
+      }
+
+      function listNames(players) {
+        var names = players.map(function (p) { return viewOf(p).displayName; });
+        if (names.length <= 1) return names.join('');
+        if (names.length === 2) return names[0] + ' and ' + names[1];
+        return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+      }
+
+      function formatDay(iso) {
+        var parts = String(iso || '').split('-');
+        if (parts.length !== 3) return iso;
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[Number(parts[1]) - 1] + ' ' + Number(parts[2]) + ', ' + parts[0];
+      }
+
+      function messageOf(err) {
+        var text = !err ? 'Something went wrong.' : typeof err === 'string' ? err : err.message || String(err);
+        return text.replace(/^Error:\s*/, '');
+      }
+
+      function inApps() {
+        return typeof google !== 'undefined' && google.script && google.script.run;
+      }
+
+      function rpc(name, args) {
+        return new Promise(function (resolve, reject) {
+          if (!inApps()) {
+            try { resolve(previewDispatch(name, args)); }
+            catch (err) { reject(err); }
+            return;
+          }
+          // google.script.run only works as a direct call. runner[name].apply() never fires.
+          var settled = false;
+          function ok(value) {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+          }
+          function bad(err) {
+            if (settled) return;
+            settled = true;
+            reject(err);
+          }
+          setTimeout(function () {
+            bad(new Error('The sheet did not answer. In Apps Script: Deploy, Manage deployments, pencil, New version, Deploy. Then reload.'));
+          }, 20000);
+          var runner = google.script.run.withSuccessHandler(ok).withFailureHandler(bad);
+          if (name === 'getBoard') runner.getBoard();
+          else if (name === 'savePlayer') runner.savePlayer(args[0], args[1], args[2], args[3]);
+          else if (name === 'hostUnlock') runner.hostUnlock(args[0]);
+          else if (name === 'hostAdd') runner.hostAdd(args[0], args[1]);
+          else if (name === 'hostRemove') runner.hostRemove(args[0], args[1]);
+          else if (name === 'hostSetLock') runner.hostSetLock(args[0], args[1]);
+          else bad(new Error('Unknown action.'));
+        });
+      }
+
+      function previewLoad() {
+        try {
+          var raw = localStorage.getItem('quizzin.themeboard');
+          if (raw) return JSON.parse(raw);
+        } catch (err) { /* start fresh */ }
+        return { lockAt: '', players: [] };
+      }
+
+      function previewSave(data) {
+        localStorage.setItem('quizzin.themeboard', JSON.stringify(data));
+      }
+
+      function previewToday() {
+        var now = new Date();
+        var m = String(now.getMonth() + 1).padStart(2, '0');
+        var d = String(now.getDate()).padStart(2, '0');
+        return now.getFullYear() + '-' + m + '-' + d;
+      }
+
+      function previewBoard(data) {
+        return {
+          locked: Boolean(data.lockAt) && previewToday() > data.lockAt,
+          lockAt: data.lockAt || '',
+          players: data.players.map(function (p) {
+            return {
+              id: p.id,
+              inviteName: p.inviteName,
+              displayName: p.displayName,
+              coming: p.coming,
+              theme: p.theme,
+            };
+          }),
+        };
+      }
+
+      function previewDispatch(name, args) {
+        var data = previewLoad();
+        if (name === 'getBoard') return previewBoard(data);
+        if (name === 'hostUnlock') {
+          if (String(args[0] || '') !== PREVIEW_PIN) throw new Error('Wrong host PIN.');
+          return previewBoard(data);
+        }
+        if (name === 'savePlayer') {
+          if (data.lockAt && previewToday() > data.lockAt) throw new Error('The board is locked.');
+          var found = data.players.filter(function (p) { return p.id === args[0]; })[0];
+          if (!found) throw new Error('That person is no longer on the list.');
+          var displayName = String(args[1] || '').replace(/\s+/g, ' ').trim();
+          var coming = args[2];
+          var theme = String(args[3] || '').replace(/\s+/g, ' ').trim();
+          if (!displayName) throw new Error('Enter a name.');
+          if (displayName.length > DISPLAY_MAX) throw new Error('Name must be ' + DISPLAY_MAX + ' characters or fewer.');
+          if (['in', 'out', 'unsure'].indexOf(coming) === -1) throw new Error('Pick whether you are coming.');
+          if (theme.length > THEME_MAX) throw new Error('A theme must be ' + THEME_MAX + ' characters or fewer.');
+          found.displayName = displayName;
+          found.coming = coming;
+          found.theme = theme;
+          previewSave(data);
+          return previewBoard(data);
+        }
+        if (String(args[0] || '') !== PREVIEW_PIN) throw new Error('Wrong host PIN.');
+        if (name === 'hostAdd') {
+          var invite = String(args[1] || '').replace(/\s+/g, ' ').trim();
+          if (!invite) throw new Error('Enter the name you know them by.');
+          if (invite.length > 40) throw new Error('Name must be 40 characters or fewer.');
+          var key = nameKey(invite);
+          if (data.players.some(function (p) { return nameKey(p.inviteName) === key; })) {
+            throw new Error(invite + ' is already on the list.');
+          }
+          data.players.push({
+            id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            inviteName: invite,
+            displayName: invite.length > DISPLAY_MAX ? invite.slice(0, DISPLAY_MAX) : invite,
+            coming: 'unsure',
+            theme: '',
+          });
+          previewSave(data);
+          return previewBoard(data);
+        }
+        if (name === 'hostRemove') {
+          var before = data.players.length;
+          data.players = data.players.filter(function (p) { return p.id !== args[1]; });
+          if (data.players.length === before) throw new Error('That person is no longer on the list.');
+          previewSave(data);
+          return previewBoard(data);
+        }
+        if (name === 'hostSetLock') {
+          var next = String(args[1] || '').trim();
+          if (next && !/^\d{4}-\d{2}-\d{2}$/.test(next)) throw new Error('Enter a lock date.');
+          data.lockAt = next;
+          previewSave(data);
+          return previewBoard(data);
+        }
+        throw new Error('Unknown action.');
+      }
+
+      function applyBoard(board) {
+        state.board = board;
+        if (!state.lockDirty) state.lockInput = board.lockAt || '';
+        if (state.editing && !board.players.some(function (p) { return p.id === state.editing; })) {
+          state.editing = null;
+          state.draft = null;
+        }
+        render();
+      }
+
+      function fail(err) {
+        state.busy = false;
+        state.error = messageOf(err);
+        render();
+      }
+
+      function run(name, args, after) {
+        state.busy = true;
+        state.error = '';
+        render();
+        rpc(name, args).then(function (board) {
+          state.busy = false;
+          if (after) after();
+          applyBoard(board);
+        }).catch(fail);
+      }
+
+      function openEdit(player) {
+        state.editing = player.id;
+        state.savedId = '';
+        state.draft = { displayName: player.displayName, coming: player.coming, theme: player.theme };
+        state.focusEdit = true;
+        render();
+      }
+
+      function render() {
+        var root = document.getElementById('app');
+        root.textContent = '';
+        state.preview = !inApps();
+        if (!state.board) {
+          root.appendChild($('p', { class: 'muted', text: 'Loading…' }));
+          return;
+        }
+
+        var board = state.board;
+        var coming = board.players.filter(function (p) { return p.coming === 'in'; }).length;
+        var choosing = board.players.filter(function (p) {
+          return p.coming !== 'out' && !nameKey(p.theme);
+        }).length;
+
+        root.appendChild($('h1', { class: 'brand' }, ['Quizz ', $('span', { text: 'In' })]));
+        root.appendChild($('p', { class: 'muted', text: "Who's in" }));
+        root.appendChild($('p', { class: 'small muted', text: 'One theme each. If someone else already has it, it is a weaker pick. The name you set here is the one to join the game with.' }));
+
+        if (board.locked) {
+          root.appendChild($('p', { class: 'warn small', text: 'Locked since ' + formatDay(board.lockAt) + '. Picks are final.' }));
+        } else if (board.lockAt) {
+          root.appendChild($('p', { class: 'small muted', text: 'Open through ' + formatDay(board.lockAt) + '.' }));
+        } else {
+          root.appendChild($('p', { class: 'small muted', text: 'No lock date yet. You can still change your pick.' }));
+        }
+
+        if (board.players.length) {
+          var stats = coming === 0 ? 'Nobody marked coming yet' : coming + (coming === 1 ? ' person coming' : ' people coming');
+          if (choosing) stats += ' · ' + choosing + ' still choosing a theme';
+          root.appendChild($('p', { class: 'small', text: stats }));
+        }
+
+        if (state.error) root.appendChild($('div', { class: 'error', role: 'alert', text: state.error }));
+
+        if (!board.players.length) {
+          root.appendChild($('p', { class: 'muted', text: 'No one on the list yet.' }));
+        }
+
+        board.players.forEach(function (player) {
+          root.appendChild(card(player));
+        });
+
+        root.appendChild(hostPanel());
+
+        if (state.preview) {
+          root.appendChild($('div', { class: 'banner' }, [
+            $('p', { class: 'small muted', text: 'Preview on this computer only. Friends need the web app link after you deploy. Host PIN here is ' + PREVIEW_PIN + '.' }),
+            $('button', {
+              class: 'btn ghost',
+              type: 'button',
+              text: 'Reset preview',
+              onclick: function () {
+                localStorage.removeItem('quizzin.themeboard');
+                state.editing = null;
+                state.draft = null;
+                state.hostOpen = false;
+                state.pin = '';
+                state.error = '';
+                load();
+              },
+            }),
+          ]));
+        }
+
+        if (state.focusEdit) {
+          state.focusEdit = false;
+          var input = document.getElementById('nickname');
+          if (input) input.focus();
+        }
+      }
+
+      function card(player) {
+        var shown = viewOf(player);
+        var shared = othersNamed(player, function (p) { return claimsTheme(p) ? p.theme : ''; });
+        var sameName = othersNamed(player, function (p) { return p.displayName; });
+        var classes = 'card';
+        if (shown.coming === 'out') classes += ' out';
+        else if (shared.length) classes += ' shared';
+        else if (!nameKey(shown.theme)) classes += ' needs';
+
+        var kids = [
+          $('div', { class: 'top' }, [
+            $('div', { class: 'who', text: shown.displayName || player.inviteName }),
+            $('span', { class: 'chip ' + shown.coming, text: COMING_LABEL[shown.coming] }),
+          ]),
+        ];
+        if (nameKey(shown.displayName) !== nameKey(player.inviteName)) {
+          kids.push($('p', { class: 'small muted', text: 'Invited as ' + player.inviteName }));
+        }
+        kids.push($('div', {
+          class: nameKey(shown.theme) ? 'theme' : 'theme muted',
+          text: nameKey(shown.theme) ? shown.theme : 'No theme yet',
+        }));
+        if (shared.length) kids.push($('p', { class: 'small warn', text: 'Also picked by ' + listNames(shared) }));
+        if (sameName.length) kids.push($('p', { class: 'small warn', text: 'Same name as ' + listNames(sameName) }));
+        if (state.savedId === player.id && state.editing !== player.id) {
+          kids.push($('p', { class: 'small muted', text: 'Saved' }));
+        }
+
+        if (state.editing === player.id) kids.push(editor(player));
+        else {
+          kids.push($('button', {
+            class: 'btn',
+            type: 'button',
+            text: 'Edit',
+            disabled: state.board.locked || state.busy,
+            onclick: function () { openEdit(player); },
+          }));
+        }
+        return $('article', { class: classes, id: 'card-' + player.id }, kids);
+      }
+
+      function editor(player) {
+        var draft = state.draft;
+        function set(key, value) {
+          draft[key] = value;
+          var y = window.scrollY;
+          var active = document.activeElement;
+          var fieldId = active && active.id;
+          var start = active && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+          var end = active && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+          render();
+          window.scrollTo(0, y);
+          if (!fieldId) return;
+          var next = document.getElementById(fieldId);
+          if (!next) return;
+          next.focus();
+          if (start != null && next.setSelectionRange) next.setSelectionRange(start, end);
+        }
+        var dirty = draft.displayName !== player.displayName || draft.coming !== player.coming || draft.theme !== player.theme;
+        return $('form', {
+          onsubmit: function (event) {
+            event.preventDefault();
+            if (!dirty || state.busy) return;
+            var id = player.id;
+            run('savePlayer', [id, draft.displayName, draft.coming, draft.theme], function () {
+              state.editing = null;
+              state.draft = null;
+              state.savedId = id;
+            });
+          },
+        }, [
+          $('label', { text: 'Name on the night' }, [
+            $('input', {
+              id: 'nickname',
+              class: 'input field',
+              maxlength: DISPLAY_MAX,
+              value: draft.displayName,
+              autocomplete: 'nickname',
+              oninput: function (event) { set('displayName', event.target.value); },
+            }),
+          ]),
+          $('div', { class: 'seg' }, ['in', 'unsure', 'out'].map(function (value) {
+            return $('button', {
+              type: 'button',
+              class: draft.coming === value ? 'on' : '',
+              text: COMING_LABEL[value],
+              onclick: function () { set('coming', value); },
+            });
+          })),
+          $('label', { text: 'Theme (' + draft.theme.length + '/' + THEME_MAX + ')' }, [
+            $('input', {
+              id: 'theme-input',
+              class: 'input field',
+              maxlength: THEME_MAX,
+              value: draft.theme,
+              placeholder: 'Track and field',
+              oninput: function (event) { set('theme', event.target.value); },
+            }),
+          ]),
+          $('div', { class: 'row' }, [
+            $('button', { class: 'btn primary grow', type: 'submit', text: state.busy ? 'Saving…' : 'Save', disabled: state.busy || !dirty }),
+            $('button', {
+              class: 'btn ghost',
+              type: 'button',
+              text: 'Cancel',
+              onclick: function () {
+                state.editing = null;
+                state.draft = null;
+                render();
+              },
+            }),
+          ]),
+        ]);
+      }
+
+      function hostPanel() {
+        var board = state.board;
+        var kids = [$('h2', { text: 'Host' })];
+        if (!state.hostOpen) {
+          kids.push($('p', { class: 'small muted', text: 'Add people, or set the lock date.' }));
+          kids.push($('form', {
+            class: 'row',
+            onsubmit: function (event) {
+              event.preventDefault();
+              var pin = state.pinInput.trim();
+              if (!pin) {
+                state.error = 'Enter the host PIN.';
+                render();
+                return;
+              }
+              state.busy = true;
+              state.error = '';
+              render();
+              rpc('hostUnlock', [pin]).then(function (next) {
+                state.busy = false;
+                state.pin = pin;
+                state.hostOpen = true;
+                state.lockDirty = false;
+                applyBoard(next);
+              }).catch(fail);
+            },
+          }, [
+            $('input', {
+              class: 'input grow',
+              type: 'password',
+              placeholder: 'Host PIN',
+              value: state.pinInput,
+              autocomplete: 'current-password',
+              oninput: function (event) { state.pinInput = event.target.value; },
+            }),
+            $('button', { class: 'btn primary', type: 'submit', text: 'Unlock' }),
+          ]));
+          return $('section', { class: 'card host' }, kids);
+        }
+
+        kids.push($('form', {
+          class: 'row',
+          onsubmit: function (event) {
+            event.preventDefault();
+            var name = state.addName;
+            run('hostAdd', [state.pin, name], function () { state.addName = ''; });
+          },
+        }, [
+          $('input', {
+            class: 'input grow',
+            placeholder: 'Name you know them by',
+            maxlength: 40,
+            value: state.addName,
+            oninput: function (event) { state.addName = event.target.value; },
+          }),
+          $('button', { class: 'btn primary', type: 'submit', text: 'Add', disabled: state.busy }),
+        ]));
+
+        board.players.forEach(function (player) {
+          kids.push($('div', { class: 'person' }, [
+            $('b', { class: 'grow', text: player.inviteName }),
+            $('button', {
+              class: 'btn bad',
+              type: 'button',
+              text: state.confirmRemove === player.id ? 'Yes, remove' : 'Remove',
+              disabled: state.busy,
+              onclick: function () {
+                if (state.confirmRemove !== player.id) {
+                  state.confirmRemove = player.id;
+                  render();
+                  return;
+                }
+                run('hostRemove', [state.pin, player.id], function () { state.confirmRemove = ''; });
+              },
+            }),
+          ]));
+        });
+
+        kids.push($('form', {
+          onsubmit: function (event) {
+            event.preventDefault();
+            var next = state.lockInput;
+            run('hostSetLock', [state.pin, next], function () { state.lockDirty = false; });
+          },
+        }, [
+          $('label', { text: 'Open through this date' }, [
+            $('input', {
+              class: 'input field',
+              type: 'date',
+              value: state.lockInput,
+              oninput: function (event) {
+                state.lockInput = event.target.value;
+                state.lockDirty = true;
+              },
+            }),
+          ]),
+          $('div', { class: 'row' }, [
+            $('button', { class: 'btn primary grow', type: 'submit', text: 'Save date', disabled: state.busy }),
+            $('button', {
+              class: 'btn ghost',
+              type: 'button',
+              text: 'Clear',
+              disabled: state.busy,
+              onclick: function () {
+                state.lockInput = '';
+                state.lockDirty = true;
+                run('hostSetLock', [state.pin, ''], function () { state.lockDirty = false; });
+              },
+            }),
+          ]),
+        ]));
+
+        kids.push($('button', {
+          class: 'btn ghost',
+          type: 'button',
+          text: 'Close host tools',
+          onclick: function () {
+            state.hostOpen = false;
+            state.pin = '';
+            state.pinInput = '';
+            render();
+          },
+        }));
+        return $('section', { class: 'card host' }, kids);
+      }
+
+      function load() {
+        state.board = null;
+        render();
+        rpc('getBoard', []).then(applyBoard).catch(fail);
+      }
+
+      load();
+    </script>
+  </body>
+</html>
