@@ -15,6 +15,7 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
     .map((p, joinOrder) => ({ p, joinOrder }))
     .sort((a, b) => b.p.score - a.p.score || a.joinOrder - b.joinOrder);
   const max = Math.max(1, ...players.map((p) => p.score));
+  const top = ranked[0]?.p.score ?? 0;
 
   return (
     <div className="scoreboard">
@@ -24,6 +25,7 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
           className={[
             'score-row',
             p.connected ? '' : 'offline',
+            top > 0 && p.score === top ? 'lead' : '',
             p.id === turnPlayerId ? 'turn' : '',
             p.id === buzzPlayerId ? 'buzz' : '',
             p.sitOut ? 'sit' : '',

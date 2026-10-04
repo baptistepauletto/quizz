@@ -129,7 +129,8 @@ function JoinForm(props: {
       }}
     >
       <h1 className="brand" style={{ fontSize: '2.2rem' }}>
-        Quizz <span>In</span>
+        <span className="brand-q">Quizz</span>
+        <span className="brand-in">In</span>
       </h1>
       {props.notice && <p className="error">{props.notice}</p>}
       <div className="field">

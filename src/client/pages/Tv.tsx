@@ -32,7 +32,8 @@ export function Tv() {
     <div className="tv">
       <header className="tv-head">
         <div className="brand">
-          Quizz <span>In</span>
+          <span className="brand-q">Quizz</span>
+          <span className="brand-in">In</span>
         </div>
         {state && state.phase !== 'lobby' && (
           <div className="tv-code">
@@ -83,8 +84,11 @@ function Lobby({ state, joinUrl }: { state: GameView; joinUrl: string }) {
       <div className="lobby-grid">
         <div className="qr">{qr && <img src={qr} alt={`Scan to join ${state.joinCode}`} />}</div>
         <div>
-          <div className="tv-sub">Scan the code, or go to {joinUrl.replace(/^https?:\/\//, '')} and enter</div>
           <div className="big-code">{state.joinCode}</div>
+          <div className="tv-sub">Scan to join</div>
+          <div className="tv-sub" style={{ fontSize: '0.85em' }}>
+            {joinUrl.replace(/^https?:\/\//, '')}
+          </div>
           <div className="player-chips">
             {state.players.length === 0 && <span className="tv-sub">Waiting for players…</span>}
             {state.players.map((p) => (

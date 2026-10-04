@@ -37,7 +37,8 @@ export function PinGate({ children }: { children: ReactNode }) {
   return (
     <form className="home" onSubmit={submit}>
       <h1 className="brand">
-        Quizz <span>In</span>
+        <span className="brand-q">Quizz</span>
+        <span className="brand-in">In</span>
       </h1>
       <div className="field">
         <label htmlFor="pin">Host PIN</label>

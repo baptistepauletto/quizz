@@ -9,7 +9,8 @@ function Home() {
   return (
     <div className="home">
       <h1 className="brand" style={{ fontSize: '2.4rem' }}>
-        Quizz <span>In</span>
+        <span className="brand-q">Quizz</span>
+        <span className="brand-in">In</span>
       </h1>
       <p className="muted">Pick your screen.</p>
       <Link className="btn primary big" to="/tv">
