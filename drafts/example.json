@@ -1,0 +1,76 @@
+{
+  "title": "Example night",
+  "sprint": [
+    {
+      "theme": "General knowledge",
+      "questions": [
+        { "prompt": "What is the capital of Australia?", "answer": "Canberra", "difficulty": "medium" },
+        { "prompt": "How many continents are there?", "answer": "Seven", "difficulty": "easy" },
+        { "prompt": "Which element has the chemical symbol Fe?", "answer": "Iron", "difficulty": "easy" },
+        { "prompt": "Who painted the ceiling of the Sistine Chapel?", "answer": "Michelangelo", "difficulty": "medium" },
+        { "prompt": "What is the smallest prime number greater than 50?", "answer": "53", "difficulty": "hard" },
+        { "prompt": "Which river flows through Paris?", "answer": "The Seine", "difficulty": "easy" }
+      ]
+    }
+  ],
+  "memory": [
+    {
+      "theme": "Space",
+      "contributor": "Alice",
+      "questions": [
+        { "prompt": "Which planet is the largest in our solar system?", "answer": "Jupiter", "difficulty": "easy" },
+        { "prompt": "Who was the first person to walk on the Moon?", "answer": "Neil Armstrong", "difficulty": "easy" },
+        { "prompt": "What is the name of Saturn's largest moon?", "answer": "Titan", "difficulty": "medium" },
+        { "prompt": "In what year did Voyager 1 launch?", "answer": "1977", "difficulty": "hard" },
+        { "prompt": "What is the closest star to the Sun?", "answer": "Proxima Centauri", "difficulty": "medium" }
+      ]
+    },
+    {
+      "theme": "Cinema",
+      "contributor": "Bob",
+      "questions": [
+        { "prompt": "Who directed Jurassic Park?", "answer": "Steven Spielberg", "difficulty": "easy" },
+        { "prompt": "Which film won the Best Picture Oscar for 1994?", "answer": "Forrest Gump", "difficulty": "medium" },
+        { "prompt": "What is the name of the hotel in The Shining?", "answer": "The Overlook Hotel", "difficulty": "medium" },
+        { "prompt": "Which actor played Jack Dawson in Titanic?", "answer": "Leonardo DiCaprio", "difficulty": "easy" },
+        { "prompt": "Who directed Seven Samurai?", "answer": "Akira Kurosawa", "difficulty": "hard" }
+      ]
+    },
+    {
+      "theme": "Cooking",
+      "contributor": "Chloe",
+      "questions": [
+        { "prompt": "What is the main ingredient of guacamole?", "answer": "Avocado", "difficulty": "easy" },
+        { "prompt": "Which country does sushi come from?", "answer": "Japan", "difficulty": "easy" },
+        { "prompt": "What is the French term for chopping vegetables into small, uniform strips?", "answer": "Julienne", "difficulty": "medium" },
+        { "prompt": "Which spice is the most expensive in the world by weight?", "answer": "Saffron", "difficulty": "medium" },
+        { "prompt": "What are the five French mother sauces? Name any three.", "answer": "Béchamel, velouté, espagnole, hollandaise, tomate", "difficulty": "hard" }
+      ]
+    },
+    {
+      "theme": "Football",
+      "contributor": "Dan",
+      "questions": [
+        { "prompt": "Which country won the 2018 FIFA World Cup?", "answer": "France", "difficulty": "easy" },
+        { "prompt": "How many players are on the pitch for one team in a match?", "answer": "Eleven", "difficulty": "easy" },
+        { "prompt": "Who has scored the most goals in World Cup history?", "answer": "Miroslav Klose (16)", "difficulty": "medium" },
+        { "prompt": "Which club has won the most Champions League / European Cup titles?", "answer": "Real Madrid", "difficulty": "medium" },
+        { "prompt": "Which country hosted the first World Cup in 1930?", "answer": "Uruguay", "difficulty": "hard" }
+      ]
+    }
+  ],
+  "climax": [
+    {
+      "theme": "Space",
+      "questions": [{ "prompt": "How many moons does Mars have?", "answer": "Two (Phobos and Deimos)", "difficulty": "hard" }]
+    },
+    {
+      "theme": "Cinema",
+      "questions": [{ "prompt": "Who directed Psycho (1960)?", "answer": "Alfred Hitchcock", "difficulty": "medium" }]
+    },
+    {
+      "theme": "World cuisine",
+      "questions": [{ "prompt": "Which country is the origin of the dish paella?", "answer": "Spain (Valencia)", "difficulty": "medium" }]
+    }
+  ]
+}
