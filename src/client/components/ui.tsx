@@ -3,11 +3,18 @@ import type { Connection } from '../lib/useGame';
 import { POINTS } from '../../shared/types';
 import type { Difficulty, PlayerView } from '../../shared/types';
 
+const DIFFICULTY_FR: Record<Difficulty, string> = {
+  easy: 'facile',
+  medium: 'moyen',
+  hard: 'difficile',
+};
+
 export function DifficultyChip({ difficulty, withPoints = true }: { difficulty: Difficulty; withPoints?: boolean }) {
+  const pts = POINTS[difficulty];
   return (
     <span className={`chip ${difficulty}`}>
-      {difficulty}
-      {withPoints ? ` · ${POINTS[difficulty]} pt${POINTS[difficulty] > 1 ? 's' : ''}` : ''}
+      {DIFFICULTY_FR[difficulty]}
+      {withPoints ? ` · ${pts} pt${pts > 1 ? 's' : ''}` : ''}
     </span>
   );
 }
@@ -29,5 +36,5 @@ export function nameOf(players: PlayerView[], id: string | null | undefined): st
 /** Small red pill when the socket is down, so nobody wonders why nothing moves. */
 export function ConnectionPill({ connection }: { connection: Connection }) {
   if (connection === 'open') return null;
-  return <div className="status-pill">{connection === 'connecting' ? 'Connecting…' : 'Reconnecting…'}</div>;
+  return <div className="status-pill">{connection === 'connecting' ? 'Connexion…' : 'Reconnexion…'}</div>;
 }

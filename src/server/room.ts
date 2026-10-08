@@ -11,7 +11,9 @@ import {
   viewFor,
 } from './game';
 import type { Emit, Game } from './game';
-import { approvedQuestions, getPackTitle, isPackReady } from './packs';
+import { drawNight } from './draw';
+import { lastAsked, recordAsk } from './history';
+import { approvedQuestions } from './packs';
 import { deleteSnapshot, loadLatestSnapshot, saveSnapshot } from './snapshot';
 import type { ClientMessage, HelloMessage, HostCommand, PlayerMessage, ServerMessage } from '../shared/protocol';
 import type { GameEvent, GameEventType, Role } from '../shared/types';
@@ -60,22 +62,22 @@ export class Room {
     try {
       msg = JSON.parse(raw) as ClientMessage;
     } catch {
-      return this.error(conn, 'bad', 'Invalid message.');
+      return this.error(conn, 'bad', 'Message invalide.');
     }
     try {
       if (msg.t === 'hello') return this.hello(conn, msg);
-      if (!conn.role) return this.error(conn, 'bad', 'Say hello first.');
+      if (!conn.role) return this.error(conn, 'bad', 'Dis bonjour d’abord.');
 
       if (conn.role === 'play') {
-        if (msg.t !== 'buzz' && msg.t !== 'bet') return this.error(conn, 'command', 'Players cannot do that.');
+        if (msg.t !== 'buzz' && msg.t !== 'bet') return this.error(conn, 'command', 'Les joueurs ne peuvent pas faire ça.');
         return this.playerMessage(conn, msg);
       }
       if (conn.role === 'host') return this.hostCommand(conn, msg as HostCommand);
-      this.error(conn, 'command', 'The TV is display-only.');
+      this.error(conn, 'command', 'La TV est en affichage seul.');
     } catch (err) {
       if (err instanceof GameError) return this.error(conn, 'command', err.message);
       console.error('Unhandled error while handling message:', err);
-      this.error(conn, 'bad', 'Something went wrong.');
+      this.error(conn, 'bad', 'Un problème est survenu.');
     }
   }
 
@@ -88,7 +90,7 @@ export class Room {
 
     if (msg.role === 'host') {
       if (!isValidToken(msg.token)) {
-        this.error(conn, 'auth', 'Wrong or missing PIN.');
+        this.error(conn, 'auth', 'PIN incorrect ou manquant.');
         return conn.ws.close(4001, 'auth');
       }
       conn.role = 'host';
@@ -99,7 +101,7 @@ export class Room {
     if (msg.role === 'play') {
       const g = this.game;
       if (!g || g.joinCode !== String(msg.code ?? '').trim().toUpperCase()) {
-        return this.error(conn, 'join', 'No game with that code.');
+        return this.error(conn, 'join', 'Aucune partie avec ce code.');
       }
       let joined: { id: string } | null = null;
       try {
@@ -180,19 +182,21 @@ export class Room {
   }
 
   private hostCommand(_conn: Conn, cmd: HostCommand): void {
-    if (cmd.t === 'game.create') return this.createGame(cmd.packId);
+    if (cmd.t === 'game.create') return this.createGame();
     if (cmd.t === 'game.end') return this.endGame();
     this.mutate((g, emit) => {
       applyCommand(g, cmd, emit);
     });
   }
 
-  private createGame(packId: number): void {
-    if (this.game) throw new GameError('A game is already running. End it first.');
-    const title = getPackTitle(Number(packId));
-    if (title === null) throw new GameError('Pack not found.');
-    if (!isPackReady(Number(packId))) throw new GameError('That pack is not marked ready yet.');
-    this.game = createGame(Number(packId), title, approvedQuestions(Number(packId)));
+  private createGame(): void {
+    if (this.game) throw new GameError('Une partie est déjà en cours. Termine-la d’abord.');
+    const hand = drawNight(approvedQuestions(), lastAsked());
+    const missing = (['sprint', 'memory', 'climax'] as const).filter((bank) => !hand.some((q) => q.bank === bank));
+    if (missing.length > 0) {
+      throw new GameError(`Valide au moins une question dans : ${missing.join(', ')}.`);
+    }
+    this.game = createGame(0, 'Ce soir', hand);
     saveSnapshot(this.game);
     this.broadcastState();
   }
@@ -215,7 +219,7 @@ export class Room {
    */
   private mutate(fn: (g: Game, emit: Emit) => boolean | void): void {
     const g = this.game;
-    if (!g) throw new GameError('There is no game in progress.');
+    if (!g) throw new GameError('Aucune partie en cours.');
     const pending: Array<{ type: GameEventType; payload: Record<string, unknown> }> = [];
     const emit: Emit = (type, payload = {}) => pending.push({ type, payload });
     if (fn(g, emit) === false) return;
@@ -223,6 +227,12 @@ export class Room {
     this.broadcastState();
     const at = Date.now();
     for (const e of pending) {
+      if (e.type === 'sprint.question') recordAsk(g.sprint.order[g.sprint.index], g.joinCode);
+      if (e.type === 'memory.asking') {
+        const tile = g.memory.tiles.find((t) => t.coord === g.memory.askingCoord);
+        if (tile) recordAsk(tile.questionId, g.joinCode);
+      }
+      if (e.type === 'climax.announce' && g.climax.questionId !== null) recordAsk(g.climax.questionId, g.joinCode);
       const event: GameEvent = { seq: g.seq, type: e.type, at, payload: e.payload };
       this.broadcast({ t: 'event', event });
     }

@@ -1,5 +1,6 @@
 import { BANKS, DIFFICULTIES } from '../shared/types';
 import type { Bank, DraftFile, DraftGroup, DraftQuestion, Difficulty } from '../shared/types';
+import { imageFileExists, normalizeImagePath } from './pictures';
 
 export class DraftError extends Error {
   constructor(public problems: string[]) {
@@ -57,9 +58,20 @@ export function parseDraft(raw: unknown): DraftFile {
         if (!prompt) bad(`${qw}: missing "prompt".`);
         if (!answer) bad(`${qw}: missing "answer".`);
         if (!DIFFICULTIES.includes(difficulty)) bad(`${qw}: "difficulty" must be easy, medium or hard.`);
-        if (prompt && answer && DIFFICULTIES.includes(difficulty)) {
+        const imageRaw = str(rec.image);
+        let image: string | undefined;
+        if (imageRaw) {
+          if (bank !== 'sprint') bad(`${qw}: pictures are only for sprint questions.`);
+          else {
+            const rel = normalizeImagePath(imageRaw);
+            if (!rel) bad(`${qw}: "image" must be a jpg, png, webp or gif path inside the pictures folder, like "friends/corentin.jpg".`);
+            else if (!imageFileExists(rel)) bad(`${qw}: picture not found at pictures/${rel}.`);
+            else image = rel;
+          }
+        }
+        if (prompt && answer && DIFFICULTIES.includes(difficulty) && (!imageRaw || image)) {
           const notes = str(rec.notes);
-          questions.push({ prompt, answer, difficulty, ...(notes ? { notes } : {}) });
+          questions.push({ prompt, answer, difficulty, ...(notes ? { notes } : {}), ...(image ? { image } : {}) });
         }
       });
       const contributor = str(group.contributor);

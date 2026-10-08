@@ -1,5 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { computeGrid, coordsFor } from '../shared/grid';
+import { mediaUrl } from './pictures';
 import type { HostCommand, PlayerMessage } from '../shared/protocol';
 import { POINTS } from '../shared/types';
 import type {
@@ -41,6 +42,8 @@ export interface QuestionRec {
   prompt: string;
   answer: string;
   notes: string | null;
+  /** Relative path inside the pictures folder. Sprint only. */
+  image: string | null;
 }
 
 export interface PlayerRec {
@@ -193,20 +196,20 @@ export function joinPlayer(
   emit: Emit,
 ): JoinResult {
   const name = cleanName(rawName);
-  if (!name) throw new GameError('Please enter a name.');
+  if (!name) throw new GameError('Entre un prénom.');
   const key = nameKeyOf(name);
 
   const existing = g.players.find((p) => p.nameKey === key);
   if (existing) {
     if (claimId !== existing.id && hasLiveConnection(existing.id)) {
-      throw new GameError('That name is already taken in this room.');
+      throw new GameError('Ce prénom est déjà pris dans cette salle.');
     }
     existing.connected = true; // keep the display name as first typed ("ann" does not rename "Ann")
     emit('player.reconnected', { playerId: existing.id, name: existing.name });
     return { player: existing, reconnected: true };
   }
 
-  if (g.players.length >= MAX_PLAYERS) throw new GameError('The room is full.');
+  if (g.players.length >= MAX_PLAYERS) throw new GameError('La salle est pleine.');
   const player: PlayerRec = { id: randomUUID(), name, nameKey: key, score: 0, connected: true };
   g.players.push(player);
   if (g.memory.status === 'playing' && !g.memory.turnPlayerId) g.memory.turnPlayerId = player.id;
@@ -224,7 +227,7 @@ export function setConnected(g: Game, playerId: string, connected: boolean, emit
 
 function playerOf(g: Game, id: string): PlayerRec {
   const p = g.players.find((x) => x.id === id);
-  if (!p) throw new GameError('Unknown player.');
+  if (!p) throw new GameError('Joueur inconnu.');
   return p;
 }
 
@@ -272,11 +275,11 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
 
   if (msg.t === 'bet') {
     const c = g.climax;
-    if (g.phase !== 'climax' || c.status !== 'betting') throw new GameError('Betting is not open.');
-    if (!c.eligible.includes(playerId)) throw new GameError('You are sitting this round out.');
+    if (g.phase !== 'climax' || c.status !== 'betting') throw new GameError('Les paris ne sont pas ouverts.');
+    if (!c.eligible.includes(playerId)) throw new GameError('Tu passes ce tour.');
     const player = playerOf(g, playerId);
     const amount = Math.floor(Number(msg.amount));
-    if (!Number.isFinite(amount) || amount < 0) throw new GameError('Invalid bet.');
+    if (!Number.isFinite(amount) || amount < 0) throw new GameError('Mise invalide.');
     c.bets[playerId] = Math.min(amount, player.score);
     emit('climax.bet', { playerId });
     return true;
@@ -295,7 +298,7 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
       return setPhase(g, cmd.phase, emit);
     case 'score.adjust': {
       const delta = Math.trunc(Number(cmd.delta));
-      if (!Number.isFinite(delta) || delta === 0) throw new GameError('Invalid score change.');
+      if (!Number.isFinite(delta) || delta === 0) throw new GameError('Changement de score invalide.');
       return addScore(g, cmd.playerId, delta, emit, 'host');
     }
     case 'player.kick':
@@ -338,7 +341,7 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
       return climaxReset(g);
 
     default:
-      throw new GameError('Unknown command.');
+      throw new GameError('Commande inconnue.');
   }
 }
 
@@ -350,12 +353,12 @@ function setPhase(g: Game, phase: Phase, emit: Emit) {
 }
 
 function requirePhase(g: Game, phase: Phase) {
-  if (g.phase !== phase) throw new GameError(`This only works during the ${phase} phase.`);
+  if (g.phase !== phase) throw new GameError(`Ça ne marche que pendant la phase ${phase}.`);
 }
 
 function question(g: Game, id: number): QuestionRec {
   const q = g.questions[id];
-  if (!q) throw new GameError('Unknown question.');
+  if (!q) throw new GameError('Question inconnue.');
   return q;
 }
 
@@ -365,9 +368,9 @@ function sprintNext(g: Game, emit: Emit) {
   requirePhase(g, 'sprint');
   const s = g.sprint;
   if (s.status === 'asking' || s.status === 'locked') {
-    throw new GameError('Resolve the current question first (award, pass or skip).');
+    throw new GameError('Résous d’abord la question en cours (correct, faux ou passer).');
   }
-  if (s.index + 1 >= s.order.length) throw new GameError('No more sprint questions.');
+  if (s.index + 1 >= s.order.length) throw new GameError('Plus de questions sprint.');
   s.index += 1;
   s.status = 'asking';
   s.buzzPlayerId = null;
@@ -384,7 +387,7 @@ function currentSprintQuestion(g: Game): QuestionRec {
 function sprintAward(g: Game, emit: Emit) {
   requirePhase(g, 'sprint');
   const s = g.sprint;
-  if (s.status !== 'locked' || !s.buzzPlayerId) throw new GameError('Nobody has buzzed.');
+  if (s.status !== 'locked' || !s.buzzPlayerId) throw new GameError('Personne n’a buzzé.');
   const q = currentSprintQuestion(g);
   addScore(g, s.buzzPlayerId, POINTS[q.difficulty], emit, 'sprint');
   s.status = 'resolved';
@@ -395,7 +398,7 @@ function sprintAward(g: Game, emit: Emit) {
 function sprintPass(g: Game, emit: Emit) {
   requirePhase(g, 'sprint');
   const s = g.sprint;
-  if (s.status !== 'locked' || !s.buzzPlayerId) throw new GameError('Nobody has buzzed.');
+  if (s.status !== 'locked' || !s.buzzPlayerId) throw new GameError('Personne n’a buzzé.');
   s.lockedOut.push(s.buzzPlayerId);
   emit('sprint.pass', { playerId: s.buzzPlayerId });
   s.buzzPlayerId = null;
@@ -406,7 +409,7 @@ function sprintPass(g: Game, emit: Emit) {
 function sprintSkip(g: Game, emit: Emit) {
   requirePhase(g, 'sprint');
   const s = g.sprint;
-  if (s.status !== 'asking' && s.status !== 'locked') throw new GameError('No question to skip.');
+  if (s.status !== 'asking' && s.status !== 'locked') throw new GameError('Aucune question à passer.');
   s.status = 'resolved';
   emit('sprint.resolved', { correct: false, playerId: null });
 }
@@ -436,7 +439,7 @@ function startMemory(g: Game, emit: Emit) {
 function hideTiles(g: Game, emit: Emit) {
   requirePhase(g, 'memory');
   const m = g.memory;
-  if (m.status !== 'preview') throw new GameError('The tiles are not being previewed.');
+  if (m.status !== 'preview') throw new GameError('Les cases ne sont pas en aperçu.');
   for (const t of m.tiles) if (t.face === 'preview') t.face = 'hidden';
   m.status = 'playing';
   m.previewUntil = null;
@@ -448,12 +451,12 @@ function hideTiles(g: Game, emit: Emit) {
 function memoryFlip(g: Game, rawCoord: string, emit: Emit) {
   requirePhase(g, 'memory');
   const m = g.memory;
-  if (m.status !== 'playing') throw new GameError('The grid is not in play yet.');
-  if (m.askingCoord) throw new GameError('Finish the current question first.');
+  if (m.status !== 'playing') throw new GameError('La grille n’est pas encore en jeu.');
+  if (m.askingCoord) throw new GameError('Termine d’abord la question en cours.');
   const coord = String(rawCoord).trim().toUpperCase();
   const tile = m.tiles.find((t) => t.coord === coord);
-  if (!tile) throw new GameError(`There is no tile ${coord}.`);
-  if (tile.face !== 'hidden') throw new GameError(`${coord} was already played.`);
+  if (!tile) throw new GameError(`Il n’y a pas de case ${coord}.`);
+  if (tile.face !== 'hidden') throw new GameError(`${coord} a déjà été jouée.`);
   const q = question(g, tile.questionId);
   tile.face = 'asking';
   m.askingCoord = coord;
@@ -465,11 +468,11 @@ function memoryFlip(g: Game, rawCoord: string, emit: Emit) {
 function memoryResolve(g: Game, correct: boolean, emit: Emit) {
   requirePhase(g, 'memory');
   const m = g.memory;
-  if (!m.askingCoord) throw new GameError('No tile is being asked.');
+  if (!m.askingCoord) throw new GameError('Aucune case n’est posée.');
   const tile = m.tiles.find((t) => t.coord === m.askingCoord)!;
   const q = question(g, tile.questionId);
   if (correct) {
-    if (!m.turnPlayerId) throw new GameError('There is no player on turn.');
+    if (!m.turnPlayerId) throw new GameError('Personne n’est au tour.');
     addScore(g, m.turnPlayerId, POINTS[q.difficulty], emit, 'memory');
   }
   tile.face = 'consumed';
@@ -511,9 +514,9 @@ export function tick(g: Game, emit: Emit): boolean {
 function climaxPick(g: Game, questionId: number, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status === 'betting' || c.status === 'asking') throw new GameError('A round is already in progress.');
+  if (c.status === 'betting' || c.status === 'asking') throw new GameError('Une manche est déjà en cours.');
   if (!c.candidates.includes(questionId) || c.used.includes(questionId)) {
-    throw new GameError('That question is not available.');
+    throw new GameError('Cette question n’est pas disponible.');
   }
   const q = question(g, questionId);
   c.questionId = questionId;
@@ -527,7 +530,7 @@ function climaxPick(g: Game, questionId: number, emit: Emit) {
 function climaxOpenBetting(g: Game, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status !== 'announce') throw new GameError('Announce a question first.');
+  if (c.status !== 'announce') throw new GameError('Annonce d’abord une question.');
   // Players with no points left sit this round out.
   c.eligible = g.players.filter((p) => p.score > 0).map((p) => p.id);
   c.bets = {};
@@ -538,7 +541,7 @@ function climaxOpenBetting(g: Game, emit: Emit) {
 function climaxLockBets(g: Game, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status !== 'betting') throw new GameError('Betting is not open.');
+  if (c.status !== 'betting') throw new GameError('Les paris ne sont pas ouverts.');
   for (const id of c.eligible) {
     const p = g.players.find((x) => x.id === id);
     c.bets[id] = Math.min(c.bets[id] ?? 0, p?.score ?? 0);
@@ -558,8 +561,8 @@ function pendingJudge(g: Game): string[] {
 function climaxJudge(g: Game, playerId: string, correct: boolean, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status !== 'asking') throw new GameError('The question is not open for judging.');
-  if (!pendingJudge(g).includes(playerId)) throw new GameError('This player has nothing to judge.');
+  if (c.status !== 'asking') throw new GameError('La question n’est pas ouverte au jugement.');
+  if (!pendingJudge(g).includes(playerId)) throw new GameError('Ce joueur n’a rien à juger.');
   const wager = c.bets[playerId];
   addScore(g, playerId, correct ? 2 * wager : -wager, emit, 'climax');
   c.results.push({ playerId, wager, correct });
@@ -589,13 +592,14 @@ function climaxReset(g: Game) {
 // Views: what each role is allowed to see
 // ---------------------------------------------------------------------------
 
-function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean }): QuestionView {
+function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean; image?: boolean }): QuestionView {
   return {
     id: q.id,
     theme: q.theme,
     difficulty: q.difficulty,
     points: POINTS[q.difficulty],
     prompt: q.prompt,
+    ...(opts.image && q.image ? { image: mediaUrl(q.image) } : {}),
     ...(opts.answer ? { answer: q.answer } : {}),
     ...(opts.notes && q.notes ? { notes: q.notes } : {}),
   };
@@ -637,7 +641,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     lockedOut: s.lockedOut,
     question:
       sprintQ && !isPlay
-        ? questionView(sprintQ, { answer: isHost || s.status === 'resolved', notes: isHost })
+        ? questionView(sprintQ, { answer: isHost || s.status === 'resolved', notes: isHost, image: true })
         : null,
   };
 

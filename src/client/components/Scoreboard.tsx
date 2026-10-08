@@ -35,7 +35,7 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
           <span className="rank">{i + 1}</span>
           <span className="name">
             {p.name}
-            {p.sitOut && <span className="tag"> sitting out</span>}
+            {p.sitOut && <span className="tag"> passe</span>}
           </span>
           <span className="pts" key={p.score}>
             {p.score}

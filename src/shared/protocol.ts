@@ -13,7 +13,7 @@ export type PlayerMessage = { t: 'buzz' } | { t: 'bet'; amount: number };
 
 /** Everything the host can do. Players can never send these. */
 export type HostCommand =
-  | { t: 'game.create'; packId: number }
+  | { t: 'game.create' }
   | { t: 'game.end' }
   | { t: 'phase.set'; phase: Phase }
   | { t: 'score.adjust'; playerId: string; delta: number }

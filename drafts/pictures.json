@@ -1,0 +1,116 @@
+{
+  "title": "Photos floues",
+  "sprint": [
+    {
+      "theme": "Photo",
+      "questions": [
+        {
+          "prompt": "Quel album est-ce ?",
+          "answer": "21 (Adele)",
+          "difficulty": "easy",
+          "image": "music/adele-21.jpg"
+        },
+        {
+          "prompt": "Quel album est-ce ?",
+          "answer": "Born to Die (Lana Del Rey)",
+          "difficulty": "medium",
+          "image": "music/lana-born-to-die.jpg"
+        }
+      ]
+    },
+    {
+      "theme": "Les potes",
+      "questions": [
+        {
+          "prompt": "Qui est sur cette photo ?",
+          "answer": "Baptiste",
+          "difficulty": "easy",
+          "image": "people/baptiste-aventure.jpg"
+        },
+        {
+          "prompt": "Qui est sur cette photo ?",
+          "answer": "Corentin",
+          "difficulty": "easy",
+          "image": "people/corentin-aventure.jpg"
+        },
+        {
+          "prompt": "Qui est sur cette photo ?",
+          "answer": "Guilhem",
+          "difficulty": "easy",
+          "image": "people/guilhem-aventure.jpg"
+        },
+        {
+          "prompt": "Qui est sur cette photo ?",
+          "answer": "Thibault",
+          "difficulty": "easy",
+          "image": "people/thibault-aventure.jpg"
+        },
+        {
+          "prompt": "Qui est sur cette photo ?",
+          "answer": "Laurence",
+          "difficulty": "medium",
+          "image": "people/laurence-niveau.jpg"
+        },
+        {
+          "prompt": "Qui est cette personne ?",
+          "answer": "Adolf Hitler",
+          "difficulty": "easy",
+          "image": "people/adolf.jpg"
+        }
+      ]
+    },
+    {
+      "theme": "Lieux & maisons",
+      "questions": [
+        {
+          "prompt": "Combien a couté cette maison ?",
+          "answer": "515000 CAD",
+          "difficulty": "medium",
+          "image": "houses/maison-hugo.jpg"
+        },
+        {
+          "prompt": "Où a été prise cette photo ?",
+          "answer": "Citrouilleville",
+          "difficulty": "medium",
+          "image": "places/citrouilleville.jpg"
+        }
+      ]
+    },
+    {
+      "theme": "Anatomie",
+      "questions": [
+        {
+          "prompt": "Quelle zone du corps est-ce ?",
+          "answer": "Les fossettes sacrées (fossettes de Vénus)",
+          "difficulty": "hard",
+          "image": "muscles/fossettes-sacro.jpg"
+        },
+        {
+          "prompt": "Quel muscle est-ce ?",
+          "answer": "Les ischio-jambiers",
+          "difficulty": "hard",
+          "image": "muscles/ischio-jambier.jpg"
+        }
+      ]
+    },
+    {
+      "theme": "Divers",
+      "questions": [
+        {
+          "prompt": "Quel animal est-ce ?",
+          "answer": "Un rat",
+          "difficulty": "easy",
+          "image": "animal/rat.jpg"
+        },
+        {
+          "prompt": "Qui / qu’est-ce que c’est ?",
+          "answer": "Willy Waller",
+          "difficulty": "medium",
+          "image": "random/willy-waller.jpg"
+        }
+      ]
+    }
+  ],
+  "memory": [],
+  "climax": []
+}

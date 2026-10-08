@@ -5,10 +5,12 @@ import type {
   PackDetail,
   PackStatus,
   PackSummary,
+  PileSummary,
   QuestionDto,
   QuestionStatus,
 } from '../shared/types';
 import { BANKS } from '../shared/types';
+import { NIGHT_SIZE } from './draw';
 import type { QuestionRec } from './game';
 
 const { packs, themes, questions } = schema;
@@ -43,6 +45,7 @@ function questionRows(packId?: number): Row[] {
     difficulty: q.difficulty,
     status: q.status,
     source: q.source,
+    image: q.image,
   }));
 }
 
@@ -100,6 +103,7 @@ export function importDraft(draft: DraftFile): number {
               difficulty: q.difficulty,
               status: 'draft',
               source: 'llm',
+              image: q.image ?? null,
               createdAt: Date.now(),
             })
             .run();
@@ -123,20 +127,20 @@ export type ReadyResult = { ok: true } | { ok: false; message: string };
 /** A pack can be played once every bank has at least one approved question. */
 export function setPackStatus(id: number, status: PackStatus): ReadyResult {
   const pack = getPack(id);
-  if (!pack) return { ok: false, message: 'Pack not found.' };
+  if (!pack) return { ok: false, message: 'Import introuvable.' };
   if (status === 'ready') {
     const missing = BANKS.filter((b) => pack.counts[b].approved === 0);
     if (missing.length > 0) {
-      return { ok: false, message: `Approve at least one question in: ${missing.join(', ')}.` };
+      return { ok: false, message: `Valide au moins une question dans : ${missing.join(', ')}.` };
     }
   }
   db.update(packs).set({ status }).where(eq(packs.id, id)).run();
   return { ok: true };
 }
 
-/** Approved questions of a pack, ready to be frozen into a live game. */
-export function approvedQuestions(packId: number): QuestionRec[] {
-  return questionRows(packId)
+/** Every approved question, from every import. That is the pile a night is drawn from. */
+export function approvedQuestions(): QuestionRec[] {
+  return questionRows()
     .filter((q) => q.status === 'approved')
     .map((q) => ({
       id: q.id,
@@ -147,7 +151,21 @@ export function approvedQuestions(packId: number): QuestionRec[] {
       prompt: q.prompt,
       answer: q.answer,
       notes: q.notes,
+      image: q.image,
     }));
+}
+
+export function pileSummary(): PileSummary {
+  const approved = { sprint: 0, memory: 0, climax: 0 };
+  for (const q of questionRows()) if (q.status === 'approved') approved[q.bank] += 1;
+  return {
+    approved,
+    tonight: {
+      sprint: Math.min(NIGHT_SIZE.sprint, approved.sprint),
+      memory: Math.min(NIGHT_SIZE.memory, approved.memory),
+      climax: Math.min(NIGHT_SIZE.climax, approved.climax),
+    },
+  };
 }
 
 export function getPackTitle(id: number): string | null {

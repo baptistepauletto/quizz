@@ -5,7 +5,10 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import Database from 'better-sqlite3';
 import WebSocket from 'ws';
+import { drawNight } from '../src/server/draw';
+import type { QuestionRec } from '../src/server/game';
 import type { ClientMessage, ServerMessage } from '../src/shared/protocol';
 import type { DraftFile, GameEvent, GameView } from '../src/shared/types';
 
@@ -13,6 +16,11 @@ const PORT = 3999;
 const PIN = '4242';
 const BASE = `http://localhost:${PORT}`;
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quizz-smoke-'));
+const picturesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quizz-pics-'));
+fs.writeFileSync(
+  path.join(picturesDir, 'smoke.png'),
+  Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+);
 
 let failures = 0;
 function check(cond: unknown, label: string) {
@@ -23,6 +31,49 @@ function check(cond: unknown, label: string) {
   }
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function sampleQuestion(
+  id: number,
+  bank: QuestionRec['bank'],
+  theme: string,
+  difficulty: QuestionRec['difficulty'],
+): QuestionRec {
+  return { id, bank, theme, contributor: null, difficulty, prompt: String(id), answer: 'a', notes: null, image: null };
+}
+
+console.log('\nNight draw');
+{
+  const fresh = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
+  const hand = drawNight(fresh, new Map([[1, 1], [2, 2]]));
+  check(hand.length === 8 && hand.every((q) => q.id > 2), 'fresh sprint questions are drawn before ones already asked');
+
+  const scarce = [
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy')),
+    sampleQuestion(11, 'sprint', 'General', 'medium'),
+    sampleQuestion(12, 'sprint', 'General', 'hard'),
+  ];
+  const mixed = drawNight(scarce, new Map());
+  check(
+    mixed.some((q) => q.difficulty === 'medium') && mixed.some((q) => q.difficulty === 'hard') && mixed.length === 8,
+    'a sprint hand keeps scarce difficulties',
+  );
+
+  const aged = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
+  const oldest = drawNight(aged, new Map([[3, 30], [4, 40], [5, 50], [6, 60], [7, 70], [8, 80], [9, 90], [10, 100]]));
+  const ids = new Set(oldest.map((q) => q.id));
+  check(ids.has(1) && ids.has(2) && ids.has(3) && !ids.has(10), 'when the fresh pile runs out, the oldest asked questions return first');
+
+  const memory = ['Space', 'Cinema', 'Food'].flatMap((theme, ti) =>
+    [0, 1, 2, 3, 4, 5].map((i) => sampleQuestion(200 + ti * 10 + i, 'memory', theme, 'easy')),
+  );
+  const grid = drawNight(memory, new Map());
+  const tally: Record<string, number> = {};
+  for (const q of grid) tally[q.theme] = (tally[q.theme] ?? 0) + 1;
+  check(
+    grid.length === 16 && tally.Space >= 5 && tally.Cinema >= 5 && tally.Food >= 5,
+    'memory hand spreads across themes',
+  );
+}
 
 class Client {
   ws!: WebSocket;
@@ -79,8 +130,8 @@ const draft: DraftFile = {
     {
       theme: 'General knowledge',
       questions: [
-        { prompt: 'Capital of France?', answer: 'Paris', difficulty: 'medium' },
-        { prompt: 'Chemical symbol for gold?', answer: 'Au', difficulty: 'hard' },
+        { prompt: 'Capital of France?', answer: 'Paris', difficulty: 'medium', image: 'smoke.png' },
+        { prompt: 'Chemical symbol for gold?', answer: 'Au', difficulty: 'hard', image: 'smoke.png' },
       ],
     },
   ],
@@ -96,7 +147,7 @@ const draft: DraftFile = {
 };
 
 const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts'], {
-  env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, HOST_PIN: PIN },
+  env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, PICTURES_DIR: picturesDir, HOST_PIN: PIN },
   stdio: ['ignore', 'pipe', 'inherit'],
 });
 await new Promise<void>((resolve, reject) => {
@@ -113,6 +164,12 @@ try {
   const { token } = (await api('POST', '/api/auth', { pin: PIN })).json;
   check(typeof token === 'string', 'right PIN returns a token');
   check((await api('POST', '/api/import', { draft: { title: 'x', sprint: [{ theme: '', questions: [] }] } }, token)).status === 400, 'invalid draft rejected');
+  check(
+    (await api('POST', '/api/import', { draft: { title: 'x', sprint: [{ theme: 'Faces', questions: [{ prompt: 'Who?', answer: 'Me', difficulty: 'easy', image: 'missing.png' }] }] } }, token)).status === 400,
+    'a sprint picture that is not in the pictures folder is rejected',
+  );
+  check((await fetch(BASE + '/media/smoke.png')).status === 200, 'a picture in the folder is served');
+  check((await fetch(BASE + '/media/..%2Fpackage.json')).status === 404, 'picture paths cannot leave the folder');
   const imported = await api('POST', '/api/import', { draft }, token);
   const packId: number = imported.json.id;
   const questions: { id: number; bank: string }[] = imported.json.pack.questions;
@@ -131,7 +188,9 @@ try {
   await host.connect({ t: 'hello', role: 'host', token });
   clients.push(tv, host);
   check(tv.state === null, 'TV sees no game yet');
-  await host.cmd({ t: 'game.create', packId });
+  const pile = await api('GET', '/api/pile', undefined, token);
+  check(pile.json.tonight.sprint === 2 && pile.json.tonight.memory === 6 && pile.json.tonight.climax === 2, 'a night draws from the whole approved pile');
+  await host.cmd({ t: 'game.create' });
   const code = host.state?.joinCode ?? '';
   check(/^[A-Z]{4}$/.test(code) && tv.state?.joinCode === code, `game created with code ${code}, visible on TV`);
 
@@ -168,9 +227,13 @@ try {
   await players.bob.cmd({ t: 'buzz' });
   check(host.state?.sprint.status === 'idle', 'buzzing before a question does nothing');
   await host.cmd({ t: 'sprint.next' });
-  check(tv.state?.sprint.question?.prompt === 'Capital of France?', 'TV shows the question');
-  check(tv.state?.sprint.question?.answer === undefined && host.state?.sprint.question?.answer === 'Paris', 'answer only goes to the host');
+  const shown = tv.state?.sprint.question;
+  const hostQ = host.state?.sprint.question;
+  check(!!shown?.prompt && shown.prompt === hostQ?.prompt, 'TV shows the question');
+  check(shown?.answer === undefined && !!hostQ?.answer, 'answer only goes to the host');
   check(players.bob.state?.sprint.question === null, 'phones never get the prompt');
+  check(typeof shown?.image === 'string' && shown.image.startsWith('/media/'), 'TV gets the picture');
+  check(!JSON.stringify(players.bob.state).includes('/media/'), 'phones do not receive the picture');
   players.ann.send({ t: 'buzz' });
   players.bob.send({ t: 'buzz' });
   players.cy.send({ t: 'buzz' });
@@ -187,7 +250,7 @@ try {
   await second.cmd({ t: 'buzz' });
   await host.cmd({ t: 'sprint.award' });
   const secondScore = host.state!.players.find((p) => p.id === second.playerId)!.score;
-  check(secondScore === 3, 'medium question awards 3 points');
+  check(secondScore === host.state!.sprint.question!.points, 'award matches the question points');
   await host.cmd({ t: 'sprint.next' });
   check(host.state!.sprint.status === 'asking' && host.state!.sprint.index === 1, 'next question starts');
   await host.cmd({ t: 'sprint.skip' });
@@ -260,6 +323,11 @@ try {
   check(scoreOf('bob') === 0, 'wrong answer wipes the wagered points (4 -> 0)');
   check(tv.state!.climax.status === 'resolved' && tv.state!.climax.question?.answer !== undefined, 'round resolved, answer revealed on TV');
 
+  const askedDb = new Database(path.join(dataDir, 'quizz-in.db'));
+  const askedCount = (askedDb.prepare('SELECT COUNT(DISTINCT question_id) AS n FROM question_asks').get() as { n: number }).n;
+  askedDb.close();
+  check(askedCount >= 5, `asked questions are remembered for the next night (${askedCount})`);
+
   console.log('\nSnapshot / restart');
   await host.cmd({ t: 'phase.set', phase: 'results' });
   await sleep(500); // snapshot is debounced
@@ -268,7 +336,7 @@ try {
   server.kill();
   await new Promise((r) => server.once('exit', r));
   const server2 = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts'], {
-    env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, HOST_PIN: PIN },
+    env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, PICTURES_DIR: picturesDir, HOST_PIN: PIN },
     stdio: ['ignore', 'pipe', 'inherit'],
   });
   await new Promise<void>((resolve) => server2.stdout!.on('data', (d) => String(d).includes('Quizz In is running') && resolve()));
@@ -291,6 +359,7 @@ try {
   await sleep(300);
   try {
     fs.rmSync(dataDir, { recursive: true, force: true });
+    fs.rmSync(picturesDir, { recursive: true, force: true });
   } catch {
     // Windows may still hold the SQLite file for a moment; the OS temp folder gets cleaned up eventually.
   }

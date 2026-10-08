@@ -24,14 +24,14 @@ export function PinGate({ children }: { children: ReactNode }) {
       await login(pin);
       setAuthed(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not sign in');
+      setError(err instanceof Error ? err.message : 'Connexion impossible');
       setPin('');
     } finally {
       setBusy(false);
     }
   }
 
-  if (authed === null) return <div className="page muted">Loading…</div>;
+  if (authed === null) return <div className="page muted">Chargement…</div>;
   if (authed) return <>{children}</>;
 
   return (
@@ -41,7 +41,7 @@ export function PinGate({ children }: { children: ReactNode }) {
         <span className="brand-in">In</span>
       </h1>
       <div className="field">
-        <label htmlFor="pin">Host PIN</label>
+        <label htmlFor="pin">Code PIN hôte</label>
         <input
           id="pin"
           className="input"
@@ -55,7 +55,7 @@ export function PinGate({ children }: { children: ReactNode }) {
       </div>
       {error && <p className="error">{error}</p>}
       <button className="btn primary big" disabled={busy || !pin}>
-        Unlock
+        Déverrouiller
       </button>
     </form>
   );

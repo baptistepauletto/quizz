@@ -67,7 +67,7 @@ export function Play() {
     if (session && connection === 'open' && synced && playerId && state === null) {
       saveSession(null);
       setSession(null);
-      setNotice('The game has ended. Thanks for playing!');
+      setNotice('La partie est terminée. Merci d’avoir joué !');
     }
   }, [session, connection, synced, playerId, state]);
 
@@ -94,7 +94,7 @@ export function Play() {
       <div className="play-head">
         <div>
           <div className="muted" style={{ fontSize: '0.8rem' }}>
-            {state ? `Room ${state.joinCode}` : 'Joining…'}
+            {state ? `Salle ${state.joinCode}` : 'Connexion…'}
           </div>
           <b>{me?.name ?? session.name}</b>
         </div>
@@ -105,7 +105,7 @@ export function Play() {
       {state && me ? (
         <Body state={state} me={me} game={game} />
       ) : (
-        <div className="play-body muted">Connecting…</div>
+        <div className="play-body muted">Connexion…</div>
       )}
       <ConnectionPill connection={connection} />
     </div>
@@ -134,7 +134,7 @@ function JoinForm(props: {
       </h1>
       {props.notice && <p className="error">{props.notice}</p>}
       <div className="field">
-        <label htmlFor="code">Room code</label>
+        <label htmlFor="code">Code de la salle</label>
         <input
           id="code"
           className="input"
@@ -147,7 +147,7 @@ function JoinForm(props: {
         />
       </div>
       <div className="field">
-        <label htmlFor="name">Your name</label>
+        <label htmlFor="name">Ton prénom</label>
         <input
           id="name"
           className="input"
@@ -157,11 +157,11 @@ function JoinForm(props: {
           onChange={(e) => setName(e.target.value)}
         />
         <span className="muted" style={{ fontSize: '0.8rem' }}>
-          Refreshed by accident? Type the same name again to get your score back.
+          Page rafraîchie par accident ? Retape le même prénom pour récupérer tes points.
         </span>
       </div>
       <button className="btn primary big" disabled={code.trim().length < 4 || !name.trim()}>
-        Join
+        Rejoindre
       </button>
     </form>
   );
@@ -174,8 +174,8 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
     case 'lobby':
       return (
         <div className="play-body">
-          <h2>You&apos;re in!</h2>
-          <p className="muted">Watch the TV. The host will start the game soon.</p>
+          <h2>Tu es dans la partie !</h2>
+          <p className="muted">Regarde la TV. L’hôte va bientôt lancer le jeu.</p>
         </div>
       );
     case 'sprint':
@@ -188,7 +188,7 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
       const rank = [...state.players].sort((a, b) => b.score - a.score).findIndex((p) => p.id === me.id) + 1;
       return (
         <div className="play-body">
-          <p className="muted">Final result</p>
+          <p className="muted">Résultat final</p>
           <h2 style={{ fontSize: '4rem' }}>#{rank}</h2>
           <p>{me.score} points</p>
         </div>
@@ -207,15 +207,15 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
   const [pressed, setPressed] = useState(false);
 
   let label = 'BUZZ';
-  let hint = 'Wait for the question…';
-  if (s.status === 'asking') hint = lockedOut ? 'You are locked out of this question' : 'Tap as fast as you can!';
+  let hint = 'Attends la question…';
+  if (s.status === 'asking') hint = lockedOut ? 'Tu es exclu de cette question' : 'Tape le plus vite possible !';
   else if (iWon) {
-    label = 'YOU!';
-    hint = 'Answer out loud';
+    label = 'TOI !';
+    hint = 'Réponds à voix haute';
   } else if (s.status === 'locked') {
     label = nameOf(state.players, s.buzzPlayerId);
-    hint = 'buzzed first';
-  } else if (s.status === 'resolved') hint = 'Question over';
+    hint = 'a buzzé en premier';
+  } else if (s.status === 'resolved') hint = 'Question terminée';
 
   // pointerdown (not click): fires the instant the finger lands, no 300ms or release delay.
   const buzz = (e: React.PointerEvent) => {
@@ -253,30 +253,30 @@ function MemoryInfo({ state, me }: { state: GameView; me: PlayerView }) {
   if (m.status === 'preview') {
     return (
       <div className="play-body">
-        <h2>Memorise!</h2>
-        <p className="muted">The themes are on the TV. They are about to flip face-down.</p>
+        <h2>Mémorise !</h2>
+        <p className="muted">Les thèmes sont sur la TV. Ils vont bientôt se retourner.</p>
       </div>
     );
   }
   if (asking) {
     return (
       <div className="play-body">
-        <p className="muted">Tile {asking.coord}</p>
+        <p className="muted">Case {asking.coord}</p>
         <h2>{asking.theme}</h2>
         {asking.difficulty && (
           <div>
             <DifficultyChip difficulty={asking.difficulty} />
           </div>
         )}
-        <p className="muted">{myTurn ? 'Your question, listen up!' : `${nameOf(state.players, m.turnPlayerId)} is answering`}</p>
+        <p className="muted">{myTurn ? 'C’est ta question, écoute !' : `${nameOf(state.players, m.turnPlayerId)} répond`}</p>
       </div>
     );
   }
   if (m.status === 'finished') {
     return (
       <div className="play-body">
-        <h2>Grid cleared</h2>
-        <p className="muted">Waiting for the next phase…</p>
+        <h2>Grille terminée</h2>
+        <p className="muted">En attente de la prochaine phase…</p>
       </div>
     );
   }
@@ -284,12 +284,12 @@ function MemoryInfo({ state, me }: { state: GameView; me: PlayerView }) {
     <div className="play-body">
       {myTurn ? (
         <>
-          <h2>Your turn!</h2>
-          <p>Call out a coordinate, like B3.</p>
+          <h2>À toi !</h2>
+          <p>Annonce une case, par exemple B3.</p>
         </>
       ) : (
         <>
-          <p className="muted">Up now</p>
+          <p className="muted">Au tour de</p>
           <h2>{nameOf(state.players, m.turnPlayerId)}</h2>
         </>
       )}
@@ -314,15 +314,15 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
   if (c.status === 'idle') {
     return (
       <div className="play-body">
-        <h2>Double or Nothing</h2>
-        <p className="muted">Get ready for the finale…</p>
+        <h2>Quitte ou double</h2>
+        <p className="muted">Prépare-toi pour la finale…</p>
       </div>
     );
   }
 
   const header = (
     <>
-      <p className="muted">Double or Nothing</p>
+      <p className="muted">Quitte ou double</p>
       <h2>{c.theme}</h2>
       {c.difficulty && (
         <div>
@@ -336,7 +336,7 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     return (
       <div className="play-body">
         {header}
-        <p className="muted">You have no points to bet, so you sit this round out.</p>
+        <p className="muted">Tu n’as plus de points à miser, tu passes ce tour.</p>
       </div>
     );
   }
@@ -345,7 +345,7 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     return (
       <div className="play-body">
         {header}
-        <p className="muted">Think about how much you want to risk…</p>
+        <p className="muted">Réfléchis à combien tu veux risquer…</p>
       </div>
     );
   }
@@ -364,7 +364,7 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
           step={1}
           value={Math.min(amount, max)}
           onChange={(e) => setAmount(Number(e.target.value))}
-          aria-label="Bet amount"
+          aria-label="Mise"
         />
         <div className="row">
           {[0.25, 0.5].map((f) => (
@@ -373,14 +373,14 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             </button>
           ))}
           <button className="btn grow" onClick={() => setAmount(max)}>
-            All in
+            Tout
           </button>
         </div>
         <button className="btn primary big" disabled={placed} onClick={() => game.send({ t: 'bet', amount })}>
-          {placed ? 'Bet placed' : 'Place bet'}
+          {placed ? 'Mise enregistrée' : 'Valider la mise'}
         </button>
         <p className="muted">
-          {c.myBet === null ? 'Nobody sees your bet.' : `You can change it until the host locks bets.`}
+          {c.myBet === null ? 'Personne ne voit ta mise.' : 'Tu peux encore changer jusqu’au verrouillage.'}
         </p>
       </div>
     );
@@ -394,9 +394,9 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
       {header}
       {c.status === 'asking' && (
         <>
-          <p className="muted">Bets are locked</p>
+          <p className="muted">Paris verrouillés</p>
           <div className="bet-amount">{wager}</div>
-          <p className="muted">{wager === 0 ? 'You did not bet.' : 'at stake. Answer out loud!'}</p>
+          <p className="muted">{wager === 0 ? 'Tu n’as pas misé.' : 'en jeu. Réponds à voix haute !'}</p>
         </>
       )}
       {c.status === 'resolved' &&
@@ -405,10 +405,10 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct ? `+${2 * result.wager}` : `-${result.wager}`}
             </div>
-            <p>{result.correct ? 'Your wager is tripled!' : 'Your wager is gone.'}</p>
+            <p>{result.correct ? 'Ta mise est triplée !' : 'Ta mise est perdue.'}</p>
           </>
         ) : (
-          <p className="muted">You did not bet this round.</p>
+          <p className="muted">Tu n’as pas misé ce tour.</p>
         ))}
     </div>
   );

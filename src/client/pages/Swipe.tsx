@@ -74,7 +74,7 @@ function SwipeDeck() {
     return () => window.removeEventListener('keydown', onKey);
   }, [top, decide, undo]);
 
-  if (!pack) return <div className="page muted">{error || 'Loading…'}</div>;
+  if (!pack) return <div className="page muted">{error || 'Chargement…'}</div>;
 
   const approved = pack.questions.filter((q) => q.status === 'approved').length;
   const rejected = pack.questions.filter((q) => q.status === 'rejected').length;
@@ -86,14 +86,14 @@ function SwipeDeck() {
           ← {pack.title}
         </Link>
         <span className="muted">
-          {queue.length} left · {approved} kept · {rejected} out
+          {queue.length} restantes · {approved} gardées · {rejected} écartées
         </span>
       </div>
 
       <div className="row wrap">
         {(['all', 'sprint', 'memory', 'climax'] as const).map((b) => (
           <button key={b} className={`chip ${bank === b ? 'hard' : ''}`} style={{ border: 0, cursor: 'pointer' }} onClick={() => setBank(b)}>
-            {b}
+            {{ all: 'tout', sprint: 'sprint', memory: 'grille', climax: 'finale' }[b]}
           </button>
         ))}
       </div>
@@ -101,12 +101,12 @@ function SwipeDeck() {
       <div className="deck">
         {!top && (
           <div className="card center stack" style={{ height: '100%', justifyContent: 'center' }}>
-            <h2>All reviewed</h2>
+            <h2>Tout est relu</h2>
             <p className="muted">
-              {approved} questions kept. Mark the pack as ready when you are happy with every bank.
+              {approved} questions gardées. Elles sont dans le tas. Une soirée tire sur tous les imports, pas seulement celui-ci.
             </p>
             <Link to={`/prep/${pack.id}`} className="btn primary">
-              Back to the pack
+              Retour à l’import
             </Link>
           </div>
         )}
@@ -116,18 +116,18 @@ function SwipeDeck() {
 
       {error && <p className="error">{error}</p>}
       <div className="swipe-actions">
-        <button className="btn bad" aria-label="Discard" disabled={!top} onClick={() => top && decide(top, 'rejected')}>
+        <button className="btn bad" aria-label="Écarter" disabled={!top} onClick={() => top && decide(top, 'rejected')}>
           ✕
         </button>
-        <button className="btn" aria-label="Undo" disabled={history.length === 0} onClick={undo}>
+        <button className="btn" aria-label="Annuler" disabled={history.length === 0} onClick={undo}>
           ↶
         </button>
-        <button className="btn ok" aria-label="Keep" disabled={!top} onClick={() => top && decide(top, 'approved')}>
+        <button className="btn ok" aria-label="Garder" disabled={!top} onClick={() => top && decide(top, 'approved')}>
           ✓
         </button>
       </div>
       <p className="muted center" style={{ fontSize: '0.85rem' }}>
-        Swipe right to keep, left to discard. Arrow keys and Z (undo) work on a computer.
+        Swipe à droite pour garder, à gauche pour écarter. Flèches et Z (annuler) sur ordinateur.
       </p>
     </div>
   );
@@ -200,21 +200,22 @@ function CardBody({ q, behind, dx = 0, animate, handlers }: CardBodyProps) {
       {...handlers}
     >
       <span className="swipe-stamp yes" style={{ opacity: dx > 0 ? strength : 0 }}>
-        KEEP
+        OUI
       </span>
       <span className="swipe-stamp no" style={{ opacity: dx < 0 ? strength : 0 }}>
-        NOPE
+        NON
       </span>
       <div className="row wrap">
-        <span className="chip">{q.bank}</span>
+        <span className="chip">{{ sprint: 'sprint', memory: 'grille', climax: 'finale' }[q.bank]}</span>
         <b>{q.theme}</b>
         {q.contributor && <span className="muted">· {q.contributor}</span>}
       </div>
       <DifficultyChip difficulty={q.difficulty} />
+      {q.image && <img className="q-photo" src={'/media/' + q.image.split('/').map(encodeURIComponent).join('/')} alt="" />}
       <div className="prompt">{q.prompt}</div>
       <div className="answer">
         <div className="muted" style={{ fontSize: '0.8rem' }}>
-          Answer
+          Réponse
         </div>
         <b>{q.answer}</b>
         {q.notes && <div className="muted" style={{ marginTop: 6, fontSize: '0.9rem' }}>{q.notes}</div>}

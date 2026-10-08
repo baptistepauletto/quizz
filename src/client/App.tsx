@@ -12,18 +12,18 @@ function Home() {
         <span className="brand-q">Quizz</span>
         <span className="brand-in">In</span>
       </h1>
-      <p className="muted">Pick your screen.</p>
+      <p className="muted">Choisis ton écran.</p>
       <Link className="btn primary big" to="/tv">
-        /tv  Main screen (TV)
+        /tv · Écran TV
       </Link>
       <Link className="btn big" to="/host">
-        /host  Host remote
+        /host · Télécommande
       </Link>
       <Link className="btn big" to="/prep">
-        /prep  Question prep
+        /prep · Préparer les questions
       </Link>
       <Link className="btn big" to="/play">
-        /play  Player
+        /play · Joueur
       </Link>
     </div>
   );

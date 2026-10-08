@@ -34,6 +34,8 @@ export interface QuestionView {
   difficulty: Difficulty;
   points: number;
   prompt: string;
+  /** Sprint picture, TV and host only. Phones never receive it. */
+  image?: string;
   /** Only sent to /host, or to /tv once the question is resolved. */
   answer?: string;
   /** Host cheat-sheet, /host only. */
@@ -185,6 +187,8 @@ export interface QuestionDto {
   difficulty: Difficulty;
   status: QuestionStatus;
   source: 'llm' | 'manual';
+  /** Path relative to the pictures folder, sprint questions only. */
+  image: string | null;
 }
 
 export interface PackDetail extends PackSummary {
@@ -197,6 +201,14 @@ export interface DraftQuestion {
   answer: string;
   difficulty: Difficulty;
   notes?: string;
+  /** Sprint only. Path relative to the pictures folder, e.g. "friends/corentin.jpg". */
+  image?: string;
+}
+
+/** Approved questions waiting in the pile, and how many a night will draw. */
+export interface PileSummary {
+  approved: Record<Bank, number>;
+  tonight: Record<Bank, number>;
 }
 
 export interface DraftGroup {
