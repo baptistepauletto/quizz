@@ -3,21 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f1020" />
+    <meta name="theme-color" content="#140e22" />
     <title>Quizz In</title>
     <style>
       :root {
-        --bg: #0f1020;
-        --panel: #1a1b33;
-        --panel-2: #23244a;
-        --line: #2f3160;
-        --text: #f1f2ff;
-        --muted: #9a9cc4;
-        --accent: #7c5cff;
-        --accent-2: #a78bfa;
-        --ok: #2ecc71;
-        --bad: #ff4d6d;
-        --warn: #ffb020;
+        --bg: #140e22;
+        --panel: #1c1430;
+        --panel-2: #271c3c;
+        --line: #3d3158;
+        --text: #f4efe4;
+        --ivory: #f4efe4;
+        --ink: #1a1230;
+        --indigo: #241848;
+        --muted: #b3a7c9;
+        --spot: #e7a23a;
+        --ok: #1d7a45;
+        --bad: #a33b4a;
         font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
         color-scheme: dark;
       }
@@ -28,69 +29,108 @@
       button { cursor: pointer; touch-action: manipulation; }
       button:disabled { opacity: 0.45; cursor: not-allowed; }
       h1, h2, p { margin: 0; }
-      .wrap { max-width: 440px; margin: 0 auto; padding: 22px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
-      .brand { font-size: 1.7rem; letter-spacing: -0.03em; }
-      .brand span { color: var(--accent-2); }
+      .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 28px 64px; display: flex; flex-direction: column; gap: 18px; }
+      .brand { display: inline-flex; align-items: baseline; gap: 0.35em; font-weight: 800; }
+      .brand-q { letter-spacing: 0.28em; text-transform: uppercase; font-size: 0.72em; color: var(--ivory); }
+      .brand-in {
+        color: var(--spot);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 1.15em;
+        line-height: 0.85;
+        border: 2px solid var(--spot);
+        padding: 0.04em 0.14em 0.08em;
+      }
+      .mast { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 28px; }
+      .mast-copy { display: flex; flex-direction: column; gap: 4px; max-width: 42rem; }
       .muted { color: var(--muted); }
-      .small { font-size: 0.85rem; line-height: 1.4; }
-      .warn { color: var(--warn); }
+      .small { font-size: 0.95rem; line-height: 1.4; }
+      .warn { color: var(--spot); }
       .error {
-        background: rgba(255, 77, 109, 0.12);
+        background: rgba(227, 93, 106, 0.14);
         color: #ffd0da;
-        border-radius: 12px;
+        border-radius: 10px;
         padding: 10px 12px;
       }
-      .banner {
+      .banner, .host {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .card {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 18px;
+        border-radius: 10px;
         padding: 14px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
+      .layout { display: grid; gap: 18px; align-items: start; }
+      .board {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      @media (min-width: 760px) {
+        .board { grid-template-columns: 1fr 1fr; }
+      }
+      @media (min-width: 1080px) {
+        .layout { grid-template-columns: minmax(0, 1fr) 280px; }
+      }
+      .card {
+        background: var(--ivory);
+        color: var(--ink);
+        border: 1px solid var(--indigo);
+        box-shadow: inset 0 0 0 5px var(--ivory), inset 0 0 0 6px var(--indigo);
+        border-radius: 6px;
+        padding: 28px 24px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 168px;
+      }
+      .card form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin: 8px 0 0;
+      }
+      .card.editing { grid-column: 1 / -1; }
       .card.out { opacity: 0.55; }
       .card.needs { border-style: dashed; }
-      .card.shared { border-color: rgba(255, 176, 32, 0.7); }
+      .card.shared { box-shadow: inset 0 0 0 5px var(--ivory), inset 0 0 0 7px var(--spot); }
+      .card .muted { color: #6b5c84; }
       .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-      .who { font-size: 1.25rem; font-weight: 700; }
-      .theme { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+      .who { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; }
+      .theme { font-size: clamp(1.7rem, 2.6vw, 2.35rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: auto; }
       .chip {
         border-radius: 999px;
         padding: 3px 8px;
         font-size: 0.75rem;
-        background: var(--panel-2);
+        background: #efe6d4;
+        color: var(--ink);
         white-space: nowrap;
       }
-      .chip.in { background: rgba(46, 204, 113, 0.18); color: var(--ok); }
-      .chip.out { background: rgba(255, 77, 109, 0.15); color: var(--bad); }
-      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .chip.in { background: rgba(46, 204, 113, 0.22); color: var(--ok); }
+      .chip.out { background: rgba(227, 93, 106, 0.16); color: var(--bad); }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; }
       .grow { flex: 1; min-width: 0; }
       .btn, .input {
         border: 0;
-        border-radius: 12px;
+        border-radius: 10px;
         background: var(--panel-2);
         min-height: 44px;
         padding: 10px 12px;
       }
-      .btn.primary { background: var(--accent); font-weight: 700; }
+      .board .btn { background: var(--indigo); color: var(--ivory); }
+      .board .btn.primary { background: var(--spot); color: var(--ink); font-weight: 800; }
+      .board .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--indigo); }
+      .board .input { background: #fff; color: var(--ink); border: 1px solid var(--indigo); }
+      .host .btn.primary, .banner .btn { background: var(--spot); color: var(--ink); font-weight: 800; }
       .btn.ghost { background: transparent; border: 1px solid var(--line); }
-      .btn.bad { background: rgba(255, 77, 109, 0.18); color: #ffd0da; }
-      .seg { display: flex; gap: 6px; }
-      .seg button { flex: 1; border: 1px solid var(--line); background: transparent; border-radius: 12px; min-height: 42px; }
-      .seg button.on { background: var(--accent); border-color: transparent; font-weight: 700; }
-      label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+      .btn.bad { background: rgba(227, 93, 106, 0.18); color: #ffd0da; }
+      .seg { display: flex; gap: 12px; }
+      .seg button { flex: 1; border: 1px solid var(--indigo); background: transparent; color: var(--ink); border-radius: 10px; min-height: 42px; }
+      .seg button.on { background: var(--spot); border-color: transparent; font-weight: 800; }
+      label { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: #6b5c84; }
+      .host label { color: var(--muted); }
       .field { width: 100%; }
-      .host { border-top: 1px solid var(--line); padding-top: 8px; }
       .person { display: flex; align-items: center; gap: 8px; }
       .person b { flex: 1; }
     </style>
@@ -368,35 +408,34 @@
           return p.coming !== 'out' && !nameKey(p.theme);
         }).length;
 
-        root.appendChild($('h1', { class: 'brand' }, ['Quizz ', $('span', { text: 'In' })]));
-        root.appendChild($('p', { class: 'muted', text: "Who's in" }));
-        root.appendChild($('p', { class: 'small muted', text: 'One theme each. If someone else already has it, it is a weaker pick. The name you set here is the one to join the game with.' }));
-
-        if (board.locked) {
-          root.appendChild($('p', { class: 'warn small', text: 'Locked since ' + formatDay(board.lockAt) + '. Picks are final.' }));
-        } else if (board.lockAt) {
-          root.appendChild($('p', { class: 'small muted', text: 'Open through ' + formatDay(board.lockAt) + '.' }));
-        } else {
-          root.appendChild($('p', { class: 'small muted', text: 'No lock date yet. You can still change your pick.' }));
-        }
-
+        var intro = [
+          $('p', { text: 'Pick your theme' }),
+          $('p', { class: 'small muted', text: 'One each. If a friend already has it, yours is a weaker pick, so the more specific the better. The name you set here is the one you’ll join the game with.' }),
+        ];
+        if (board.locked) intro.push($('p', { class: 'warn small', text: 'Locked since ' + formatDay(board.lockAt) + '. Picks are final.' }));
+        else if (board.lockAt) intro.push($('p', { class: 'small muted', text: 'Open through ' + formatDay(board.lockAt) + '.' }));
+        else intro.push($('p', { class: 'small muted', text: 'No lock date yet. You can still change your pick.' }));
         if (board.players.length) {
           var stats = coming === 0 ? 'Nobody marked coming yet' : coming + (coming === 1 ? ' person coming' : ' people coming');
           if (choosing) stats += ' · ' + choosing + ' still choosing a theme';
-          root.appendChild($('p', { class: 'small', text: stats }));
+          intro.push($('p', { class: 'small', text: stats }));
         }
+        root.appendChild($('header', { class: 'mast' }, [
+          $('h1', { class: 'brand' }, [
+            $('span', { class: 'brand-q', text: 'Quizz' }),
+            $('span', { class: 'brand-in', text: 'In' }),
+          ]),
+          $('div', { class: 'mast-copy' }, intro),
+        ]));
 
         if (state.error) root.appendChild($('div', { class: 'error', role: 'alert', text: state.error }));
 
-        if (!board.players.length) {
-          root.appendChild($('p', { class: 'muted', text: 'No one on the list yet.' }));
-        }
-
+        var grid = $('div', { class: 'board' });
+        if (!board.players.length) grid.appendChild($('p', { class: 'muted', text: 'No one on the list yet.' }));
         board.players.forEach(function (player) {
-          root.appendChild(card(player));
+          grid.appendChild(card(player));
         });
-
-        root.appendChild(hostPanel());
+        root.appendChild($('div', { class: 'layout' }, [grid, hostPanel()]));
 
         if (state.preview) {
           root.appendChild($('div', { class: 'banner' }, [
@@ -430,6 +469,7 @@
         var shared = othersNamed(player, function (p) { return claimsTheme(p) ? p.theme : ''; });
         var sameName = othersNamed(player, function (p) { return p.displayName; });
         var classes = 'card';
+        if (state.editing === player.id) classes += ' editing';
         if (shown.coming === 'out') classes += ' out';
         else if (shared.length) classes += ' shared';
         else if (!nameKey(shown.theme)) classes += ' needs';
@@ -577,7 +617,7 @@
             }),
             $('button', { class: 'btn primary', type: 'submit', text: 'Unlock' }),
           ]));
-          return $('section', { class: 'card host' }, kids);
+          return $('section', { class: 'host' }, kids);
         }
 
         kids.push($('form', {
@@ -663,7 +703,7 @@
             render();
           },
         }));
-        return $('section', { class: 'card host' }, kids);
+        return $('section', { class: 'host' }, kids);
       }
 
       function load() {

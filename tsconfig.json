@@ -14,5 +14,5 @@
     "noEmit": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "scripts", "drafts/example.json", "vite.config.ts"]
+  "include": ["src", "scripts", "drafts/example.json", "drafts/pictures.json", "vite.config.ts"]
 }

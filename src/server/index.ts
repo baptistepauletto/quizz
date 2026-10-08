@@ -4,6 +4,7 @@ import path from 'node:path';
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { usingDefaultPin } from './auth';
+import { pictureType, PICTURES_DIR, resolvePicture } from './pictures';
 import { prepRoutes } from './prep';
 import { Room } from './room';
 
@@ -66,10 +67,21 @@ app.register(async (ws) => {
 
 app.get('/api/info', async () => ({ ips: lanAddresses(), port: PORT }));
 
+// Sprint photos. The path is relative to the pictures folder; nothing outside it is served.
+fs.mkdirSync(PICTURES_DIR, { recursive: true });
+app.get('/media/*', async (req, reply) => {
+  const wild = (req.params as { '*': string })['*'] ?? '';
+  const file = resolvePicture(wild);
+  if (!file) return reply.code(404).send({ error: 'Not found' });
+  return reply.type(pictureType(file)).header('Cache-Control', 'no-cache').send(fs.createReadStream(file));
+});
+
 // Serve the built client (npm run build) and fall back to index.html for client-side routes.
 app.get('/*', async (req, reply) => {
   const urlPath = decodeURIComponent(req.url.split('?')[0]);
-  if (urlPath.startsWith('/api/') || urlPath === '/ws') return reply.code(404).send({ error: 'Not found' });
+  if (urlPath.startsWith('/api/') || urlPath.startsWith('/media/') || urlPath === '/ws') {
+    return reply.code(404).send({ error: 'Not found' });
+  }
 
   const index = path.join(CLIENT_DIR, 'index.html');
   if (!fs.existsSync(index)) {

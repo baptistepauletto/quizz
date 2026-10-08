@@ -6,6 +6,7 @@ import { ApiError, api } from '../lib/api';
 import { BANKS } from '../../shared/types';
 import type { DraftFile, PackDetail, PackSummary, QuestionDto, QuestionStatus } from '../../shared/types';
 import samplePack from '../../../drafts/example.json';
+import picturesPack from '../../../drafts/pictures.json';
 
 const EXAMPLE: DraftFile = {
   title: 'Friday night',
@@ -55,13 +56,15 @@ function PrepList() {
   }
 
   const sample = samplePack as DraftFile;
+  const pictures = picturesPack as DraftFile;
   const sampleAlready = packs?.find((p) => p.title === sample.title);
+  const picturesAlready = packs?.find((p) => p.title === pictures.title);
 
-  async function importSample() {
+  async function importDraftFile(draft: DraftFile) {
     setProblems([]);
     setBusy(true);
     try {
-      const res = await api<{ id: number }>('POST', '/api/import', { draft: sample });
+      const res = await api<{ id: number }>('POST', '/api/import', { draft });
       navigate(`/prep/${res.id}/swipe`);
     } catch (err) {
       setProblems(err instanceof ApiError && err.problems.length ? err.problems : [(err as Error).message]);
@@ -76,7 +79,7 @@ function PrepList() {
     try {
       draft = JSON.parse(text);
     } catch (err) {
-      return setProblems([`That is not valid JSON: ${(err as Error).message}`]);
+      return setProblems([`JSON invalide : ${(err as Error).message}`]);
     }
     setBusy(true);
     try {
@@ -94,17 +97,18 @@ function PrepList() {
     <div className="page">
       <div className="topbar">
         <h1 className="brand">
-          Prep <span>/ packs</span>
+          Préparation <span>/ questions</span>
         </h1>
         <Link to="/" className="muted">
-          home
+          accueil
         </Link>
       </div>
 
       <section className="stack">
-        <h2>Your packs</h2>
-        {packs === null && <p className="muted">Loading…</p>}
-        {packs?.length === 0 && <p className="muted">No pack yet. Import a JSON draft below.</p>}
+        <h2>Tes imports</h2>
+        <p className="muted">Les questions validées rejoignent un seul tas. Une soirée sur /host tire depuis ce tas, et laisse celles déjà posées jusqu’à ce que le neuf soit épuisé.</p>
+        {packs === null && <p className="muted">Chargement…</p>}
+        {packs?.length === 0 && <p className="muted">Rien d’importé pour l’instant. Colle un brouillon JSON ci-dessous.</p>}
         {packs?.map((p) => {
           const t = totals(p);
           return (
@@ -112,39 +116,50 @@ function PrepList() {
               <div className="grow">
                 <b>{p.title}</b>
                 <div className="muted" style={{ fontSize: '0.85rem' }}>
-                  {t.approved} approved · {t.draft} to review · {t.rejected} discarded
+                  {t.approved} validées · {t.draft} à revoir · {t.rejected} rejetées
                 </div>
               </div>
-              <span className={`chip ${p.status === 'ready' ? 'ok' : ''}`}>{p.status}</span>
+              <span className={`chip ${p.status === 'ready' ? 'ok' : ''}`}>{p.status === 'ready' ? 'prêt' : 'brouillon'}</span>
             </Link>
           );
         })}
       </section>
 
       <section className="stack">
-        <h2>Import JSON drafts</h2>
+        <h2>Importer des brouillons JSON</h2>
         <p className="muted">
-          Ask the Cursor agent to write the drafts from the players&apos; themes, then paste the JSON here or pick the file.
+          Demande à Cursor d’écrire les brouillons à partir des thèmes, puis colle le JSON ici ou choisis le fichier.
         </p>
-        {sampleAlready ? (
-          <Link to={`/prep/${sampleAlready.id}/swipe`} className="btn primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
-            Review “{sample.title}”
-          </Link>
-        ) : (
-          <button className="btn primary" disabled={busy || packs === null} onClick={importSample}>
-            Import “{sample.title}” to review
-          </button>
-        )}
+        <div className="row wrap">
+          {sampleAlready ? (
+            <Link to={`/prep/${sampleAlready.id}/swipe`} className="btn primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+              Relire « {sample.title} »
+            </Link>
+          ) : (
+            <button className="btn primary" disabled={busy || packs === null} onClick={() => importDraftFile(sample)}>
+              Importer « {sample.title} »
+            </button>
+          )}
+          {picturesAlready ? (
+            <Link to={`/prep/${picturesAlready.id}/swipe`} className="btn" style={{ textAlign: 'center', textDecoration: 'none' }}>
+              Relire « {pictures.title} »
+            </Link>
+          ) : (
+            <button className="btn" disabled={busy || packs === null} onClick={() => importDraftFile(pictures)}>
+              Importer « {pictures.title} »
+            </button>
+          )}
+        </div>
         <p className="muted" style={{ margin: 0 }}>
-          That pack is the file <b>drafts/example.json</b> (6 sprint, 20 memory, 3 climax). The smoke test uses a smaller throwaway set inside <b>scripts/smoke.ts</b> and never saves it.
+          Les questions vivent dans <b>drafts/*.json</b>. Les photos pointent vers <b>pictures/</b>. Une fois importées et validées, elles rejoignent le tas.
         </p>
         <div className="row">
           <label className="btn ghost small">
-            Choose file
+            Choisir un fichier
             <input type="file" accept=".json,application/json" onChange={onFile} hidden />
           </label>
           <button className="btn ghost small" onClick={() => setText(JSON.stringify(sample, null, 2))}>
-            Show sample JSON
+            Afficher un exemple JSON
           </button>
         </div>
         <textarea
@@ -162,14 +177,16 @@ function PrepList() {
           </ul>
         )}
         <button className="btn primary" disabled={busy || !text.trim()} onClick={doImport}>
-          Import as draft pack
+          Importer comme brouillon
         </button>
         <details className="muted">
-          <summary>Draft file format</summary>
+          <summary>Format du fichier brouillon</summary>
           <pre style={{ overflow: 'auto', fontSize: '0.75rem' }}>{JSON.stringify(EXAMPLE, null, 2)}</pre>
           <p>
-            <b>sprint</b>: general-knowledge questions. <b>memory</b>: one group per player theme (5-6 questions, mixed
-            difficulties). <b>climax</b>: the spicy Double or Nothing set. Difficulty is easy, medium or hard.
+            <b>sprint</b> : culture générale. Ajoute <b>image</b> (chemin dans le dossier pictures, ex.
+            friends/corentin.jpg) et la TV affiche la photo qui se dévoile pendant le buzz. <b>memory</b> : un groupe par
+            thème joueur (5-6 questions, difficultés mélangées). <b>climax</b> : le quitte ou double. Difficulté
+            easy, medium ou hard.
           </p>
         </details>
       </section>
@@ -214,12 +231,12 @@ function PackDetailView() {
   }
 
   async function remove() {
-    if (!window.confirm('Delete this pack and all its questions?')) return;
+    if (!window.confirm('Supprimer cet import et toutes ses questions\u00a0?')) return;
     await api('DELETE', `/api/packs/${id}`);
     navigate('/prep');
   }
 
-  if (!pack) return <div className="page muted">{error || 'Loading…'}</div>;
+  if (!pack) return <div className="page muted">{error || 'Chargement…'}</div>;
   const toReview = totals(pack).draft;
 
   // Group questions by theme (keeping the order they were imported in).
@@ -234,20 +251,18 @@ function PackDetailView() {
     <div className="page">
       <div className="topbar">
         <Link to="/prep" className="muted">
-          ← packs
+          ← imports
         </Link>
-        <span className={`chip ${pack.status === 'ready' ? 'ok' : ''}`}>{pack.status}</span>
+        <span className={`chip ${pack.status === 'ready' ? 'ok' : ''}`}>{pack.status === 'ready' ? 'prêt' : 'brouillon'}</span>
       </div>
       <h1>{pack.title}</h1>
 
       <div className="card stack">
         {BANKS.map((b) => (
           <div key={b} className="row">
-            <b className="grow" style={{ textTransform: 'capitalize' }}>
-              {b}
-            </b>
-            <span className="chip ok">{pack.counts[b].approved} approved</span>
-            <span className="chip">{pack.counts[b].draft} to review</span>
+            <b className="grow">{b === 'sprint' ? 'Sprint' : b === 'memory' ? 'Grille' : 'Finale'}</b>
+            <span className="chip ok">{pack.counts[b].approved} validées</span>
+            <span className="chip">{pack.counts[b].draft} à revoir</span>
             <span className="chip bad">{pack.counts[b].rejected}</span>
           </div>
         ))}
@@ -258,49 +273,52 @@ function PackDetailView() {
         className={`btn primary big ${toReview === 0 ? 'ghost' : ''}`}
         style={{ textAlign: 'center', textDecoration: 'none' }}
       >
-        {toReview > 0 ? `Review ${toReview} question${toReview > 1 ? 's' : ''} (swipe)` : 'Nothing left to review'}
+        {toReview > 0 ? `Relire ${toReview} question${toReview > 1 ? 's' : ''} (swipe)` : 'Plus rien à relire'}
       </Link>
 
       {error && <p className="error">{error}</p>}
       <div className="row">
         {pack.status === 'ready' ? (
           <button className="btn grow" onClick={() => setReady('draft')}>
-            Back to draft
+            Remettre en brouillon
           </button>
         ) : (
           <button className="btn ok grow" onClick={() => setReady('ready')}>
-            Mark ready to play
+            Relecture terminée
           </button>
         )}
         <button className="btn bad" onClick={remove}>
-          Delete
+          Supprimer
         </button>
       </div>
 
-      <h2>All questions</h2>
+      <h2>Toutes les questions</h2>
       {[...groups.values()].map((g) => (
         <div key={g.label + g.bank + g.items[0].id} className="card stack">
           <div className="row">
             <b className="grow">{g.label}</b>
-            <span className="chip">{g.bank}</span>
+            <span className="chip">{{ sprint: 'sprint', memory: 'grille', climax: 'finale' }[g.bank as 'sprint' | 'memory' | 'climax']}</span>
             {g.contributor && <span className="muted">{g.contributor}</span>}
           </div>
           {g.items.map((q) => (
             <div key={q.id} className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
               <div className="row wrap">
                 <DifficultyChip difficulty={q.difficulty} />
-                <span className={`chip ${q.status === 'approved' ? 'ok' : q.status === 'rejected' ? 'bad' : ''}`}>{q.status}</span>
+                <span className={`chip ${q.status === 'approved' ? 'ok' : q.status === 'rejected' ? 'bad' : ''}`}>
+                  {q.status === 'approved' ? 'validée' : q.status === 'rejected' ? 'rejetée' : 'brouillon'}
+                </span>
               </div>
+              {q.image && <div className="muted">Photo : {q.image}</div>}
               <div>{q.prompt}</div>
               <div className="muted">
-                Answer: <b style={{ color: 'var(--text)' }}>{q.answer}</b>
+                Réponse : <b style={{ color: 'var(--text)' }}>{q.answer}</b>
               </div>
               <div className="row">
                 <button className="btn small ok" disabled={q.status === 'approved'} onClick={() => setStatus(q, 'approved')}>
-                  Approve
+                  Valider
                 </button>
                 <button className="btn small bad" disabled={q.status === 'rejected'} onClick={() => setStatus(q, 'rejected')}>
-                  Discard
+                  Rejeter
                 </button>
               </div>
             </div>

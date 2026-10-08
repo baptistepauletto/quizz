@@ -37,6 +37,7 @@ sqlite.exec(`
     difficulty TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     source TEXT NOT NULL DEFAULT 'llm',
+    image TEXT,
     created_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS game_sessions (
@@ -45,9 +46,22 @@ sqlite.exec(`
     state_json TEXT NOT NULL,
     updated_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS question_asks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL,
+    join_code TEXT NOT NULL,
+    asked_at INTEGER NOT NULL
+  );
   CREATE INDEX IF NOT EXISTS idx_themes_pack ON themes(pack_id);
   CREATE INDEX IF NOT EXISTS idx_questions_theme ON questions(theme_id);
+  CREATE INDEX IF NOT EXISTS idx_asks_question ON question_asks(question_id);
 `);
+
+// Databases created before picture questions existed.
+const questionCols = sqlite.prepare('PRAGMA table_info(questions)').all() as { name: string }[];
+if (!questionCols.some((col) => col.name === 'image')) {
+  sqlite.exec('ALTER TABLE questions ADD COLUMN image TEXT');
+}
 
 export const db = drizzle(sqlite, { schema });
 export { schema };

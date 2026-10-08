@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { TvGrid } from '../components/MemoryGrid';
+import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
 import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
 import { fetchInfo, lanOrigin } from '../lib/api';
@@ -32,19 +33,20 @@ export function Tv() {
     <div className="tv">
       <header className="tv-head">
         <div className="brand">
-          Quizz <span>In</span>
+          <span className="brand-q">Quizz</span>
+          <span className="brand-in">In</span>
         </div>
         {state && state.phase !== 'lobby' && (
           <div className="tv-code">
-            <small>join</small>
+            <small>code</small>
             {state.joinCode}
           </div>
         )}
       </header>
       {!state ? (
         <div className="tv-center">
-          <div className="tv-title">Waiting for the host…</div>
-          <div className="tv-sub">Start a game from the /host screen on your phone.</div>
+          <div className="tv-title">En attente de l’hôte…</div>
+          <div className="tv-sub">Lance une partie depuis /host sur ton téléphone.</div>
         </div>
       ) : state.phase === 'lobby' ? (
         <Lobby state={state} joinUrl={joinUrl} />
@@ -81,12 +83,15 @@ function Lobby({ state, joinUrl }: { state: GameView; joinUrl: string }) {
   return (
     <div className="tv-body full">
       <div className="lobby-grid">
-        <div className="qr">{qr && <img src={qr} alt={`Scan to join ${state.joinCode}`} />}</div>
+        <div className="qr">{qr && <img src={qr} alt={`Scanne pour rejoindre ${state.joinCode}`} />}</div>
         <div>
-          <div className="tv-sub">Scan the code, or go to {joinUrl.replace(/^https?:\/\//, '')} and enter</div>
           <div className="big-code">{state.joinCode}</div>
+          <div className="tv-sub">Scanne pour rejoindre</div>
+          <div className="tv-sub" style={{ fontSize: '0.85em' }}>
+            {joinUrl.replace(/^https?:\/\//, '')}
+          </div>
           <div className="player-chips">
-            {state.players.length === 0 && <span className="tv-sub">Waiting for players…</span>}
+            {state.players.length === 0 && <span className="tv-sub">En attente des joueurs…</span>}
             {state.players.map((p) => (
               <span key={p.id} className="chip" style={{ opacity: p.connected ? 1 : 0.5 }}>
                 {p.name}
@@ -107,25 +112,34 @@ function Sprint({ state }: { state: GameView }) {
   return (
     <div className="tv-center">
       <div className="tv-sub">
-        Phase 1 · The Sprint{s.total > 0 && s.index >= 0 ? ` · question ${s.index + 1} of ${s.total}` : ''}
+        Phase 1 · Le Sprint
+        {s.total > 0 && s.index >= 0 ? ` · question ${s.index + 1} sur ${s.total}` : ''}
       </div>
       {!q ? (
-        <div className="tv-title">Fingers on the buzzers!</div>
+        <div className="tv-title">Doigts sur les buzzers !</div>
       ) : (
-        <>
+        <div className={q.image ? 'tv-center has-photo' : 'tv-center'} style={{ flex: 1, width: '100%' }}>
           <div className="tv-badges">
-            <span className="chip">{q.theme}</span>
+            {/* Photo rounds: hide the theme until resolved, or “Musique” / “Les potes” gives it away. */}
+            <span className="chip">{q.image && s.status !== 'resolved' ? 'Photo' : q.theme}</span>
             <DifficultyChip difficulty={q.difficulty} />
           </div>
+          {q.image && (
+            <PhotoReveal
+              src={q.image}
+              questionId={q.id}
+              phase={s.status === 'resolved' ? 'resolved' : s.status === 'locked' ? 'locked' : 'asking'}
+            />
+          )}
           <div className="tv-prompt">{q.prompt}</div>
           {s.status === 'locked' && s.buzzPlayerId && (
             <div className="buzz-banner" key={s.buzzPlayerId}>
-              {nameOf(state.players, s.buzzPlayerId)} buzzed!
+              {nameOf(state.players, s.buzzPlayerId)} a buzzé !
             </div>
           )}
-          {s.status === 'asking' && <div className="tv-sub">Buzz in on your phone…</div>}
+          {s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
           {s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
-        </>
+        </div>
       )}
     </div>
   );
@@ -141,7 +155,7 @@ function Memory({ state }: { state: GameView }) {
   if (m.status === 'finished' && m.tiles.length === 0) {
     return (
       <div className="tv-center">
-        <div className="tv-title">No questions in the grid</div>
+        <div className="tv-title">Aucune question dans la grille</div>
       </div>
     );
   }
@@ -151,14 +165,14 @@ function Memory({ state }: { state: GameView }) {
       <div className="turn-banner">
         {m.status === 'preview' ? (
           <>
-            Memorise the themes! <span className="countdown">{seconds}s</span>
+            Mémorisez les thèmes ! <span className="countdown">{seconds}s</span>
           </>
         ) : m.status === 'finished' ? (
-          'Grid cleared!'
+          'Grille terminée !'
         ) : (
           <>
-            <b>{nameOf(state.players, m.turnPlayerId)}</b>, call a coordinate
-            <span className="muted"> · {m.remaining} tiles left</span>
+            <b>{nameOf(state.players, m.turnPlayerId)}</b>, annonce une case
+            <span className="muted"> · {m.remaining} restantes</span>
           </>
         )}
       </div>
@@ -172,7 +186,7 @@ function Memory({ state }: { state: GameView }) {
               <DifficultyChip difficulty={m.asking.difficulty} />
             </div>
             <div className="tv-prompt">{m.asking.prompt}</div>
-            <div className="tv-sub">For {nameOf(state.players, m.turnPlayerId)}</div>
+            <div className="tv-sub">Pour {nameOf(state.players, m.turnPlayerId)}</div>
           </div>
         </div>
       )}
@@ -191,15 +205,15 @@ function Climax({ state }: { state: GameView }) {
     return (
       <div className="tv-center">
         <div className="tv-sub">Phase 3</div>
-        <div className="tv-title">Double or Nothing</div>
-        <div className="tv-sub">Correct answer: your wager is tripled. Wrong: it is gone.</div>
+        <div className="tv-title">Quitte ou double</div>
+        <div className="tv-sub">Bonne réponse : ta mise est triplée. Mauvaise : tu la perds.</div>
       </div>
     );
   }
 
   return (
     <div className="tv-center">
-      <div className="tv-sub">Double or Nothing</div>
+      <div className="tv-sub">Quitte ou double</div>
       <div className="tv-badges">
         <span className="chip" style={{ fontSize: '2em' }}>
           {c.theme}
@@ -207,18 +221,18 @@ function Climax({ state }: { state: GameView }) {
         {c.difficulty && <DifficultyChip difficulty={c.difficulty} />}
       </div>
 
-      {c.status === 'announce' && <div className="tv-title">Get ready to bet…</div>}
+      {c.status === 'announce' && <div className="tv-title">Préparez vos mises…</div>}
 
       {c.status === 'betting' && (
         <>
-          <div className="tv-title">Place your bets!</div>
+          <div className="tv-title">Placez vos paris !</div>
           <div className="tv-sub">
-            {placed} of {bettors.length} bets placed
+            {placed} mise{placed > 1 ? 's' : ''} sur {bettors.length}
           </div>
           <div className="player-chips">
             {state.players.map((p) => (
               <span key={p.id} className={`chip ${p.sitOut ? '' : p.hasBet ? 'ok' : ''}`}>
-                {p.name} {p.sitOut ? '· sitting out' : p.hasBet ? '· locked in' : '· thinking…'}
+                {p.name} {p.sitOut ? '· passe' : p.hasBet ? '· misé' : '· réfléchit…'}
               </span>
             ))}
           </div>
@@ -228,7 +242,7 @@ function Climax({ state }: { state: GameView }) {
       {(c.status === 'asking' || c.status === 'resolved') && c.question && (
         <>
           <div className="tv-prompt">{c.question.prompt}</div>
-          {c.status === 'asking' && <div className="tv-sub">Bets are locked.</div>}
+          {c.status === 'asking' && <div className="tv-sub">Les paris sont verrouillés.</div>}
           {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
         </>
       )}
@@ -255,7 +269,7 @@ function Results({ state }: { state: GameView }) {
     <div className="tv-body">
       <div className="tv-main">
         <div className="tv-center">
-          <div className="tv-title">Final results</div>
+          <div className="tv-title">Classement final</div>
           <div className="podium">
             {podium.map((p) => {
               const place = ranked.indexOf(p) + 1;

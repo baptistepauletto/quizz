@@ -35,6 +35,7 @@ export const questions = sqliteTable('questions', {
   source: text('source', { enum: ['llm', 'manual'] })
     .notNull()
     .default('llm'),
+  image: text('image'),
   createdAt: integer('created_at').notNull(),
 });
 

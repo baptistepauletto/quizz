@@ -7,7 +7,7 @@ import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
 import { parseCoord } from '../../shared/grid';
 import type { HostCommand } from '../../shared/protocol';
-import type { GameView, PackSummary, Phase, QuestionView } from '../../shared/types';
+import type { GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
 
 const PHASES: Phase[] = ['lobby', 'sprint', 'memory', 'climax', 'results'];
 
@@ -54,45 +54,47 @@ function HostApp() {
 // ---------------------------------------------------------------------------
 
 function NoGame({ game }: { game: UseGame }) {
-  const [packs, setPacks] = useState<PackSummary[] | null>(null);
+  const [pile, setPile] = useState<PileSummary | null>(null);
   useEffect(() => {
-    api<PackSummary[]>('GET', '/api/packs').then(setPacks).catch(() => setPacks([]));
+    api<PileSummary>('GET', '/api/pile').then(setPile).catch(() => setPile({ approved: { sprint: 0, memory: 0, climax: 0 }, tonight: { sprint: 0, memory: 0, climax: 0 } }));
   }, []);
-  const ready = packs?.filter((p) => p.status === 'ready') ?? [];
+  const ready = pile !== null && pile.tonight.sprint > 0 && pile.tonight.memory > 0 && pile.tonight.climax > 0;
 
   return (
     <>
       <div className="topbar">
         <h1 className="brand">
-          Host <span>remote</span>
+          Télécommande <span>hôte</span>
         </h1>
         <Link to="/" className="muted">
-          home
+          accueil
         </Link>
       </div>
-      <h2>Start a game</h2>
-      {packs === null && <p className="muted">Loading packs…</p>}
-      {packs && ready.length === 0 && (
+      <h2>Lancer une soirée</h2>
+      {pile === null && <p className="muted">Chargement du tas…</p>}
+      {pile && (
         <div className="card stack">
-          <p>No pack is ready to play yet.</p>
-          <Link className="btn primary" to="/prep" style={{ textAlign: 'center', textDecoration: 'none' }}>
-            Go to /prep
-          </Link>
+          <p>
+            Le tas contient {pile.approved.sprint} sprint, {pile.approved.memory} grille et {pile.approved.climax} finale.
+          </p>
+          {ready ? (
+            <p className="muted">
+              Ce soir : {pile.tonight.sprint} sprint, {pile.tonight.memory} grille et {pile.tonight.climax} finale. Les questions déjà posées restent en bas.
+            </p>
+          ) : (
+            <p>Valide au moins une question sprint, une grille et une finale.</p>
+          )}
+          {ready ? (
+            <button className="btn primary" onClick={() => game.send({ t: 'game.create' })}>
+              Tirer la soirée
+            </button>
+          ) : (
+            <Link className="btn primary" to="/prep" style={{ textAlign: 'center', textDecoration: 'none' }}>
+              Aller à /prep
+            </Link>
+          )}
         </div>
       )}
-      {ready.map((p) => (
-        <div key={p.id} className="card row">
-          <div className="grow">
-            <b>{p.title}</b>
-            <div className="muted" style={{ fontSize: '0.85rem' }}>
-              {p.counts.sprint.approved} sprint · {p.counts.memory.approved} grid · {p.counts.climax.approved} finale
-            </div>
-          </div>
-          <button className="btn primary" onClick={() => game.send({ t: 'game.create', packId: p.id })}>
-            Start
-          </button>
-        </div>
-      ))}
     </>
   );
 }
@@ -113,16 +115,16 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
         </div>
         <button
           className="btn small ghost"
-          onClick={() => window.confirm('End this game for everyone?') && send({ t: 'game.end' })}
+          onClick={() => window.confirm('Terminer la partie pour tout le monde ?') && send({ t: 'game.end' })}
         >
-          End game
+          Fin de partie
         </button>
       </div>
 
       <div className="phase-tabs">
         {PHASES.map((p) => (
           <button key={p} className={state.phase === p ? 'active' : ''} onClick={() => send({ t: 'phase.set', phase: p })}>
-            {p}
+            {{ lobby: 'salon', sprint: 'sprint', memory: 'mémoire', climax: 'finale', results: 'classement' }[p]}
           </button>
         ))}
       </div>
@@ -133,12 +135,12 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
       {state.phase === 'climax' && <ClimaxPanel state={state} send={send} />}
       {state.phase === 'results' && (
         <div className="card center">
-          <h2>Game over</h2>
-          <p className="muted">The podium is on the TV.</p>
+          <h2>Partie terminée</h2>
+          <p className="muted">Le podium est sur la TV.</p>
         </div>
       )}
 
-      <Players state={state} send={send} />
+      <PlayersPanel state={state} send={send} />
     </>
   );
 }
@@ -153,11 +155,12 @@ function QuestionCard({ q, label }: { q: QuestionView; label?: string }) {
         <span className="chip">{q.theme}</span>
         <DifficultyChip difficulty={q.difficulty} />
       </div>
+      {q.image && <img className="q-photo" src={q.image} alt="" />}
       <div className="prompt">{q.prompt}</div>
       {q.answer && (
         <div className="answer">
           <div className="muted" style={{ fontSize: '0.8rem' }}>
-            Answer
+            Réponse
           </div>
           <b>{q.answer}</b>
         </div>
@@ -173,10 +176,10 @@ function LobbyPanel({ state, send }: { state: GameView; send: Send }) {
   return (
     <div className="card stack">
       <p>
-        Players join with the code <b>{state.joinCode}</b> (QR on the TV). {state.players.length} in the room.
+        Les joueurs rejoignent avec le code <b>{state.joinCode}</b> (QR sur la TV). {state.players.length} dans la salle.
       </p>
       <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'sprint' })}>
-        Start Phase 1: The Sprint
+        Lancer la phase 1 : Le Sprint
       </button>
     </div>
   );
@@ -193,15 +196,15 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
   return (
     <div className="stack">
       <div className="muted">
-        Question {Math.max(0, s.index + 1)} of {s.total}
+        Question {Math.max(0, s.index + 1)} sur {s.total}
       </div>
-      {q ? <QuestionCard q={q} /> : <div className="card muted">Press next to ask the first question.</div>}
+      {q ? <QuestionCard q={q} /> : <div className="card muted">Appuie sur suivant pour la première question.</div>}
 
-      {s.status === 'asking' && <div className="card center muted">Buzzers are open… {s.lockedOut.length > 0 && `(${s.lockedOut.length} locked out)`}</div>}
+      {s.status === 'asking' && <div className="card center muted">Buzzers ouverts… {s.lockedOut.length > 0 && `(${s.lockedOut.length} exclus)`}</div>}
       {s.status === 'locked' && (
         <>
           <div className="card center">
-            <div className="muted">First to buzz</div>
+            <div className="muted">Premier à buzzer</div>
             <h2 style={{ fontSize: '2rem' }}>{buzzer}</h2>
           </div>
           <div className="row">
@@ -209,24 +212,24 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
               Correct{q ? ` +${q.points}` : ''}
             </button>
             <button className="btn bad big grow" onClick={() => send({ t: 'sprint.pass' })}>
-              Wrong / reopen
+              Faux / rouvrir
             </button>
           </div>
         </>
       )}
       {(s.status === 'asking' || s.status === 'locked') && (
         <button className="btn ghost" onClick={() => send({ t: 'sprint.skip' })}>
-          Skip question (no points)
+          Passer (sans points)
         </button>
       )}
       {(s.status === 'idle' || s.status === 'resolved') && (
         <button className="btn primary big" disabled={done && s.status === 'resolved'} onClick={() => send({ t: 'sprint.next' })}>
-          {done && s.status === 'resolved' ? 'No more questions' : 'Next question'}
+          {done && s.status === 'resolved' ? 'Plus de questions' : 'Question suivante'}
         </button>
       )}
       {done && s.status === 'resolved' && (
         <button className="btn" onClick={() => send({ t: 'phase.set', phase: 'memory' })}>
-          Continue to Phase 2: Memory Grid
+          Continuer vers la phase 2 : Grille mémoire
         </button>
       )}
     </div>
@@ -249,9 +252,9 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
   if (m.status === 'idle') {
     return (
       <div className="card stack">
-        <p>Ready to build the grid from the approved questions.</p>
+        <p>Prêt à monter la grille avec les questions validées.</p>
         <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'memory' })}>
-          Show the grid
+          Afficher la grille
         </button>
       </div>
     );
@@ -262,10 +265,10 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
       {m.status === 'preview' && (
         <div className="card stack">
           <p>
-            Themes are face-up on the TV. They flip in <b className="countdown">{seconds}s</b>.
+            Les thèmes sont visibles sur la TV. Ils se retournent dans <b className="countdown">{seconds}s</b>.
           </p>
           <button className="btn primary" onClick={() => send({ t: 'memory.hide' })}>
-            Flip them face-down now
+            Les retourner maintenant
           </button>
         </div>
       )}
@@ -275,7 +278,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
           <div className="row">
             <div className="grow">
               <div className="muted" style={{ fontSize: '0.8rem' }}>
-                On turn
+                Au tour de
               </div>
               <b style={{ fontSize: '1.3rem' }}>{nameOf(state.players, m.turnPlayerId) || '—'}</b>
             </div>
@@ -285,7 +288,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
               value=""
               onChange={(e) => e.target.value && send({ t: 'memory.setTurn', playerId: e.target.value })}
             >
-              <option value="">Change…</option>
+              <option value="">Changer…</option>
               {state.players.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -293,7 +296,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
               ))}
             </select>
             <button className="btn small" onClick={() => send({ t: 'memory.skipTurn' })}>
-              Skip
+              Passer
             </button>
           </div>
         </div>
@@ -307,11 +310,11 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
               Correct +{m.asking.points}
             </button>
             <button className="btn bad big grow" onClick={() => send({ t: 'memory.resolve', correct: false })}>
-              Miss
+              Raté
             </button>
           </div>
           <p className="muted center" style={{ fontSize: '0.85rem' }}>
-            Hit or miss, this tile is used up for good.
+            Bon ou mauvais, cette case est définitivement jouée.
           </p>
         </>
       )}
@@ -322,13 +325,13 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
           disabled={!selected}
           onClick={() => selected && send({ t: 'memory.flip', coord: selected })}
         >
-          {selected ? `Flip ${selected}` : 'Tap the coordinate they called'}
+          {selected ? `Retourner ${selected}` : 'Touche la case annoncée'}
         </button>
       )}
 
       {m.status === 'finished' && (
         <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'climax' })}>
-          Grid cleared: continue to Phase 3
+          Grille terminée : phase 3
         </button>
       )}
 
@@ -375,7 +378,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
       <div className="stack">
         {c.status === 'resolved' && c.question && (
           <>
-            <QuestionCard q={c.question} label="Round over" />
+            <QuestionCard q={c.question} label="Manche terminée" />
             {c.results.map((r) => (
               <div key={r.playerId} className="card row">
                 <b className="grow">{nameOf(state.players, r.playerId)}</b>
@@ -384,7 +387,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             ))}
           </>
         )}
-        <h2>{c.candidates.length > 0 ? 'Pick the question' : 'No question left'}</h2>
+        <h2>{c.candidates.length > 0 ? 'Choisir la question' : 'Plus de question'}</h2>
         {c.candidates.map((q) => (
           <div key={q.id} className="qcard">
             <div className="row wrap">
@@ -393,16 +396,16 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             </div>
             <div>{q.prompt}</div>
             <div className="muted">
-              Answer: <b style={{ color: 'var(--text)' }}>{q.answer}</b>
+              Réponse: <b style={{ color: 'var(--text)' }}>{q.answer}</b>
             </div>
             <button className="btn primary" onClick={() => send({ t: 'climax.pick', questionId: q.id })}>
-              Announce this one
+              Annoncer celle-ci
             </button>
           </div>
         ))}
         {c.status === 'resolved' && (
           <button className="btn" onClick={() => send({ t: 'phase.set', phase: 'results' })}>
-            Finish: show the results
+            Finir : afficher le classement
           </button>
         )}
       </div>
@@ -412,13 +415,13 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
   const eligible = state.players.filter((p) => !p.sitOut);
   return (
     <div className="stack">
-      {c.question && <QuestionCard q={c.question} label={c.status === 'asking' ? 'Revealed' : 'Hidden from players'} />}
+      {c.question && <QuestionCard q={c.question} label={c.status === 'asking' ? 'Révélée' : 'Cachée aux joueurs'} />}
 
       {c.status === 'announce' && (
         <>
-          <p className="muted">The TV shows the theme and difficulty only.</p>
+          <p className="muted">La TV n’affiche que le thème et la difficulté.</p>
           <button className="btn primary big" onClick={() => send({ t: 'climax.openBetting' })}>
-            Open betting
+            Ouvrir les paris
           </button>
         </>
       )}
@@ -427,40 +430,40 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
         <>
           <div className="card stack">
             <b>
-              Bets ({eligible.filter((p) => p.hasBet).length}/{eligible.length})
+              Mises ({eligible.filter((p) => p.hasBet).length}/{eligible.length})
             </b>
             {state.players.map((p) => (
               <div key={p.id} className="player-row">
                 <span className="name">{p.name}</span>
                 {p.sitOut ? (
-                  <span className="chip">sits out</span>
+                  <span className="chip">passe</span>
                 ) : (
-                  <span className={`chip ${p.hasBet ? 'ok' : ''}`}>{p.hasBet ? `${c.bets[p.id]} of ${p.score}` : 'thinking…'}</span>
+                  <span className={`chip ${p.hasBet ? 'ok' : ''}`}>{p.hasBet ? `${c.bets[p.id]} sur ${p.score}` : 'réfléchit…'}</span>
                 )}
               </div>
             ))}
           </div>
           <button className="btn primary big" onClick={() => send({ t: 'climax.lockBets' })}>
-            Lock bets and reveal the question
+            Verrouiller et révéler la question
           </button>
         </>
       )}
 
       {c.status === 'asking' && (
         <>
-          {c.pendingJudge.length === 0 && <p className="muted">Nobody left to judge.</p>}
+          {c.pendingJudge.length === 0 && <p className="muted">Plus personne à juger.</p>}
           {c.pendingJudge.map((id) => (
             <div key={id} className="card stack">
               <div className="row">
                 <b className="grow">{nameOf(state.players, id)}</b>
-                <span className="chip hard">{c.bets[id]} at stake</span>
+                <span className="chip hard">{c.bets[id]} en jeu</span>
               </div>
               <div className="row">
                 <button className="btn ok grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: true })}>
                   Correct (+{2 * c.bets[id]})
                 </button>
                 <button className="btn bad grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: false })}>
-                  Wrong (-{c.bets[id]})
+                  Faux (-{c.bets[id]})
                 </button>
               </div>
             </div>
@@ -471,14 +474,14 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
   );
 }
 
-// --- Players --------------------------------------------------------------------
+// --- Joueurs --------------------------------------------------------------------
 
-function Players({ state, send }: { state: GameView; send: Send }) {
+function PlayersPanel({ state, send }: { state: GameView; send: Send }) {
   const sorted = [...state.players].sort((a, b) => b.score - a.score);
   return (
     <details className="card">
       <summary>
-        <b>Players</b> <span className="muted">({state.players.length})</span>
+        <b>Joueurs</b> <span className="muted">({state.players.length})</span>
       </summary>
       <div style={{ marginTop: 8 }}>
         {sorted.map((p) => (
@@ -498,14 +501,14 @@ function Players({ state, send }: { state: GameView; send: Send }) {
             ))}
             <button
               className="btn small ghost"
-              aria-label={`Remove ${p.name}`}
-              onClick={() => window.confirm(`Remove ${p.name} from the game?`) && send({ t: 'player.kick', playerId: p.id })}
+              aria-label={`Retirer ${p.name}`}
+              onClick={() => window.confirm(`Retirer ${p.name} de la partie ?`) && send({ t: 'player.kick', playerId: p.id })}
             >
               ✕
             </button>
           </div>
         ))}
-        {state.players.length === 0 && <p className="muted">Nobody yet.</p>}
+        {state.players.length === 0 && <p className="muted">Personne pour l’instant.</p>}
       </div>
     </details>
   );
