@@ -5,17 +5,33 @@ export type RevealMode = 'blur' | 'pixel' | 'zoomIn' | 'zoomOut';
 const MODES: RevealMode[] = ['blur', 'pixel', 'zoomIn', 'zoomOut'];
 const DURATION_MS = 12_000;
 /** Close-up that pulls back to 1×. */
-const ZOOM_IN_START = 8;
+const ZOOM_IN_START = 12;
 /** Tiny / pulled-out view that grows up to 1×. */
 const ZOOM_OUT_START = 0.12;
+/** Keep focus away from dead empty corners. */
+const ORIGIN_MIN = 0.15;
+const ORIGIN_MAX = 0.85;
 
-function pickMode(seed: number): RevealMode {
+function hashSeed(seed: number): number {
   // Stable for this question id so a re-render does not swap the pattern mid-reveal.
   let x = (seed * 2654435761) >>> 0;
   x ^= x << 13;
   x ^= x >>> 17;
   x ^= x << 5;
-  return MODES[x % MODES.length];
+  return x >>> 0;
+}
+
+function pickMode(seed: number): RevealMode {
+  return MODES[hashSeed(seed) % MODES.length];
+}
+
+/** Off-center focal point so zooms do not always land on the middle of the photo. */
+function pickOrigin(seed: number): { x: number; y: number } {
+  const h = hashSeed(seed ^ 0x9e3779b9);
+  const span = ORIGIN_MAX - ORIGIN_MIN;
+  const x = ORIGIN_MIN + ((h & 0xffff) / 0xffff) * span;
+  const y = ORIGIN_MIN + (((h >>> 16) & 0xffff) / 0xffff) * span;
+  return { x, y };
 }
 
 type Phase = 'asking' | 'locked' | 'resolved';
@@ -87,6 +103,7 @@ function ZoomReveal({
   const startRef = useRef(0);
   const freezeAtRef = useRef<number | null>(null);
   const rafRef = useRef(0);
+  const origin = useMemo(() => pickOrigin(questionId), [questionId]);
 
   useEffect(() => {
     freezeAtRef.current = null;
@@ -103,6 +120,8 @@ function ZoomReveal({
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
+
+    img.style.transformOrigin = `${origin.x * 100}% ${origin.y * 100}%`;
 
     const apply = (progress: number) => {
       const p = clear ? 1 : Math.min(1, Math.max(0, progress));
@@ -128,7 +147,7 @@ function ZoomReveal({
     }
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [src, questionId, clear, frozen, from]);
+  }, [src, questionId, clear, frozen, from, origin.x, origin.y]);
 
   return (
     <div className="reveal-frame reveal-frame-zoom">

@@ -635,6 +635,7 @@ input[type='range'] {
   overflow: hidden;
 }
 .reveal-zoom {
+  /* Origin overridden in JS to a seeded off-center focal point. */
   transform-origin: center center;
   will-change: transform;
 }
