@@ -239,10 +239,30 @@ function Climax({ state }: { state: GameView }) {
         </>
       )}
 
+      {c.status === 'answering' && c.question && (
+        <>
+          {c.question.image && <img className="tv-photo" src={c.question.image} alt="" />}
+          <div className="tv-prompt">{c.question.prompt}</div>
+          <ClimaxTvCountdown until={c.answerUntil} />
+          <div className="tv-sub">Répondez sur votre téléphone</div>
+        </>
+      )}
+
       {(c.status === 'asking' || c.status === 'resolved') && c.question && (
         <>
+          {c.question.image && <img className="tv-photo" src={c.question.image} alt="" />}
           <div className="tv-prompt">{c.question.prompt}</div>
-          {c.status === 'asking' && <div className="tv-sub">Les paris sont verrouillés.</div>}
+          {c.status === 'asking' && (
+            <div className="card stack" style={{ width: 'min(90vw, 720px)', textAlign: 'left' }}>
+              {c.submissions.map((s) => (
+                <div key={s.playerId} className="row" style={{ gap: '1rem', alignItems: 'baseline' }}>
+                  <b style={{ minWidth: '6rem' }}>{s.name}</b>
+                  <span className="chip hard">{s.wager}</span>
+                  <span className="grow">{s.text || '—'}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
         </>
       )}
@@ -258,6 +278,12 @@ function Climax({ state }: { state: GameView }) {
       )}
     </div>
   );
+}
+
+function ClimaxTvCountdown({ until }: { until: number | null }) {
+  const now = useNow(250);
+  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : 0;
+  return <div className="tv-title">{left}</div>;
 }
 
 // --- Results -------------------------------------------------------------------

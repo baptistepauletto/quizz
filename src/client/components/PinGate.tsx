@@ -11,7 +11,7 @@ export function PinGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!getToken()) return setAuthed(false);
-    api('GET', '/api/packs')
+    api('GET', '/api/pile')
       .then(() => setAuthed(true))
       .catch((err) => setAuthed(err instanceof ApiError && err.status === 401 ? false : true));
   }, []);

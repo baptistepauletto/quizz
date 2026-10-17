@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { PinGate } from '../components/PinGate';
 import { DifficultyChip } from '../components/ui';
 import { api } from '../lib/api';
-import type { Bank, PackDetail, QuestionDto, QuestionStatus } from '../../shared/types';
+import type { Bank, QuestionDto, QuestionStatus } from '../../shared/types';
 
-const THRESHOLD = 110; // px of horizontal drag that counts as a decision
+const THRESHOLD = 110;
+
+const BANK_LABEL: Record<Bank | 'all', string> = {
+  all: 'tout',
+  sprint: 'sprint',
+  memory: 'grille',
+  climax: 'finale',
+};
 
 export function Swipe() {
   return (
@@ -16,25 +23,25 @@ export function Swipe() {
 }
 
 function SwipeDeck() {
-  const { id } = useParams();
-  const [pack, setPack] = useState<PackDetail | null>(null);
+  const [questions, setQuestions] = useState<QuestionDto[] | null>(null);
   const [bank, setBank] = useState<'all' | Bank>('all');
-  const [history, setHistory] = useState<number[]>([]); // question ids, most recent last
+  const [history, setHistory] = useState<number[]>([]);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    api<PackDetail>('GET', `/api/packs/${id}`)
-      .then(setPack)
+  const load = useCallback(() => {
+    api<QuestionDto[]>('GET', '/api/inbox')
+      .then(setQuestions)
       .catch((e: Error) => setError(e.message));
-  }, [id]);
+  }, []);
+  useEffect(load, [load]);
 
   const setLocal = useCallback((qid: number, status: QuestionStatus) => {
-    setPack((p) => p && { ...p, questions: p.questions.map((q) => (q.id === qid ? { ...q, status } : q)) });
+    setQuestions((list) => list && list.map((q) => (q.id === qid ? { ...q, status } : q)));
   }, []);
 
   const decide = useCallback(
     async (q: QuestionDto, status: 'approved' | 'rejected') => {
-      setLocal(q.id, status); // optimistic: the next card shows immediately
+      setLocal(q.id, status);
       setHistory((h) => [...h, q.id]);
       try {
         await api('PATCH', `/api/questions/${q.id}`, { status });
@@ -59,11 +66,10 @@ function SwipeDeck() {
     }
   }, [history, setLocal]);
 
-  const queue = pack?.questions.filter((q) => q.status === 'draft' && (bank === 'all' || q.bank === bank)) ?? [];
+  const queue = questions?.filter((q) => q.status === 'draft' && (bank === 'all' || q.bank === bank)) ?? [];
   const top = queue[0];
   const next = queue[1];
 
-  // Desktop shortcuts: arrows to decide, Z to undo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' && top) decide(top, 'approved');
@@ -74,16 +80,16 @@ function SwipeDeck() {
     return () => window.removeEventListener('keydown', onKey);
   }, [top, decide, undo]);
 
-  if (!pack) return <div className="page muted">{error || 'Chargement…'}</div>;
+  if (!questions) return <div className="page muted">{error || 'Chargement…'}</div>;
 
-  const approved = pack.questions.filter((q) => q.status === 'approved').length;
-  const rejected = pack.questions.filter((q) => q.status === 'rejected').length;
+  const approved = questions.filter((q) => q.status === 'approved').length;
+  const rejected = questions.filter((q) => q.status === 'rejected').length;
 
   return (
     <div className="page">
       <div className="topbar">
-        <Link to={`/prep/${pack.id}`} className="muted">
-          ← {pack.title}
+        <Link to="/prep" className="muted">
+          ← préparation
         </Link>
         <span className="muted">
           {queue.length} restantes · {approved} gardées · {rejected} écartées
@@ -93,7 +99,7 @@ function SwipeDeck() {
       <div className="row wrap">
         {(['all', 'sprint', 'memory', 'climax'] as const).map((b) => (
           <button key={b} className={`chip ${bank === b ? 'hard' : ''}`} style={{ border: 0, cursor: 'pointer' }} onClick={() => setBank(b)}>
-            {{ all: 'tout', sprint: 'sprint', memory: 'grille', climax: 'finale' }[b]}
+            {BANK_LABEL[b]}
           </button>
         ))}
       </div>
@@ -102,11 +108,9 @@ function SwipeDeck() {
         {!top && (
           <div className="card center stack" style={{ height: '100%', justifyContent: 'center' }}>
             <h2>Tout est relu</h2>
-            <p className="muted">
-              {approved} questions gardées. Elles sont dans le tas. Une soirée tire sur tous les imports, pas seulement celui-ci.
-            </p>
-            <Link to={`/prep/${pack.id}`} className="btn primary">
-              Retour à l’import
+            <p className="muted">Les questions gardées sont dans le tas. Resync si tu modifies encore le JSON.</p>
+            <Link to="/prep" className="btn primary">
+              Retour
             </Link>
           </div>
         )}
@@ -206,7 +210,8 @@ function CardBody({ q, behind, dx = 0, animate, handlers }: CardBodyProps) {
         NON
       </span>
       <div className="row wrap">
-        <span className="chip">{{ sprint: 'sprint', memory: 'grille', climax: 'finale' }[q.bank]}</span>
+        <span className="chip">{BANK_LABEL[q.bank]}</span>
+        <span className="chip muted">{q.sourceId}</span>
         <b>{q.theme}</b>
         {q.contributor && <span className="muted">· {q.contributor}</span>}
       </div>

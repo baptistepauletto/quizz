@@ -1,7 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Host } from './pages/Host';
 import { Play } from './pages/Play';
-import { PackPage, PrepHome } from './pages/Prep';
+import { PilePage, PrepHome } from './pages/Prep';
 import { Swipe } from './pages/Swipe';
 import { Tv } from './pages/Tv';
 
@@ -37,8 +37,8 @@ export function App() {
       <Route path="/host" element={<Host />} />
       <Route path="/play" element={<Play />} />
       <Route path="/prep" element={<PrepHome />} />
-      <Route path="/prep/:id" element={<PackPage />} />
-      <Route path="/prep/:id/swipe" element={<Swipe />} />
+      <Route path="/prep/pile" element={<PilePage />} />
+      <Route path="/prep/swipe" element={<Swipe />} />
       <Route path="*" element={<Home />} />
     </Routes>
   );

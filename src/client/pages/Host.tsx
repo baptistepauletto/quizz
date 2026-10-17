@@ -56,7 +56,14 @@ function HostApp() {
 function NoGame({ game }: { game: UseGame }) {
   const [pile, setPile] = useState<PileSummary | null>(null);
   useEffect(() => {
-    api<PileSummary>('GET', '/api/pile').then(setPile).catch(() => setPile({ approved: { sprint: 0, memory: 0, climax: 0 }, tonight: { sprint: 0, memory: 0, climax: 0 } }));
+    api<PileSummary>('GET', '/api/pile').then(setPile).catch(() =>
+      setPile({
+        approved: { sprint: 0, memory: 0, climax: 0 },
+        tonight: { sprint: 0, memory: 0, climax: 0 },
+        draft: 0,
+        rejected: 0,
+      }),
+    );
   }, []);
   const ready = pile !== null && pile.tonight.sprint > 0 && pile.tonight.memory > 0 && pile.tonight.climax > 0;
 
@@ -444,34 +451,68 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             ))}
           </div>
           <button className="btn primary big" onClick={() => send({ t: 'climax.lockBets' })}>
-            Verrouiller et révéler la question
+            Verrouiller · 30 s pour répondre
+          </button>
+        </>
+      )}
+
+      {c.status === 'answering' && (
+        <>
+          <p className="muted">Les joueurs tapent sur leur téléphone. Réponse vide = mise perdue.</p>
+          <ClimaxCountdown until={c.answerUntil} />
+          <button className="btn" onClick={() => send({ t: 'climax.lockAnswers' })}>
+            Clôturer les réponses maintenant
           </button>
         </>
       )}
 
       {c.status === 'asking' && (
         <>
-          {c.pendingJudge.length === 0 && <p className="muted">Plus personne à juger.</p>}
-          {c.pendingJudge.map((id) => (
-            <div key={id} className="card stack">
-              <div className="row">
-                <b className="grow">{nameOf(state.players, id)}</b>
-                <span className="chip hard">{c.bets[id]} en jeu</span>
+          <div className="card stack">
+            <b>Réponses</b>
+            {c.submissions.map((s) => (
+              <div key={s.playerId} className="row">
+                <span className="grow">
+                  <b>{s.name}</b>
+                  <span className="muted"> · {s.text || '(vide)'}</span>
+                </span>
+                <span className="chip hard">{s.wager} pts</span>
               </div>
-              <div className="row">
-                <button className="btn ok grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: true })}>
-                  Correct (+{2 * c.bets[id]})
-                </button>
-                <button className="btn bad grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: false })}>
-                  Faux (-{c.bets[id]})
-                </button>
+            ))}
+          </div>
+          {c.pendingJudge.length === 0 && <p className="muted">Plus personne à juger (vides déjà perdus).</p>}
+          {c.pendingJudge.map((id) => {
+            const sub = c.submissions.find((s) => s.playerId === id);
+            return (
+              <div key={id} className="card stack">
+                <div className="row">
+                  <b className="grow">{nameOf(state.players, id)}</b>
+                  <span className="chip hard">{c.bets[id]} en jeu</span>
+                </div>
+                <div>
+                  Réponse : <b>{sub?.text ?? ''}</b>
+                </div>
+                <div className="row">
+                  <button className="btn ok grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: true })}>
+                    Correct (+{2 * c.bets[id]})
+                  </button>
+                  <button className="btn bad grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: false })}>
+                    Faux (-{c.bets[id]})
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </>
       )}
     </div>
   );
+}
+
+function ClimaxCountdown({ until }: { until: number | null }) {
+  const now = useNow(250);
+  const left = until ? Math.max(0, Math.ceil((until - now) / 1000)) : 0;
+  return <div className="bet-amount">{left}s</div>;
 }
 
 // --- Joueurs --------------------------------------------------------------------

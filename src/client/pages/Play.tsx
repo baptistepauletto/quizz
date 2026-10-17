@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
+import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
 import { useGame } from '../lib/useGame';
 import type { GameView, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
@@ -386,17 +386,37 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     );
   }
 
-  // asking / resolved
   const result = c.results.find((r) => r.playerId === me.id);
   const wager = c.myBet ?? 0;
+
+  if (c.status === 'answering') {
+    return (
+      <ClimaxAnswering
+        header={header}
+        wager={wager}
+        question={c.question}
+        answerUntil={c.answerUntil}
+        myAnswer={c.myAnswer}
+        game={game}
+      />
+    );
+  }
+
   return (
     <div className="play-body">
       {header}
       {c.status === 'asking' && (
         <>
-          <p className="muted">Paris verrouillés</p>
-          <div className="bet-amount">{wager}</div>
-          <p className="muted">{wager === 0 ? 'Tu n’as pas misé.' : 'en jeu. Réponds à voix haute !'}</p>
+          <p className="muted">Réponses verrouillées · mise {wager}</p>
+          {c.question?.prompt && <div className="prompt">{c.question.prompt}</div>}
+          {wager > 0 ? (
+            <p>
+              Ta réponse : <b>{(c.myAnswer ?? '').trim() || '(vide — mise perdue)'}</b>
+            </p>
+          ) : (
+            <p className="muted">Tu n’as pas misé.</p>
+          )}
+          <p className="muted">L’écran affiche toutes les réponses. L’hôte juge.</p>
         </>
       )}
       {c.status === 'resolved' &&
@@ -410,6 +430,66 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
         ) : (
           <p className="muted">Tu n’as pas misé ce tour.</p>
         ))}
+    </div>
+  );
+}
+
+function ClimaxAnswering({
+  header,
+  wager,
+  question,
+  answerUntil,
+  myAnswer,
+  game,
+}: {
+  header: React.ReactNode;
+  wager: number;
+  question: GameView['climax']['question'];
+  answerUntil: number | null;
+  myAnswer: string | null;
+  game: UseGame;
+}) {
+  const now = useNow(250);
+  const left = answerUntil ? Math.max(0, Math.ceil((answerUntil - now) / 1000)) : 0;
+  const [text, setText] = useState(myAnswer ?? '');
+
+  useEffect(() => {
+    setText(myAnswer ?? '');
+  }, [myAnswer, question?.id]);
+
+  useEffect(() => {
+    if (wager <= 0) return;
+    const t = setTimeout(() => {
+      game.send({ t: 'answer', text });
+    }, 280);
+    return () => clearTimeout(t);
+  }, [text, wager, game]);
+
+  return (
+    <div className="play-body">
+      {header}
+      <div className="bet-amount" style={{ fontSize: '2.5rem' }}>
+        {left}s
+      </div>
+      {question?.image && <img className="q-photo" src={question.image} alt="" />}
+      {question?.prompt && <div className="prompt">{question.prompt}</div>}
+      <div className="muted">Mise en jeu : {wager}</div>
+      {wager <= 0 ? (
+        <p className="muted">Tu n’as pas misé — tu regardes seulement.</p>
+      ) : (
+        <>
+          <textarea
+            className="input"
+            rows={3}
+            maxLength={200}
+            placeholder="Ta réponse…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoFocus
+          />
+          <p className="muted">Tu peux modifier jusqu’à 0. Sans réponse = mise perdue.</p>
+        </>
+      )}
     </div>
   );
 }

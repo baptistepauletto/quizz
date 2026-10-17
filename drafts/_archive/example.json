@@ -1,0 +1,35 @@
+{
+  "title": "Soirée exemple",
+  "sprint": [
+    {
+      "theme": "Culture générale",
+      "questions": [
+        { "prompt": "Quelle est la capitale de l'Australie ?", "answer": "Canberra", "difficulty": "medium" },
+        { "prompt": "Quel élément a pour symbole chimique Fe ?", "answer": "Le fer", "difficulty": "easy" },
+        { "prompt": "Quel est le plus petit nombre premier supérieur à 50 ?", "answer": "53", "difficulty": "hard" },
+      ]
+    }
+  ],
+  "memory": [
+    {
+      "theme": "Espace",
+      "questions": [
+        { "prompt": "En quelle année Voyager 1 a-t-elle été lancée ?", "answer": "1977", "difficulty": "hard" },
+        { "prompt": "Quelle est l'étoile la plus proche du Soleil ?", "answer": "Proxima du Centaure", "difficulty": "hard" }
+      ]
+    },
+    {
+      "theme": "Cinéma",
+      "questions": [
+        { "prompt": "Quel acteur interprète Jack Dawson dans Titanic ?", "answer": "Leonardo DiCaprio", "difficulty": "easy" },
+      ]
+    },
+    {
+      "theme": "Cuisine",
+      "questions": [
+        { "prompt": "Comment s'appelle la technique qui consiste à couper les légumes en fines lanières régulières ?", "answer": "Julienne", "difficulty": "medium" },
+        { "prompt": "Quelle épice est la plus chère au monde au poids ?", "answer": "Le safran", "difficulty": "medium" },
+      ]
+    }
+
+}

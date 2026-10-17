@@ -1,0 +1,67 @@
+{
+  "questions": [
+    {
+      "id": "c_001",
+      "theme": "Finale",
+      "prompt": "Combien y a-t-il de fleurs de lys sur le drapeau du Québec ?",
+      "answer": "Quatre",
+      "difficulty": "easy"
+    },
+    {
+      "id": "c_002",
+      "theme": "Finale",
+      "prompt": "En quelle année Montréal a-t-elle accueilli l'Exposition universelle ?",
+      "answer": "1967",
+      "difficulty": "easy"
+    },
+    {
+      "id": "c_003",
+      "theme": "Finale",
+      "prompt": "Quel détroit sépare le Labrador / Québec de l'île de Terre-Neuve au nord du golfe ?",
+      "answer": "Le détroit de Belle-Isle",
+      "difficulty": "hard"
+    },
+    {
+      "id": "c_004",
+      "theme": "Finale",
+      "prompt": "Citez les quatre classes de sirop d'érable.",
+      "answer": "Doré, ambré, foncé, très foncé",
+      "difficulty": "medium"
+    },
+    {
+      "id": "c_005",
+      "theme": "Espace",
+      "prompt": "En quelle année Voyager 1 a-t-elle été lancée ?",
+      "answer": "1977",
+      "difficulty": "hard"
+    },
+    {
+      "id": "c_006",
+      "theme": "Espace",
+      "prompt": "Quelle est l'étoile la plus proche du Soleil ?",
+      "answer": "Proxima du Centaure",
+      "difficulty": "hard"
+    },
+    {
+      "id": "c_007",
+      "theme": "Cinéma",
+      "prompt": "Quel acteur interprète Jack Dawson dans Titanic ?",
+      "answer": "Leonardo DiCaprio",
+      "difficulty": "easy"
+    },
+    {
+      "id": "c_008",
+      "theme": "Cuisine",
+      "prompt": "Comment s'appelle la technique qui consiste à couper les légumes en fines lanières régulières ?",
+      "answer": "Julienne",
+      "difficulty": "medium"
+    },
+    {
+      "id": "c_009",
+      "theme": "Cuisine",
+      "prompt": "Quelle épice est la plus chère au monde au poids ?",
+      "answer": "Le safran",
+      "difficulty": "medium"
+    }
+  ]
+}

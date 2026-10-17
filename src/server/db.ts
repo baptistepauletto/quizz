@@ -4,39 +4,41 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
 
-// Everything lives in one SQLite file next to the app (data/quizz-in.db by default).
 const dataDir = path.resolve(process.env.DATA_DIR ?? 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
-export const sqlite = new Database(path.join(dataDir, 'quizz-in.db'));
+const dbPath = path.join(dataDir, 'quizz-in.db');
+
+export const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
-// Tiny schema, so we create it directly instead of shipping migration files.
+/** Schema v2: flat questions with source_id. Wipe legacy pack/theme DBs. */
+const SCHEMA_VERSION = 2;
+const ver = Number(sqlite.pragma('user_version', { simple: true }) ?? 0);
+if (ver < SCHEMA_VERSION) {
+  sqlite.exec(`
+    DROP TABLE IF EXISTS question_asks;
+    DROP TABLE IF EXISTS game_sessions;
+    DROP TABLE IF EXISTS questions;
+    DROP TABLE IF EXISTS themes;
+    DROP TABLE IF EXISTS packs;
+  `);
+  sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
+}
+
 sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS packs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'draft'
-  );
-  CREATE TABLE IF NOT EXISTS themes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pack_id INTEGER NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
-    bank TEXT NOT NULL,
-    label TEXT NOT NULL,
-    contributor_name TEXT,
-    sort_order INTEGER NOT NULL DEFAULT 0
-  );
   CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    theme_id INTEGER NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    source_id TEXT NOT NULL UNIQUE,
+    bank TEXT NOT NULL,
+    theme TEXT NOT NULL,
+    contributor TEXT,
     prompt TEXT NOT NULL,
     answer TEXT NOT NULL,
     notes TEXT,
     difficulty TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
-    source TEXT NOT NULL DEFAULT 'llm',
     image TEXT,
     created_at INTEGER NOT NULL
   );
@@ -52,16 +54,10 @@ sqlite.exec(`
     join_code TEXT NOT NULL,
     asked_at INTEGER NOT NULL
   );
-  CREATE INDEX IF NOT EXISTS idx_themes_pack ON themes(pack_id);
-  CREATE INDEX IF NOT EXISTS idx_questions_theme ON questions(theme_id);
+  CREATE INDEX IF NOT EXISTS idx_questions_bank ON questions(bank);
+  CREATE INDEX IF NOT EXISTS idx_questions_status ON questions(status);
   CREATE INDEX IF NOT EXISTS idx_asks_question ON question_asks(question_id);
 `);
-
-// Databases created before picture questions existed.
-const questionCols = sqlite.prepare('PRAGMA table_info(questions)').all() as { name: string }[];
-if (!questionCols.some((col) => col.name === 'image')) {
-  sqlite.exec('ALTER TABLE questions ADD COLUMN image TEXT');
-}
 
 export const db = drizzle(sqlite, { schema });
 export { schema };

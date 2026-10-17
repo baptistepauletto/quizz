@@ -1,8 +1,8 @@
 {
-  "title": "Photos floues",
+  "title": "Photos",
   "sprint": [
     {
-      "theme": "Photo",
+      "theme": "Musique",
       "questions": [
         {
           "prompt": "Quel album est-ce ?",
@@ -13,46 +13,46 @@
         {
           "prompt": "Quel album est-ce ?",
           "answer": "Born to Die (Lana Del Rey)",
-          "difficulty": "medium",
+          "difficulty": "easy",
           "image": "music/lana-born-to-die.jpg"
         }
       ]
     },
     {
-      "theme": "Les potes",
+      "theme": "Les rigolos",
       "questions": [
         {
-          "prompt": "Qui est sur cette photo ?",
+          "prompt": "Qui est ce rigolo ?",
           "answer": "Baptiste",
           "difficulty": "easy",
           "image": "people/baptiste-aventure.jpg"
         },
         {
-          "prompt": "Qui est sur cette photo ?",
+          "prompt": "Qui ça peut bien être ?",
           "answer": "Corentin",
           "difficulty": "easy",
           "image": "people/corentin-aventure.jpg"
         },
         {
-          "prompt": "Qui est sur cette photo ?",
+          "prompt": "Qui est ce super beau gosse ?",
           "answer": "Guilhem",
           "difficulty": "easy",
           "image": "people/guilhem-aventure.jpg"
         },
         {
-          "prompt": "Qui est sur cette photo ?",
+          "prompt": "Qui est cet aventurier ?",
           "answer": "Thibault",
           "difficulty": "easy",
           "image": "people/thibault-aventure.jpg"
         },
         {
-          "prompt": "Qui est sur cette photo ?",
+          "prompt": "Qui ça peut bien être ?",
           "answer": "Laurence",
-          "difficulty": "medium",
+          "difficulty": "easy",
           "image": "people/laurence-niveau.jpg"
         },
         {
-          "prompt": "Qui est cette personne ?",
+          "prompt": "Qui est ce peintre ?",
           "answer": "Adolf Hitler",
           "difficulty": "easy",
           "image": "people/adolf.jpg"
@@ -63,13 +63,13 @@
       "theme": "Lieux & maisons",
       "questions": [
         {
-          "prompt": "Combien a couté cette maison ?",
+          "prompt": "Combien a couté cette résidence ?",
           "answer": "515000 CAD",
           "difficulty": "medium",
           "image": "houses/maison-hugo.jpg"
         },
         {
-          "prompt": "Où a été prise cette photo ?",
+          "prompt": "Où a été prise cette picture ?",
           "answer": "Citrouilleville",
           "difficulty": "medium",
           "image": "places/citrouilleville.jpg"
@@ -80,15 +80,15 @@
       "theme": "Anatomie",
       "questions": [
         {
-          "prompt": "Quelle zone du corps est-ce ?",
-          "answer": "Les fossettes sacrées (fossettes de Vénus)",
+          "prompt": "Comment s'appelle cette partie du corps ?",
+          "answer": "Les fossettes sacro-iliaques",
           "difficulty": "hard",
           "image": "muscles/fossettes-sacro.jpg"
         },
         {
-          "prompt": "Quel muscle est-ce ?",
+          "prompt": "Quel groupe musculaire est-ce ?",
           "answer": "Les ischio-jambiers",
-          "difficulty": "hard",
+          "difficulty": "medium",
           "image": "muscles/ischio-jambier.jpg"
         }
       ]
@@ -97,20 +97,50 @@
       "theme": "Divers",
       "questions": [
         {
-          "prompt": "Quel animal est-ce ?",
+          "prompt": "Qui est ce super beau gosse ?",
           "answer": "Un rat",
           "difficulty": "easy",
           "image": "animal/rat.jpg"
         },
         {
-          "prompt": "Qui / qu’est-ce que c’est ?",
+          "prompt": "De quelle référence s'agit-il ?",
           "answer": "Willy Waller",
           "difficulty": "medium",
           "image": "random/willy-waller.jpg"
         }
       ]
+    },
+    {
+      "theme": "AI mashup",
+      "questions": [
+        {
+          "prompt": "Quel est ce tableau et quel est le nom de la personnalité?",
+          "answer": "Carney et Napoléon franchissant les Alpes, Delacroix",
+          "difficulty": "hard",
+          "image": "ai-mashup/carney-napoleon.jpg"
+        },
+        {
+          "prompt": "Où est ce tableau et quels sont les noms des personnalités?",
+          "answer": "Hugo et Anaïs, plafond de la chappelle Sixtine, Michel-Ange",
+          "difficulty": "medium",
+          "image": "ai-mashup/hugo-anais-plafond.jpg"
+        },
+        {
+          "prompt": "A qui sommes nous tous mariés ?",
+          "answer": "Revenu Québec",
+          "difficulty": "medium",
+          "image": "ai-mashup/mariage-revenu-quebec.jpg"
+        },
+        {
+          "prompt": "Quel est ce chat et quel est le nom de la personnalité?",
+          "answer": "Nino et La jeune fille à la perle, Vermeer",
+          "difficulty": "medium",
+          "image": "ai-mashup/nino-perle.jpg"
+        }
+      ]
     }
   ],
+
   "memory": [],
   "climax": []
 }

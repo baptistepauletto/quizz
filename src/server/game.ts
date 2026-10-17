@@ -26,8 +26,11 @@ import type {
 
 /** How long the themes stay face-up before the grid flips face-down on its own. */
 export const PREVIEW_MS = 30_000;
+/** How long climax bettors have to type after the question is revealed. */
+export const CLIMAX_ANSWER_MS = Number(process.env.CLIMAX_ANSWER_MS ?? 30_000);
 export const MAX_PLAYERS = 16;
 const MAX_NAME_LENGTH = 20;
+const MAX_ANSWER_LENGTH = 200;
 
 // ---------------------------------------------------------------------------
 // Server-side state (JSON-serialisable so it can be snapshotted to SQLite)
@@ -95,6 +98,9 @@ export interface Game {
     questionId: number | null;
     eligible: string[];
     bets: Record<string, number>;
+    /** Typed answers while status is answering (and frozen after lock). */
+    answers: Record<string, string>;
+    answerUntil: number | null;
     results: ClimaxResult[];
   };
 }
@@ -161,6 +167,8 @@ export function createGame(packId: number, packTitle: string, questions: Questio
       questionId: null,
       eligible: [],
       bets: {},
+      answers: {},
+      answerUntil: null,
       results: [],
     },
   };
@@ -250,6 +258,7 @@ function removePlayer(g: Game, playerId: string, emit: Emit) {
   }
   g.climax.eligible = g.climax.eligible.filter((id) => id !== playerId);
   delete g.climax.bets[playerId];
+  delete g.climax.answers[playerId];
   maybeResolveClimax(g, emit);
 }
 
@@ -282,6 +291,21 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
     if (!Number.isFinite(amount) || amount < 0) throw new GameError('Mise invalide.');
     c.bets[playerId] = Math.min(amount, player.score);
     emit('climax.bet', { playerId });
+    return true;
+  }
+
+  if (msg.t === 'answer') {
+    const c = g.climax;
+    if (g.phase !== 'climax' || c.status !== 'answering') throw new GameError('Ce n’est pas le moment de répondre.');
+    if (!c.eligible.includes(playerId)) throw new GameError('Tu passes ce tour.');
+    if ((c.bets[playerId] ?? 0) <= 0) throw new GameError('Tu n’as pas misé.');
+    const text = String(msg.text ?? '')
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, MAX_ANSWER_LENGTH);
+    c.answers[playerId] = text;
+    emit('climax.answer', { playerId });
     return true;
   }
 
@@ -335,6 +359,8 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
       return climaxOpenBetting(g, emit);
     case 'climax.lockBets':
       return climaxLockBets(g, emit);
+    case 'climax.lockAnswers':
+      return climaxLockAnswers(g, emit);
     case 'climax.judge':
       return climaxJudge(g, cmd.playerId, cmd.correct, emit);
     case 'climax.reset':
@@ -498,15 +524,21 @@ function advanceTurn(g: Game, emit: Emit) {
 
 /** Called about once a second: flips the grid face-down when the preview is over. */
 export function tick(g: Game, emit: Emit): boolean {
+  let changed = false;
   const m = g.memory;
   if (m.status === 'preview' && m.previewUntil !== null && Date.now() >= m.previewUntil) {
     for (const t of m.tiles) if (t.face === 'preview') t.face = 'hidden';
     m.status = 'playing';
     m.previewUntil = null;
     emit('memory.hidden', {});
-    return true;
+    changed = true;
   }
-  return false;
+  const c = g.climax;
+  if (g.phase === 'climax' && c.status === 'answering' && c.answerUntil !== null && Date.now() >= c.answerUntil) {
+    climaxLockAnswers(g, emit);
+    changed = true;
+  }
+  return changed;
 }
 
 // --- Phase 3: Double or Nothing ---------------------------------------------------
@@ -514,7 +546,9 @@ export function tick(g: Game, emit: Emit): boolean {
 function climaxPick(g: Game, questionId: number, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status === 'betting' || c.status === 'asking') throw new GameError('Une manche est déjà en cours.');
+  if (c.status === 'betting' || c.status === 'answering' || c.status === 'asking') {
+    throw new GameError('Une manche est déjà en cours.');
+  }
   if (!c.candidates.includes(questionId) || c.used.includes(questionId)) {
     throw new GameError('Cette question n’est pas disponible.');
   }
@@ -523,6 +557,8 @@ function climaxPick(g: Game, questionId: number, emit: Emit) {
   c.status = 'announce';
   c.eligible = [];
   c.bets = {};
+  c.answers = {};
+  c.answerUntil = null;
   c.results = [];
   emit('climax.announce', { theme: q.theme, difficulty: q.difficulty });
 }
@@ -534,6 +570,7 @@ function climaxOpenBetting(g: Game, emit: Emit) {
   // Players with no points left sit this round out.
   c.eligible = g.players.filter((p) => p.score > 0).map((p) => p.id);
   c.bets = {};
+  c.answers = {};
   c.status = 'betting';
   emit('climax.betting_open', { eligible: c.eligible.length });
 }
@@ -546,15 +583,39 @@ function climaxLockBets(g: Game, emit: Emit) {
     const p = g.players.find((x) => x.id === id);
     c.bets[id] = Math.min(c.bets[id] ?? 0, p?.score ?? 0);
   }
-  c.status = 'asking';
+  c.answers = {};
+  c.status = 'answering';
+  c.answerUntil = Date.now() + CLIMAX_ANSWER_MS;
   emit('climax.betting_locked', {});
-  emit('climax.revealed', { questionId: c.questionId });
+  emit('climax.revealed', { questionId: c.questionId, answerUntil: c.answerUntil });
+}
+
+/** End the typing window: empty answers auto-lose the wager; host judges the rest. */
+function climaxLockAnswers(g: Game, emit: Emit) {
+  requirePhase(g, 'climax');
+  const c = g.climax;
+  if (c.status !== 'answering') throw new GameError('Les réponses ne sont pas ouvertes.');
+  c.answerUntil = null;
+  c.status = 'asking';
+  emit('climax.answers_locked', {});
+  for (const id of c.eligible) {
+    const wager = c.bets[id] ?? 0;
+    if (wager <= 0) continue;
+    const text = (c.answers[id] ?? '').trim();
+    if (!text) {
+      addScore(g, id, -wager, emit, 'climax');
+      c.results.push({ playerId: id, wager, correct: false });
+      emit('climax.judged', { playerId: id, wager, correct: false, reason: 'empty' });
+    }
+  }
   maybeResolveClimax(g, emit);
 }
 
 function pendingJudge(g: Game): string[] {
   const c = g.climax;
-  return c.eligible.filter((id) => (c.bets[id] ?? 0) > 0 && !c.results.some((r) => r.playerId === id));
+  return c.eligible.filter(
+    (id) => (c.bets[id] ?? 0) > 0 && (c.answers[id] ?? '').trim() !== '' && !c.results.some((r) => r.playerId === id),
+  );
 }
 
 /** Correct: the wager is tripled (+2x on top of the stake). Wrong: the wager is wiped out. */
@@ -585,7 +646,24 @@ function climaxReset(g: Game) {
   c.questionId = null;
   c.eligible = [];
   c.bets = {};
+  c.answers = {};
+  c.answerUntil = null;
   c.results = [];
+}
+
+function climaxSubmissions(g: Game): { playerId: string; name: string; text: string; wager: number }[] {
+  const c = g.climax;
+  return c.eligible
+    .filter((id) => (c.bets[id] ?? 0) > 0)
+    .map((id) => {
+      const p = g.players.find((x) => x.id === id);
+      return {
+        playerId: id,
+        name: p?.name ?? '?',
+        text: (c.answers[id] ?? '').trim(),
+        wager: c.bets[id] ?? 0,
+      };
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -608,7 +686,7 @@ function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean; i
 /**
  * Projects the full server state into what a given role may see.
  * - play: no prompts, no answers, only their own bet
- * - tv: prompts once asked, answers only after a question is resolved, never bets
+ * - tv: prompts once asked; answers + wagers only after the typing window locks; never live bets
  * - host: everything
  */
 export function viewFor(g: Game, role: Role, playerId: string | null): GameView {
@@ -676,25 +754,33 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
 
   // Climax
   const cq = c.questionId !== null ? g.questions[c.questionId] : undefined;
-  const revealed = c.status === 'asking' || c.status === 'resolved';
+  const questionLive = c.status === 'answering' || c.status === 'asking' || c.status === 'resolved';
   const candidates: ClimaxCandidate[] = isHost
     ? c.candidates
         .filter((id) => !c.used.includes(id))
         .map((id) => g.questions[id])
         .map((q) => ({ id: q.id, theme: q.theme, difficulty: q.difficulty, prompt: q.prompt, answer: q.answer }))
     : [];
+  const showOfficialAnswer = isHost || c.status === 'resolved';
   const climax: ClimaxView = {
     status: c.status,
     theme: cq && c.status !== 'idle' ? cq.theme : null,
     difficulty: cq && c.status !== 'idle' ? cq.difficulty : null,
     question:
-      cq && !isPlay && c.status !== 'idle' && (revealed || isHost)
-        ? questionView(cq, { answer: isHost || c.status === 'resolved', notes: isHost })
+      cq && c.status !== 'idle' && (isHost || questionLive)
+        ? questionView(cq, {
+            answer: showOfficialAnswer,
+            notes: isHost,
+            image: true,
+          })
         : null,
     candidates,
     bets: isHost ? c.bets : {},
     pendingJudge: isHost && c.status === 'asking' ? pendingJudge(g) : [],
     myBet: isPlay && playerId ? (c.bets[playerId] ?? null) : null,
+    myAnswer: isPlay && playerId ? (c.answers[playerId] ?? null) : null,
+    answerUntil: c.status === 'answering' ? c.answerUntil : null,
+    submissions: c.status === 'asking' || c.status === 'resolved' ? climaxSubmissions(g) : [],
     results: c.results,
   };
 

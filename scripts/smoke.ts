@@ -10,17 +10,42 @@ import WebSocket from 'ws';
 import { drawNight } from '../src/server/draw';
 import type { QuestionRec } from '../src/server/game';
 import type { ClientMessage, ServerMessage } from '../src/shared/protocol';
-import type { DraftFile, GameEvent, GameView } from '../src/shared/types';
+import type { GameEvent, GameView } from '../src/shared/types';
 
 const PORT = 3999;
 const PIN = '4242';
 const BASE = `http://localhost:${PORT}`;
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quizz-smoke-'));
 const picturesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quizz-pics-'));
+const draftsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quizz-drafts-'));
 fs.writeFileSync(
   path.join(picturesDir, 'smoke.png'),
   Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
 );
+
+function writeBankFiles(sprintQs: unknown[], memoryQs: unknown[], climaxQs: unknown[]) {
+  fs.writeFileSync(path.join(draftsDir, 'sprint.json'), JSON.stringify({ questions: sprintQs }, null, 2));
+  fs.writeFileSync(path.join(draftsDir, 'memory.json'), JSON.stringify({ questions: memoryQs }, null, 2));
+  fs.writeFileSync(path.join(draftsDir, 'climax.json'), JSON.stringify({ questions: climaxQs }, null, 2));
+}
+
+const smokeSprint = [
+  { id: 's_001', theme: 'General knowledge', prompt: 'Capital of France?', answer: 'Paris', difficulty: 'medium', image: 'smoke.png' },
+  { id: 's_002', theme: 'General knowledge', prompt: 'Chemical symbol for gold?', answer: 'Au', difficulty: 'hard', image: 'smoke.png' },
+];
+const smokeMemory = [
+  { id: 'm_001', theme: 'Space', contributor: 'Ann', prompt: 'Biggest planet?', answer: 'Jupiter', difficulty: 'easy' },
+  { id: 'm_002', theme: 'Space', contributor: 'Ann', prompt: 'First on the Moon?', answer: 'Armstrong', difficulty: 'medium' },
+  { id: 'm_003', theme: 'Cinema', contributor: 'Bob', prompt: 'Director of Jaws?', answer: 'Spielberg', difficulty: 'medium' },
+  { id: 'm_004', theme: 'Cinema', contributor: 'Bob', prompt: 'Best Picture 1994?', answer: 'Forrest Gump', difficulty: 'hard' },
+  { id: 'm_005', theme: 'Food', contributor: 'Cy', prompt: 'Main ingredient of guacamole?', answer: 'Avocado', difficulty: 'easy' },
+  { id: 'm_006', theme: 'Food', contributor: 'Cy', prompt: 'Country of origin of sushi?', answer: 'Japan', difficulty: 'easy' },
+];
+const smokeClimax = [
+  { id: 'c_001', theme: 'Space', prompt: 'How many moons does Mars have?', answer: 'Two', difficulty: 'hard' },
+  { id: 'c_002', theme: 'Cinema', prompt: 'Who directed Psycho?', answer: 'Hitchcock', difficulty: 'medium', image: 'smoke.png' },
+];
+writeBankFiles(smokeSprint, smokeMemory, smokeClimax);
 
 let failures = 0;
 function check(cond: unknown, label: string) {
@@ -124,30 +149,16 @@ async function api(method: string, url: string, body?: unknown, token?: string) 
   return { status: res.status, json: (await res.json().catch(() => null)) as any };
 }
 
-const draft: DraftFile = {
-  title: 'Smoke test night',
-  sprint: [
-    {
-      theme: 'General knowledge',
-      questions: [
-        { prompt: 'Capital of France?', answer: 'Paris', difficulty: 'medium', image: 'smoke.png' },
-        { prompt: 'Chemical symbol for gold?', answer: 'Au', difficulty: 'hard', image: 'smoke.png' },
-      ],
-    },
-  ],
-  memory: [
-    { theme: 'Space', contributor: 'Ann', questions: [{ prompt: 'Biggest planet?', answer: 'Jupiter', difficulty: 'easy' }, { prompt: 'First on the Moon?', answer: 'Armstrong', difficulty: 'medium' }] },
-    { theme: 'Cinema', contributor: 'Bob', questions: [{ prompt: 'Director of Jaws?', answer: 'Spielberg', difficulty: 'medium' }, { prompt: 'Best Picture 1994?', answer: 'Forrest Gump', difficulty: 'hard' }] },
-    { theme: 'Food', contributor: 'Cy', questions: [{ prompt: 'Main ingredient of guacamole?', answer: 'Avocado', difficulty: 'easy' }, { prompt: 'Country of origin of sushi?', answer: 'Japan', difficulty: 'easy' }] },
-  ],
-  climax: [
-    { theme: 'Space', questions: [{ prompt: 'How many moons does Mars have?', answer: 'Two', difficulty: 'hard' }] },
-    { theme: 'Cinema', questions: [{ prompt: 'Who directed Psycho?', answer: 'Hitchcock', difficulty: 'medium' }] },
-  ],
-};
-
 const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts'], {
-  env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, PICTURES_DIR: picturesDir, HOST_PIN: PIN },
+  env: {
+    ...process.env,
+    PORT: String(PORT),
+    DATA_DIR: dataDir,
+    PICTURES_DIR: picturesDir,
+    DRAFTS_DIR: draftsDir,
+    HOST_PIN: PIN,
+    CLIMAX_ANSWER_MS: '60000',
+  },
   stdio: ['ignore', 'pipe', 'inherit'],
 });
 await new Promise<void>((resolve, reject) => {
@@ -159,24 +170,56 @@ await new Promise<void>((resolve, reject) => {
 const clients: Client[] = [];
 try {
   console.log('\nPrep API');
-  check((await api('GET', '/api/packs')).status === 401, 'prep API requires auth');
+  check((await api('GET', '/api/pile')).status === 401, 'prep API requires auth');
   check((await api('POST', '/api/auth', { pin: 'nope' })).status === 401, 'wrong PIN rejected');
   const { token } = (await api('POST', '/api/auth', { pin: PIN })).json;
   check(typeof token === 'string', 'right PIN returns a token');
-  check((await api('POST', '/api/import', { draft: { title: 'x', sprint: [{ theme: '', questions: [] }] } }, token)).status === 400, 'invalid draft rejected');
-  check(
-    (await api('POST', '/api/import', { draft: { title: 'x', sprint: [{ theme: 'Faces', questions: [{ prompt: 'Who?', answer: 'Me', difficulty: 'easy', image: 'missing.png' }] }] } }, token)).status === 400,
-    'a sprint picture that is not in the pictures folder is rejected',
-  );
   check((await fetch(BASE + '/media/smoke.png')).status === 200, 'a picture in the folder is served');
   check((await fetch(BASE + '/media/..%2Fpackage.json')).status === 404, 'picture paths cannot leave the folder');
-  const imported = await api('POST', '/api/import', { draft }, token);
-  const packId: number = imported.json.id;
-  const questions: { id: number; bank: string }[] = imported.json.pack.questions;
-  check(questions.length === 10 && questions.every((q: any) => q.status === 'draft'), 'draft imported as 10 draft questions');
-  check((await api('POST', `/api/packs/${packId}/status`, { status: 'ready' }, token)).status === 400, 'pack cannot be ready before approving');
-  for (const q of questions) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
-  check((await api('POST', `/api/packs/${packId}/status`, { status: 'ready' }, token)).status === 200, 'pack ready after approving');
+
+  const synced = await api('POST', '/api/sync', {}, token);
+  check(synced.status === 200 && synced.json.added === 10, 'sync imports all draft questions as new');
+  check(synced.json.reviewCount === 10, 'sync leaves everything in the review inbox');
+  const inbox = await api('GET', '/api/inbox', undefined, token);
+  check(inbox.json.length === 10, 'inbox lists every draft question');
+
+  writeBankFiles(
+    [{ ...smokeSprint[0], image: 'missing.png' }, smokeSprint[1]],
+    smokeMemory,
+    smokeClimax,
+  );
+  const badSync = await api('POST', '/api/sync', {}, token);
+  check(badSync.json.problems?.length >= 1, 'sync reports a missing picture path');
+  writeBankFiles(smokeSprint, smokeMemory, smokeClimax);
+
+  for (const q of inbox.json) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
+  const afterApprove = await api('POST', '/api/sync', {}, token);
+  check(afterApprove.json.unchanged === 10 && afterApprove.json.reviewCount === 0, 'unchanged approved questions stay out of the inbox');
+
+  const pileQs = await api('GET', '/api/pile/questions', undefined, token);
+  check(pileQs.json.length === 10, 'pile questions lists every approved question');
+  const sprintPile = await api('GET', '/api/pile/questions?bank=sprint', undefined, token);
+  check(sprintPile.json.length === 2 && sprintPile.json.every((q: any) => q.bank === 'sprint'), 'pile questions can filter by bank');
+
+  // Content change → back to inbox; approve updates in place.
+  writeBankFiles([{ ...smokeSprint[0], prompt: 'Capitale de la France ?' }, smokeSprint[1]], smokeMemory, smokeClimax);
+  const changed = await api('POST', '/api/sync', {}, token);
+  check(changed.json.updated === 1 && changed.json.reviewCount === 1, 'fingerprint change returns a question to review');
+  const changedInbox = await api('GET', '/api/inbox', undefined, token);
+  check(changedInbox.json[0].prompt === 'Capitale de la France ?', 'inbox shows the updated prompt');
+  const changedId = changedInbox.json[0].id;
+  await api('PATCH', `/api/questions/${changedId}`, { status: 'approved' }, token);
+
+  // Missing from JSON → rejected.
+  writeBankFiles([smokeSprint[0], smokeSprint[1]], smokeMemory, [smokeClimax[0]]);
+  const removed = await api('POST', '/api/sync', {}, token);
+  check(removed.json.rejected === 1, 'questions removed from JSON are rejected');
+  // Restore full climax for the game night.
+  writeBankFiles([{ ...smokeSprint[0], prompt: 'Capitale de la France ?' }, smokeSprint[1]], smokeMemory, smokeClimax);
+  const restored = await api('POST', '/api/sync', {}, token);
+  check(restored.json.added === 1 || restored.json.updated >= 1, 'restored climax question returns for review');
+  const restoreInbox = await api('GET', '/api/inbox', undefined, token);
+  for (const q of restoreInbox.json) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
 
   console.log('\nRoom');
   const tv = new Client('tv');
@@ -315,7 +358,21 @@ try {
   await host.cmd({ t: 'climax.lockBets' });
   await players.ann.cmd({ t: 'bet', amount: 10 });
   check(players.ann.errors.length > 0 && host.state!.climax.bets[players.ann.playerId!] === 6, 'bets cannot change after the lock');
-  check(!!tv.state!.climax.question?.prompt && tv.state!.climax.question?.answer === undefined, 'question revealed on TV, answer still hidden');
+  check(host.state!.climax.status === 'answering', 'locking bets opens the answer window');
+  check(!!tv.state!.climax.question?.prompt && !!players.ann.state!.climax.question?.prompt, 'question shown on TV and phones while answering');
+  check(tv.state!.climax.question?.answer === undefined, 'official answer still hidden during typing');
+  check(tv.state!.climax.submissions.length === 0, 'TV does not show answers before the timer ends');
+  await players.ann.cmd({ t: 'answer', text: 'Deux' });
+  await players.bob.cmd({ t: 'answer', text: 'Quatre' });
+  check(players.ann.state!.climax.myAnswer === 'Deux', 'phone keeps the typed answer');
+  await host.cmd({ t: 'climax.lockAnswers' });
+  check(host.state!.climax.status === 'asking', 'locking answers moves to judging');
+  check(tv.state!.climax.submissions.length === 2, 'TV shows every bettor name + answer');
+  check(
+    tv.state!.climax.submissions.some((s) => s.name === 'Ann' && s.text === 'Deux' && s.wager === 6) &&
+      tv.state!.climax.submissions.some((s) => s.name === 'Bob' && s.text === 'Quatre' && s.wager === 4),
+    'submissions include Ann and Bob answers with wagers',
+  );
   await host.cmd({ t: 'climax.judge', playerId: players.ann.playerId!, correct: true });
   check(scoreOf('ann') === 10 + 2 * 6, 'correct answer triples the wager (10 -> 22)');
   check(host.state!.climax.status === 'asking', 'round stays open until everybody is judged');

@@ -1,0 +1,173 @@
+{
+  "title": "Soirée — sprint & finale (v1)",
+  "sprint": [
+    {
+      "theme": "Québec (photos)",
+      "questions": [
+        {
+          "prompt": "Quel bâtiment emblématique de Québec est sur cette photo ?",
+          "answer": "Le Château Frontenac",
+          "difficulty": "easy",
+          "image": "quebec/chateau-frontenac.jpg"
+        },
+        {
+          "prompt": "D'où vient ce plat québécois (restaurant exact)?",
+          "answer": "Ma poule mouillée",
+          "difficulty": "easy",
+          "image": "quebec/poutine.jpg"
+        },
+        {
+          "prompt": "Qui est cette chanteuse française ?",
+          "answer": "Céline Dion",
+          "difficulty": "easy",
+          "image": "quebec/celine-dion.jpg"
+        },
+        {
+          "prompt": "Quel animal voit-on ici (nom français) ?",
+          "answer": "Un orignal",
+          "difficulty": "medium",
+          "image": "quebec/orignal.jpg",
+          "notes": "Accepte aussi « élan »."
+        },
+        {
+          "prompt": "De quelle province est ce drapeau ?",
+          "answer": "Le Québec",
+          "difficulty": "easy",
+          "image": "quebec/drapeau-quebec.png"
+        }
+      ]
+    },
+    {
+      "theme": "Québec",
+      "questions": [
+        {
+          "prompt": "Comment s'apelle la région administrative de Québec ?",
+          "answer": "Capitale-Nationale",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "En quelle année le Québec a-t-il tenu son dernier référendum sur la souveraineté ?",
+          "answer": "1995",
+          "difficulty": "medium"
+        },
+        {
+          "prompt": "Quel est le nom de la fête nationale du Québec ?",
+          "answer": "La Saint-Jean-Baptiste",
+          "difficulty": "easy",
+          "notes": "Sans Baptiste, ce sera refusé."
+        },
+        {
+          "prompt": "Depuis quand, attendons-nous un Québec libre ?",
+          "answer": "1967",
+          "difficulty": "medium",
+          "notes": "Discours de De Gaulle à l'expo universelle"
+        },
+        {
+          "prompt": "Combien de requêtes ont été reçues, par la ville de Montréal, pour combler des nids de poule en 2026 ?",
+          "answer": "13667",
+          "difficulty": "hard",
+          "notes": "Accepter à 500 près. (1 janvier au 1 mai)"
+        }
+      ]
+    },
+    {
+      "theme": "Pub quiz",
+      "questions": [
+        {
+          "prompt": "Combien de provinces compte le Canada ?",
+          "answer": "Dix",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Quel océan borde la côte ouest du Canada ?",
+          "answer": "L'océan Pacifique",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Quel élément chimique a pour symbole Au ?",
+          "answer": "L'or",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Qui a peint « La Nuit étoilée » ?",
+          "answer": "Vincent van Gogh",
+          "difficulty": "medium"
+        },
+        {
+          "prompt": "Dans quel pays se trouve le Machu Picchu ?",
+          "answer": "Au Pérou",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Quel romancier a écrit « La Chute » ?",
+          "answer": "Albert Camus",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    {
+      "theme": "Participants",
+      "questions": [
+        {
+          "prompt": "Qui a le plus de temps d'écran aujourd'hui ?",
+          "answer": "Sortez vos téléphones",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Qui en parlera dans son livre ?",
+          "answer": "Baptiste",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Qui vit depuis le plus longtemps à Montréal ?",
+          "answer": "Nino",
+          "difficulty": "medium"
+        },
+        {
+          "prompt": "Qui est actionnaire majoritaire d'Iconoglace ?",
+          "answer": "Guilhem",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Qui est encore à l'école ?",
+          "answer": "Laurence",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Qu'est ce qui se trouve en plus grande quantité, le nombre de mois dans l'année ou le nombre de pages lues par Thibault en 2026 ?",
+          "answer": "Le nombre de mois dans l'année",
+          "difficulty": "easy",
+          "notes": "12 mois vs 10 pages"
+        }
+      ]
+    }
+  ],
+  "memory": [],
+  "climax": [
+    {
+      "theme": "Finale",
+      "questions": [
+        {
+          "prompt": "Combien y a-t-il de fleurs de lys sur le drapeau du Québec ?",
+          "answer": "Quatre",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "En quelle année Montréal a-t-elle accueilli l'Exposition universelle ?",
+          "answer": "1967",
+          "difficulty": "easy"
+        },
+        {
+          "prompt": "Quel détroit sépare le Labrador / Québec de l'île de Terre-Neuve au nord du golfe ?",
+          "answer": "Le détroit de Belle-Isle",
+          "difficulty": "hard"
+        },
+        {
+          "prompt": "Citez les quatre classes de sirop d'érable.",
+          "answer": "Doré, ambré, foncé, très foncé",
+          "difficulty": "medium"
+        }
+      ]
+    }
+  ]
+}

@@ -1,146 +1,56 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { asc, eq } from 'drizzle-orm';
 import { db, schema } from './db';
 import type {
-  DraftFile,
-  PackDetail,
-  PackStatus,
-  PackSummary,
+  Bank,
+  BankDraftQuestion,
   PileSummary,
   QuestionDto,
   QuestionStatus,
+  SyncResult,
 } from '../shared/types';
 import { BANKS } from '../shared/types';
+import { DraftError, fingerprint, parseBankDraft } from './draft';
 import { NIGHT_SIZE } from './draw';
 import type { QuestionRec } from './game';
 
-const { packs, themes, questions } = schema;
+/** Bank draft files live here: sprint.json, memory.json, climax.json */
+export const DRAFTS_DIR = path.resolve(process.env.DRAFTS_DIR ?? 'drafts');
 
-type Row = QuestionDto & { packId: number };
+const { questions } = schema;
 
-function summarise(pack: typeof packs.$inferSelect, rows: Row[]): PackSummary {
-  const counts = {} as PackSummary['counts'];
-  for (const b of BANKS) counts[b] = { draft: 0, approved: 0, rejected: 0 };
-  for (const q of rows) counts[q.bank][q.status] += 1;
-  return { id: pack.id, title: pack.title, status: pack.status, createdAt: pack.createdAt, counts };
-}
-
-function questionRows(packId?: number): Row[] {
-  const base = db
-    .select({ q: questions, t: themes })
-    .from(questions)
-    .innerJoin(themes, eq(questions.themeId, themes.id));
-  const rows = (packId === undefined ? base : base.where(eq(themes.packId, packId)))
-    .orderBy(asc(themes.sortOrder), asc(questions.id))
-    .all();
-  return rows.map(({ q, t }) => ({
-    id: q.id,
-    packId: t.packId,
-    themeId: t.id,
-    bank: t.bank,
-    theme: t.label,
-    contributor: t.contributorName,
-    prompt: q.prompt,
-    answer: q.answer,
-    notes: q.notes,
-    difficulty: q.difficulty,
-    status: q.status,
-    source: q.source,
-    image: q.image,
-  }));
-}
-
-export function listPacks(): PackSummary[] {
-  const allPacks = db.select().from(packs).orderBy(asc(packs.id)).all();
-  const all = questionRows();
-  return allPacks
-    .map((p) =>
-      summarise(
-        p,
-        all.filter((q) => q.packId === p.id),
-      ),
-    )
-    .reverse(); // newest first
-}
-
-export function getPack(id: number): PackDetail | null {
-  const pack = db.select().from(packs).where(eq(packs.id, id)).get();
-  if (!pack) return null;
-  const rows = questionRows(id);
+function toDto(row: typeof questions.$inferSelect): QuestionDto {
   return {
-    ...summarise(pack, rows),
-    questions: rows.map(({ packId: _packId, ...q }) => q),
+    id: row.id,
+    sourceId: row.sourceId,
+    bank: row.bank,
+    theme: row.theme,
+    contributor: row.contributor,
+    prompt: row.prompt,
+    answer: row.answer,
+    notes: row.notes,
+    difficulty: row.difficulty,
+    status: row.status,
+    image: row.image,
   };
 }
 
-export function importDraft(draft: DraftFile): number {
-  return db.transaction((tx) => {
-    const pack = tx
-      .insert(packs)
-      .values({ title: draft.title, createdAt: Date.now(), status: 'draft' })
-      .returning()
-      .get();
-    let sort = 0;
-    for (const bank of BANKS) {
-      for (const group of draft[bank]) {
-        const theme = tx
-          .insert(themes)
-          .values({
-            packId: pack.id,
-            bank,
-            label: group.theme,
-            contributorName: group.contributor ?? null,
-            sortOrder: sort++,
-          })
-          .returning()
-          .get();
-        for (const q of group.questions) {
-          tx.insert(questions)
-            .values({
-              themeId: theme.id,
-              prompt: q.prompt,
-              answer: q.answer,
-              notes: q.notes ?? null,
-              difficulty: q.difficulty,
-              status: 'draft',
-              source: 'llm',
-              image: q.image ?? null,
-              createdAt: Date.now(),
-            })
-            .run();
-        }
-      }
-    }
-    return pack.id;
-  });
+function allRows(): QuestionDto[] {
+  return db
+    .select()
+    .from(questions)
+    .orderBy(asc(questions.bank), asc(questions.id))
+    .all()
+    .map(toDto);
 }
 
 export function setQuestionStatus(id: number, status: QuestionStatus): boolean {
   return db.update(questions).set({ status }).where(eq(questions.id, id)).run().changes > 0;
 }
 
-export function deletePack(id: number): boolean {
-  return db.delete(packs).where(eq(packs.id, id)).run().changes > 0;
-}
-
-export type ReadyResult = { ok: true } | { ok: false; message: string };
-
-/** A pack can be played once every bank has at least one approved question. */
-export function setPackStatus(id: number, status: PackStatus): ReadyResult {
-  const pack = getPack(id);
-  if (!pack) return { ok: false, message: 'Import introuvable.' };
-  if (status === 'ready') {
-    const missing = BANKS.filter((b) => pack.counts[b].approved === 0);
-    if (missing.length > 0) {
-      return { ok: false, message: `Valide au moins une question dans : ${missing.join(', ')}.` };
-    }
-  }
-  db.update(packs).set({ status }).where(eq(packs.id, id)).run();
-  return { ok: true };
-}
-
-/** Every approved question, from every import. That is the pile a night is drawn from. */
 export function approvedQuestions(): QuestionRec[] {
-  return questionRows()
+  return allRows()
     .filter((q) => q.status === 'approved')
     .map((q) => ({
       id: q.id,
@@ -157,7 +67,13 @@ export function approvedQuestions(): QuestionRec[] {
 
 export function pileSummary(): PileSummary {
   const approved = { sprint: 0, memory: 0, climax: 0 };
-  for (const q of questionRows()) if (q.status === 'approved') approved[q.bank] += 1;
+  let draft = 0;
+  let rejected = 0;
+  for (const q of allRows()) {
+    if (q.status === 'approved') approved[q.bank] += 1;
+    else if (q.status === 'draft') draft += 1;
+    else if (q.status === 'rejected') rejected += 1;
+  }
   return {
     approved,
     tonight: {
@@ -165,13 +81,132 @@ export function pileSummary(): PileSummary {
       memory: Math.min(NIGHT_SIZE.memory, approved.memory),
       climax: Math.min(NIGHT_SIZE.climax, approved.climax),
     },
+    draft,
+    rejected,
   };
 }
 
-export function getPackTitle(id: number): string | null {
-  return db.select().from(packs).where(eq(packs.id, id)).get()?.title ?? null;
+export function pileQuestions(bank?: Bank): QuestionDto[] {
+  return allRows().filter((q) => q.status === 'approved' && (!bank || q.bank === bank));
 }
 
-export function isPackReady(id: number): boolean {
-  return db.select().from(packs).where(eq(packs.id, id)).get()?.status === 'ready';
+export function draftQuestions(): QuestionDto[] {
+  return allRows().filter((q) => q.status === 'draft');
+}
+
+function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 'unchanged' {
+  const existing = db.select().from(questions).where(eq(questions.sourceId, q.id)).get();
+  const fp = fingerprint(q.prompt, q.answer, q.difficulty);
+  const fields = {
+    bank,
+    theme: q.theme,
+    contributor: q.contributor ?? null,
+    prompt: q.prompt,
+    answer: q.answer,
+    notes: q.notes ?? null,
+    difficulty: q.difficulty,
+    image: q.image ?? null,
+  };
+
+  if (!existing) {
+    db.insert(questions)
+      .values({
+        sourceId: q.id,
+        ...fields,
+        status: 'draft',
+        createdAt: Date.now(),
+      })
+      .run();
+    return 'added';
+  }
+
+  const same = fingerprint(existing.prompt, existing.answer, existing.difficulty) === fp;
+  // Re-adding a rejected id (even with the same text) puts it back in the inbox.
+  if (same && existing.status !== 'rejected') {
+    db.update(questions)
+      .set({
+        theme: fields.theme,
+        contributor: fields.contributor,
+        notes: fields.notes,
+        image: fields.image,
+        bank: fields.bank,
+      })
+      .where(eq(questions.id, existing.id))
+      .run();
+    return 'unchanged';
+  }
+
+  db.update(questions)
+    .set({
+      ...fields,
+      status: 'draft',
+    })
+    .where(eq(questions.id, existing.id))
+    .run();
+  return 'updated';
+}
+
+/**
+ * Diff drafts/{sprint,memory,climax}.json against the DB.
+ * New / fingerprint-changed → draft (inbox). Missing from file → rejected.
+ */
+export function syncDraftsFromDisk(): SyncResult {
+  const result: SyncResult = {
+    added: 0,
+    updated: 0,
+    rejected: 0,
+    unchanged: 0,
+    reviewCount: 0,
+    problems: [],
+  };
+
+  if (!fs.existsSync(DRAFTS_DIR)) fs.mkdirSync(DRAFTS_DIR, { recursive: true });
+
+  const seenIds = new Set<string>();
+
+  for (const bank of BANKS) {
+    const file = `${bank}.json`;
+    const full = path.join(DRAFTS_DIR, file);
+    if (!fs.existsSync(full)) {
+      result.problems.push({ file, problems: ['Fichier manquant.'] });
+      continue;
+    }
+    let raw: unknown;
+    try {
+      raw = JSON.parse(fs.readFileSync(full, 'utf8'));
+    } catch (err) {
+      result.problems.push({ file, problems: [`JSON invalide : ${(err as Error).message}`] });
+      continue;
+    }
+    let draft;
+    try {
+      draft = parseBankDraft(bank, raw);
+    } catch (err) {
+      if (err instanceof DraftError) result.problems.push({ file, problems: err.problems });
+      else result.problems.push({ file, problems: [(err as Error).message] });
+      continue;
+    }
+
+    for (const q of draft.questions) {
+      seenIds.add(q.id);
+      const kind = applyDraftRow(bank, q);
+      result[kind] += 1;
+    }
+  }
+
+  // Approved/draft rows whose source_id vanished from JSON → rejected.
+  for (const row of db.select().from(questions).all()) {
+    if (!seenIds.has(row.sourceId) && row.status !== 'rejected') {
+      db.update(questions).set({ status: 'rejected' }).where(eq(questions.id, row.id)).run();
+      result.rejected += 1;
+    }
+  }
+
+  result.reviewCount = draftQuestions().length;
+  return result;
+}
+
+/** @deprecated kept name for room imports */
+export function getPackTitle(_id: number): string | null {
+  return 'Ce soir';
 }

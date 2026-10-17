@@ -34,7 +34,7 @@ export interface QuestionView {
   difficulty: Difficulty;
   points: number;
   prompt: string;
-  /** Sprint picture, TV and host only. Phones never receive it. */
+  /** Sprint/climax picture, TV and host only. Phones never receive it. */
   image?: string;
   /** Only sent to /host, or to /tv once the question is resolved. */
   answer?: string;
@@ -78,7 +78,7 @@ export interface MemoryView {
   remaining: number;
 }
 
-export type ClimaxStatus = 'idle' | 'announce' | 'betting' | 'asking' | 'resolved';
+export type ClimaxStatus = 'idle' | 'announce' | 'betting' | 'answering' | 'asking' | 'resolved';
 
 export interface ClimaxCandidate {
   id: number;
@@ -94,12 +94,24 @@ export interface ClimaxResult {
   correct: boolean;
 }
 
+/** Locked player submissions shown on TV/host after the answer timer. */
+export interface ClimaxSubmission {
+  playerId: string;
+  name: string;
+  text: string;
+  /** Points wagered — safe to show after lock (not during betting). */
+  wager: number;
+}
+
 export interface ClimaxView {
   status: ClimaxStatus;
   /** Theme + difficulty are announced before the question is revealed. */
   theme: string | null;
   difficulty: Difficulty | null;
-  /** Revealed from `asking` onwards (always visible to the host). */
+  /**
+   * Host: always once picked.
+   * TV/play: from answering onwards (prompt only for play; official answer only when resolved).
+   */
   question: QuestionView | null;
   /** /host only: questions that can still be picked. */
   candidates: ClimaxCandidate[];
@@ -109,6 +121,12 @@ export interface ClimaxView {
   pendingJudge: string[];
   /** /play only: your own current bet. */
   myBet: number | null;
+  /** /play only: your typed answer while answering (and after lock). */
+  myAnswer: string | null;
+  /** When status is answering: wall-clock end of the typing window. */
+  answerUntil: number | null;
+  /** TV + host after lock: every bettor's name + answer + wager. */
+  submissions: ClimaxSubmission[];
   results: ClimaxResult[];
 }
 
@@ -149,6 +167,8 @@ export type GameEventType =
   | 'climax.bet'
   | 'climax.betting_locked'
   | 'climax.revealed'
+  | 'climax.answer'
+  | 'climax.answers_locked'
   | 'climax.judged'
   | 'climax.resolved'
   | 'score.updated';
@@ -165,19 +185,10 @@ export interface GameEvent {
 // ---------------------------------------------------------------------------
 
 export type QuestionStatus = 'draft' | 'approved' | 'rejected';
-export type PackStatus = 'draft' | 'ready';
-
-export interface PackSummary {
-  id: number;
-  title: string;
-  status: PackStatus;
-  createdAt: number;
-  counts: Record<Bank, { draft: number; approved: number; rejected: number }>;
-}
 
 export interface QuestionDto {
   id: number;
-  themeId: number;
+  sourceId: string;
   bank: Bank;
   theme: string;
   contributor: string | null;
@@ -186,40 +197,39 @@ export interface QuestionDto {
   notes: string | null;
   difficulty: Difficulty;
   status: QuestionStatus;
-  source: 'llm' | 'manual';
-  /** Path relative to the pictures folder, sprint questions only. */
+  /** Path relative to the pictures folder. Sprint and climax. */
   image: string | null;
 }
 
-export interface PackDetail extends PackSummary {
-  questions: QuestionDto[];
-}
-
-/** JSON draft file format, written by the Cursor agent and imported in /prep. */
-export interface DraftQuestion {
+/** One question in drafts/{bank}.json */
+export interface BankDraftQuestion {
+  id: string;
+  theme: string;
   prompt: string;
   answer: string;
   difficulty: Difficulty;
   notes?: string;
-  /** Sprint only. Path relative to the pictures folder, e.g. "friends/corentin.jpg". */
   image?: string;
+  contributor?: string;
 }
 
-/** Approved questions waiting in the pile, and how many a night will draw. */
+export interface BankDraftFile {
+  questions: BankDraftQuestion[];
+}
+
 export interface PileSummary {
   approved: Record<Bank, number>;
   tonight: Record<Bank, number>;
+  /** Waiting for swipe (new or content-changed). */
+  draft: number;
+  rejected: number;
 }
 
-export interface DraftGroup {
-  theme: string;
-  contributor?: string;
-  questions: DraftQuestion[];
-}
-
-export interface DraftFile {
-  title: string;
-  sprint: DraftGroup[];
-  memory: DraftGroup[];
-  climax: DraftGroup[];
+export interface SyncResult {
+  added: number;
+  updated: number;
+  rejected: number;
+  unchanged: number;
+  reviewCount: number;
+  problems: { file: string; problems: string[] }[];
 }

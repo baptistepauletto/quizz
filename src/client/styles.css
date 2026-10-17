@@ -646,6 +646,15 @@ input[type='range'] {
   border-radius: 8px;
   background: #140e22;
 }
+.tv-photo {
+  width: min(70vw, 520px);
+  max-height: 28vh;
+  object-fit: contain;
+  border-radius: 12px;
+  margin: 0.5rem auto;
+  display: block;
+  background: #140e22;
+}
 .tv-answer {
   font-size: 2.2em;
   font-weight: 800;

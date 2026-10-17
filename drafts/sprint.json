@@ -1,0 +1,333 @@
+{
+  "questions": [
+    {
+      "id": "s_001",
+      "theme": "Musique",
+      "prompt": "Quel album est-ce ?",
+      "answer": "21 (Adele)",
+      "difficulty": "easy",
+      "image": "music/adele-21.jpg"
+    },
+    {
+      "id": "s_002",
+      "theme": "Musique",
+      "prompt": "Quel album est-ce ?",
+      "answer": "Born to Die (Lana Del Rey)",
+      "difficulty": "easy",
+      "image": "music/lana-born-to-die.jpg"
+    },
+    {
+      "id": "s_003",
+      "theme": "Les rigolos",
+      "prompt": "Qui est ce rigolo ?",
+      "answer": "Baptiste",
+      "difficulty": "easy",
+      "image": "people/baptiste-aventure.jpg"
+    },
+    {
+      "id": "s_004",
+      "theme": "Les rigolos",
+      "prompt": "Qui ça peut bien être ?",
+      "answer": "Corentin",
+      "difficulty": "easy",
+      "image": "people/corentin-aventure.jpg"
+    },
+    {
+      "id": "s_005",
+      "theme": "Les rigolos",
+      "prompt": "Qui est ce super beau gosse ?",
+      "answer": "Guilhem",
+      "difficulty": "easy",
+      "image": "people/guilhem-aventure.jpg"
+    },
+    {
+      "id": "s_006",
+      "theme": "Les rigolos",
+      "prompt": "Qui est cet aventurier ?",
+      "answer": "Thibault",
+      "difficulty": "easy",
+      "image": "people/thibault-aventure.jpg"
+    },
+    {
+      "id": "s_007",
+      "theme": "Les rigolos",
+      "prompt": "Qui ça peut bien être ?",
+      "answer": "Laurence",
+      "difficulty": "easy",
+      "image": "people/laurence-niveau.jpg"
+    },
+    {
+      "id": "s_008",
+      "theme": "Les rigolos",
+      "prompt": "Qui est ce peintre ?",
+      "answer": "Adolf Hitler",
+      "difficulty": "easy",
+      "image": "people/adolf.jpg"
+    },
+    {
+      "id": "s_009",
+      "theme": "Lieux & maisons",
+      "prompt": "Combien a couté cette résidence ?",
+      "answer": "515000 CAD",
+      "difficulty": "medium",
+      "image": "houses/maison-hugo.jpg"
+    },
+    {
+      "id": "s_010",
+      "theme": "Lieux & maisons",
+      "prompt": "Où a été prise cette picture ?",
+      "answer": "Citrouilleville",
+      "difficulty": "medium",
+      "image": "places/citrouilleville.jpg"
+    },
+    {
+      "id": "s_011",
+      "theme": "Anatomie",
+      "prompt": "Comment s'appelle cette partie du corps ?",
+      "answer": "Les fossettes sacro-iliaques",
+      "difficulty": "hard",
+      "image": "muscles/fossettes-sacro.jpg"
+    },
+    {
+      "id": "s_012",
+      "theme": "Anatomie",
+      "prompt": "Quel groupe musculaire est-ce ?",
+      "answer": "Les ischio-jambiers",
+      "difficulty": "medium",
+      "image": "muscles/ischio-jambier.jpg"
+    },
+    {
+      "id": "s_013",
+      "theme": "Divers",
+      "prompt": "Qui est ce super beau gosse ?",
+      "answer": "Un rat",
+      "difficulty": "easy",
+      "image": "animal/rat.jpg"
+    },
+    {
+      "id": "s_014",
+      "theme": "Divers",
+      "prompt": "De quelle référence s'agit-il ?",
+      "answer": "Willy Waller",
+      "difficulty": "medium",
+      "image": "random/willy-waller.jpg"
+    },
+    {
+      "id": "s_015",
+      "theme": "AI mashup",
+      "prompt": "Quel est ce tableau et quel est le nom de la personnalité?",
+      "answer": "Carney et Napoléon franchissant les Alpes, Delacroix",
+      "difficulty": "hard",
+      "image": "ai-mashup/carney-napoleon.jpg"
+    },
+    {
+      "id": "s_016",
+      "theme": "AI mashup",
+      "prompt": "Où est ce tableau et quels sont les noms des personnalités?",
+      "answer": "Hugo et Anaïs, plafond de la chappelle Sixtine, Michel-Ange",
+      "difficulty": "medium",
+      "image": "ai-mashup/hugo-anais-plafond.jpg"
+    },
+    {
+      "id": "s_017",
+      "theme": "AI mashup",
+      "prompt": "A qui sommes nous tous mariés ?",
+      "answer": "Revenu Québec",
+      "difficulty": "medium",
+      "image": "ai-mashup/mariage-revenu-quebec.jpg"
+    },
+    {
+      "id": "s_018",
+      "theme": "AI mashup",
+      "prompt": "Quel est ce chat et quel est le nom de la personnalité?",
+      "answer": "Nino et La jeune fille à la perle, Vermeer",
+      "difficulty": "medium",
+      "image": "ai-mashup/nino-perle.jpg"
+    },
+    {
+      "id": "s_019",
+      "theme": "Québec (photos)",
+      "prompt": "Quel bâtiment emblématique de Québec est sur cette photo ?",
+      "answer": "Le Château Frontenac",
+      "difficulty": "easy",
+      "image": "quebec/chateau-frontenac.jpg"
+    },
+    {
+      "id": "s_020",
+      "theme": "Québec (photos)",
+      "prompt": "D'où vient ce plat québécois (restaurant exact)?",
+      "answer": "Ma poule mouillée",
+      "difficulty": "easy",
+      "image": "quebec/poutine.jpg"
+    },
+    {
+      "id": "s_021",
+      "theme": "Québec (photos)",
+      "prompt": "Qui est cette chanteuse française ?",
+      "answer": "Céline Dion",
+      "difficulty": "easy",
+      "image": "quebec/celine-dion.jpg"
+    },
+    {
+      "id": "s_022",
+      "theme": "Québec (photos)",
+      "prompt": "Quel animal voit-on ici (nom français) ?",
+      "answer": "Un orignal",
+      "difficulty": "medium",
+      "notes": "Accepte aussi « élan ».",
+      "image": "quebec/orignal.jpg"
+    },
+    {
+      "id": "s_023",
+      "theme": "Québec (photos)",
+      "prompt": "De quelle province est ce drapeau ?",
+      "answer": "Le Québec",
+      "difficulty": "easy",
+      "image": "quebec/drapeau-quebec.png"
+    },
+    {
+      "id": "s_024",
+      "theme": "Québec",
+      "prompt": "Comment s'apelle la région administrative de Québec ?",
+      "answer": "Capitale-Nationale",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_025",
+      "theme": "Québec",
+      "prompt": "En quelle année le Québec a-t-il tenu son dernier référendum sur la souveraineté ?",
+      "answer": "1995",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_026",
+      "theme": "Québec",
+      "prompt": "Quel est le nom de la fête nationale du Québec ?",
+      "answer": "La Saint-Jean-Baptiste",
+      "difficulty": "easy",
+      "notes": "Sans Baptiste, ce sera refusé."
+    },
+    {
+      "id": "s_027",
+      "theme": "Québec",
+      "prompt": "Depuis quand, attendons-nous un Québec libre ?",
+      "answer": "1967",
+      "difficulty": "medium",
+      "notes": "Discours de De Gaulle à l'expo universelle"
+    },
+    {
+      "id": "s_028",
+      "theme": "Québec",
+      "prompt": "Combien de requêtes ont été reçues, par la ville de Montréal, pour combler des nids de poule en 2026 ?",
+      "answer": "13667",
+      "difficulty": "hard",
+      "notes": "Accepter à 500 près. (1 janvier au 1 mai)"
+    },
+    {
+      "id": "s_029",
+      "theme": "Pub quiz",
+      "prompt": "Combien de provinces compte le Canada ?",
+      "answer": "Dix",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_030",
+      "theme": "Pub quiz",
+      "prompt": "Quel océan borde la côte ouest du Canada ?",
+      "answer": "L'océan Pacifique",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_031",
+      "theme": "Pub quiz",
+      "prompt": "Quel élément chimique a pour symbole Au ?",
+      "answer": "L'or",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_032",
+      "theme": "Pub quiz",
+      "prompt": "Qui a peint « La Nuit étoilée » ?",
+      "answer": "Vincent van Gogh",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_033",
+      "theme": "Pub quiz",
+      "prompt": "Dans quel pays se trouve le Machu Picchu ?",
+      "answer": "Au Pérou",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_034",
+      "theme": "Pub quiz",
+      "prompt": "Quel romancier a écrit « La Chute » ?",
+      "answer": "Albert Camus",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_035",
+      "theme": "Participants",
+      "prompt": "Qui a le plus de temps d'écran aujourd'hui ?",
+      "answer": "Sortez vos téléphones",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_036",
+      "theme": "Participants",
+      "prompt": "Qui en parlera dans son livre ?",
+      "answer": "Baptiste",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_037",
+      "theme": "Participants",
+      "prompt": "Qui vit depuis le plus longtemps à Montréal ?",
+      "answer": "Nino",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_038",
+      "theme": "Participants",
+      "prompt": "Qui est actionnaire majoritaire d'Iconoglace ?",
+      "answer": "Guilhem",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_039",
+      "theme": "Participants",
+      "prompt": "Qui est encore à l'école ?",
+      "answer": "Laurence",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_040",
+      "theme": "Participants",
+      "prompt": "Qu'est ce qui se trouve en plus grande quantité, le nombre de mois dans l'année ou le nombre de pages lues par Thibault en 2026 ?",
+      "answer": "Le nombre de mois dans l'année",
+      "difficulty": "easy",
+      "notes": "12 mois vs 10 pages"
+    },
+    {
+      "id": "s_041",
+      "theme": "Culture générale",
+      "prompt": "Quelle est la capitale de l'Australie ?",
+      "answer": "Canberra",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_042",
+      "theme": "Culture générale",
+      "prompt": "Quel élément a pour symbole chimique Fe ?",
+      "answer": "Le fer",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_043",
+      "theme": "Culture générale",
+      "prompt": "Quel est le plus petit nombre premier supérieur à 50 ?",
+      "answer": "53",
+      "difficulty": "hard"
+    }
+  ]
+}

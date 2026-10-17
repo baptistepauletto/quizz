@@ -9,7 +9,10 @@ export type HelloMessage =
   | { t: 'hello'; role: 'host'; token: string }
   | { t: 'hello'; role: 'play'; code: string; name: string; playerId?: string };
 
-export type PlayerMessage = { t: 'buzz' } | { t: 'bet'; amount: number };
+export type PlayerMessage =
+  | { t: 'buzz' }
+  | { t: 'bet'; amount: number }
+  | { t: 'answer'; text: string };
 
 /** Everything the host can do. Players can never send these. */
 export type HostCommand =
@@ -33,6 +36,7 @@ export type HostCommand =
   | { t: 'climax.pick'; questionId: number }
   | { t: 'climax.openBetting' }
   | { t: 'climax.lockBets' }
+  | { t: 'climax.lockAnswers' }
   | { t: 'climax.judge'; playerId: string; correct: boolean }
   | { t: 'climax.reset' };
 
