@@ -949,6 +949,43 @@ input[type='range'] {
   letter-spacing: 0.08em;
   line-height: 1;
 }
+.q-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: min(100%, 36rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  text-align: left;
+}
+.q-options li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  background: color-mix(in srgb, var(--indigo) 8%, transparent);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-size: 1.05em;
+  line-height: 1.25;
+}
+.modal-card .q-options li {
+  background: color-mix(in srgb, var(--indigo) 10%, var(--ivory));
+  color: var(--ink);
+  font-size: clamp(1rem, 2.2vw, 1.45rem);
+}
+.q-options li.correct {
+  outline: 2px solid var(--ok);
+}
+.q-opt-letter {
+  flex-shrink: 0;
+  font-weight: 800;
+  min-width: 1.4em;
+  color: var(--spot);
+}
+.modal-card .q-opt-letter {
+  color: var(--indigo);
+}
 .turn-banner {
   text-align: center;
   font-size: 1.8em;

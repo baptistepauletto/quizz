@@ -11,7 +11,7 @@ import type {
   SyncResult,
 } from '../shared/types';
 import { BANKS } from '../shared/types';
-import { DraftError, fingerprint, parseBankDraft } from './draft';
+import { DraftError, fingerprint, parseBankDraft, parseOptions, serializeOptions } from './draft';
 import { NIGHT_SIZE } from './draw';
 import type { QuestionRec } from './game';
 
@@ -33,6 +33,7 @@ function toDto(row: typeof questions.$inferSelect): QuestionDto {
     difficulty: row.difficulty,
     status: row.status,
     image: row.image,
+    options: parseOptions(row.options),
   };
 }
 
@@ -62,6 +63,7 @@ export function approvedQuestions(): QuestionRec[] {
       answer: q.answer,
       notes: q.notes,
       image: q.image,
+      options: q.options,
     }));
 }
 
@@ -96,7 +98,7 @@ export function draftQuestions(): QuestionDto[] {
 
 function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 'unchanged' {
   const existing = db.select().from(questions).where(eq(questions.sourceId, q.id)).get();
-  const fp = fingerprint(q.prompt, q.answer, q.difficulty);
+  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options);
   const fields = {
     bank,
     theme: q.theme,
@@ -106,6 +108,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     notes: q.notes ?? null,
     difficulty: q.difficulty,
     image: q.image ?? null,
+    options: serializeOptions(q.options),
   };
 
   if (!existing) {
@@ -120,7 +123,8 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     return 'added';
   }
 
-  const same = fingerprint(existing.prompt, existing.answer, existing.difficulty) === fp;
+  const same =
+    fingerprint(existing.prompt, existing.answer, existing.difficulty, parseOptions(existing.options)) === fp;
   // Re-adding a rejected id (even with the same text) puts it back in the inbox.
   if (same && existing.status !== 'rejected') {
     db.update(questions)
@@ -129,6 +133,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
         contributor: fields.contributor,
         notes: fields.notes,
         image: fields.image,
+        options: fields.options,
         bank: fields.bank,
       })
       .where(eq(questions.id, existing.id))

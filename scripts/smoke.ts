@@ -34,8 +34,16 @@ const smokeSprint = [
   { id: 's_002', theme: 'General knowledge', prompt: 'Chemical symbol for gold?', answer: 'Au', difficulty: 'hard', image: 'smoke.png' },
 ];
 const smokeMemory = [
-  { id: 'm_001', theme: 'Space', contributor: 'Ann', prompt: 'Biggest planet?', answer: 'Jupiter', difficulty: 'easy' },
-  { id: 'm_002', theme: 'Space', contributor: 'Ann', prompt: 'First on the Moon?', answer: 'Armstrong', difficulty: 'medium' },
+  { id: 'm_001', theme: 'Space', contributor: 'Ann', prompt: 'Biggest planet?', answer: 'Jupiter', difficulty: 'easy', image: 'smoke.png' },
+  {
+    id: 'm_002',
+    theme: 'Space',
+    contributor: 'Ann',
+    prompt: 'First on the Moon?',
+    answer: 'Armstrong',
+    difficulty: 'medium',
+    options: ['Aldrin', 'Armstrong', 'Collins', 'Glenn'],
+  },
   { id: 'm_003', theme: 'Cinema', contributor: 'Bob', prompt: 'Director of Jaws?', answer: 'Spielberg', difficulty: 'medium' },
   { id: 'm_004', theme: 'Cinema', contributor: 'Bob', prompt: 'Best Picture 1994?', answer: 'Forrest Gump', difficulty: 'hard' },
   { id: 'm_005', theme: 'Food', contributor: 'Cy', prompt: 'Main ingredient of guacamole?', answer: 'Avocado', difficulty: 'easy' },
@@ -63,7 +71,18 @@ function sampleQuestion(
   theme: string,
   difficulty: QuestionRec['difficulty'],
 ): QuestionRec {
-  return { id, bank, theme, contributor: null, difficulty, prompt: String(id), answer: 'a', notes: null, image: null };
+  return {
+    id,
+    bank,
+    theme,
+    contributor: null,
+    difficulty,
+    prompt: String(id),
+    answer: 'a',
+    notes: null,
+    image: null,
+    options: null,
+  };
 }
 
 console.log('\nNight draw');
@@ -310,22 +329,64 @@ try {
   await host.cmd({ t: 'memory.hide' });
   check(host.state!.memory.status === 'playing' && host.state!.memory.tiles.every((t) => t.face === 'hidden' && !t.theme), 'tiles flipped face-down, no theme leaked');
   check(!JSON.stringify(tv.state).includes('Jupiter'), 'TV has no answers in its state');
-  const turn1 = host.state!.memory.turnPlayerId!;
-  const coord = host.state!.memory.tiles[2].coord;
-  await host.cmd({ t: 'memory.flip', coord });
-  check(tv.state!.memory.askingCoord === coord && !!tv.state!.memory.asking?.prompt, 'TV shows the asked question in a modal');
-  check(tv.state!.memory.asking?.answer === undefined && !!host.state!.memory.asking?.answer, 'answer stays on /host');
-  await host.cmd({ t: 'memory.flip', coord: host.state!.memory.tiles[0].coord });
-  check(host.errors.length > 0, 'cannot flip a second tile while one is being asked');
-  const pts = host.state!.memory.asking!.points;
-  const before = host.state!.players.find((p) => p.id === turn1)!.score;
-  await host.cmd({ t: 'memory.resolve', correct: true });
-  check(host.state!.players.find((p) => p.id === turn1)!.score === before + pts, `correct answer awards ${pts} points to the player on turn`);
-  check(host.state!.memory.tiles.find((t) => t.coord === coord)!.face === 'consumed', 'tile consumed after a hit');
-  check(host.state!.memory.turnPlayerId !== turn1, 'turn moved to the next player (round-robin)');
-  await host.cmd({ t: 'memory.flip', coord });
+  check(!JSON.stringify(tv.state!.memory.tiles).includes('Armstrong'), 'peek tiles never leak MCQ answers');
+
+  let sawPhoto = false;
+  let sawMcq = false;
+  let scoredCoord: string | null = null;
+  let turn1: string | null = null;
+  while ((!sawPhoto || !sawMcq) && host.state!.memory.tiles.some((x) => x.face === 'hidden')) {
+    const next = host.state!.memory.tiles.find((x) => x.face === 'hidden')!;
+    await host.cmd({ t: 'memory.flip', coord: next.coord });
+    const asking = host.state!.memory.asking!;
+    if (!sawPhoto && asking.image) {
+      check(
+        typeof tv.state!.memory.asking?.image === 'string' && tv.state!.memory.asking!.image!.startsWith('/media/'),
+        'TV shows the memory photo immediately on flip',
+      );
+      check(
+        typeof host.state!.memory.asking?.image === 'string' && host.state!.memory.asking!.image!.startsWith('/media/'),
+        'host sees the memory photo too',
+      );
+      check(tv.state!.memory.askingCoord === next.coord && !!tv.state!.memory.asking?.prompt, 'TV shows the asked question in a modal');
+      check(tv.state!.memory.asking?.answer === undefined && !!host.state!.memory.asking?.answer, 'answer stays on /host');
+      const otherHidden = host.state!.memory.tiles.find((x) => x.face === 'hidden');
+      if (otherHidden) {
+        await host.cmd({ t: 'memory.flip', coord: otherHidden.coord });
+        check(host.errors.length > 0, 'cannot flip a second tile while one is being asked');
+      } else {
+        await host.cmd({ t: 'memory.flip', coord: 'Z9' });
+        check(host.errors.length > 0, 'cannot flip a second tile while one is being asked');
+      }
+      turn1 = host.state!.memory.turnPlayerId!;
+      const pts = host.state!.memory.asking!.points;
+      const before = host.state!.players.find((p) => p.id === turn1)!.score;
+      await host.cmd({ t: 'memory.resolve', correct: true });
+      check(host.state!.players.find((p) => p.id === turn1)!.score === before + pts, `correct answer awards ${pts} points to the player on turn`);
+      check(host.state!.memory.tiles.find((t) => t.coord === next.coord)!.face === 'consumed', 'tile consumed after a hit');
+      check(host.state!.memory.turnPlayerId !== turn1, 'turn moved to the next player (round-robin)');
+      scoredCoord = next.coord;
+      sawPhoto = true;
+      continue;
+    }
+    if (!sawMcq && asking.options?.length === 4) {
+      check(tv.state!.memory.asking?.options?.length === 4, 'TV shows four MCQ options on flip');
+      check(
+        tv.state!.memory.asking?.answer === undefined && host.state!.memory.asking?.answer === 'Armstrong',
+        'MCQ answer stays on /host; options do not reveal it on TV',
+      );
+      await host.cmd({ t: 'memory.resolve', correct: true });
+      sawMcq = true;
+      continue;
+    }
+    await host.cmd({ t: 'memory.resolve', correct: false });
+  }
+  check(sawPhoto, 'found the memory photo card');
+  check(sawMcq, 'found the memory MCQ card');
+
+  await host.cmd({ t: 'memory.flip', coord: scoredCoord! });
   check(host.errors.length > 0, 'a consumed tile cannot be asked again');
-  const coord2 = host.state!.memory.tiles[0].coord;
+  const coord2 = host.state!.memory.tiles.find((x) => x.face === 'hidden')!.coord;
   const turn2 = host.state!.memory.turnPlayerId!;
   const before2 = host.state!.players.find((p) => p.id === turn2)!.score;
   await host.cmd({ t: 'memory.flip', coord: coord2 });
@@ -333,7 +394,10 @@ try {
   check(host.state!.players.find((p) => p.id === turn2)!.score === before2, 'a miss scores nothing');
   const t2 = host.state!.memory.tiles.find((t) => t.coord === coord2)!;
   check(t2.face === 'consumed' && t2.result === 'miss', 'a missed tile is consumed too and never returns');
-  check(host.state!.memory.remaining === 4, '4 tiles remain');
+  check(
+    host.state!.memory.remaining === host.state!.memory.tiles.filter((t) => t.face !== 'consumed').length,
+    'remaining matches unconsumed tiles',
+  );
 
   console.log('\nPhase 3: Double or Nothing');
   // Ann 10, Bob 4, Cy 0 -> Cy sits out.

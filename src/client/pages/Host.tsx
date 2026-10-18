@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PinGate } from '../components/PinGate';
-import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
+import { ConnectionPill, DifficultyChip, OptionsList, nameOf, useNow } from '../components/ui';
 import { api, getToken, setToken } from '../lib/api';
 import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
@@ -164,6 +164,7 @@ function QuestionCard({ q, label }: { q: QuestionView; label?: string }) {
       </div>
       {q.image && <img className="q-photo" src={q.image} alt="" />}
       <div className="prompt">{q.prompt}</div>
+      {q.options && <OptionsList options={q.options} correct={q.answer} />}
       {q.answer && (
         <div className="answer">
           <div className="muted" style={{ fontSize: '0.8rem' }}>

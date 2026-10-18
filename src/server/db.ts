@@ -14,9 +14,9 @@ sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
 /** Schema v2: flat questions with source_id. Wipe legacy pack/theme DBs. */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const ver = Number(sqlite.pragma('user_version', { simple: true }) ?? 0);
-if (ver < SCHEMA_VERSION) {
+if (ver < 2) {
   sqlite.exec(`
     DROP TABLE IF EXISTS question_asks;
     DROP TABLE IF EXISTS game_sessions;
@@ -24,9 +24,7 @@ if (ver < SCHEMA_VERSION) {
     DROP TABLE IF EXISTS themes;
     DROP TABLE IF EXISTS packs;
   `);
-  sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
 }
-
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +38,7 @@ sqlite.exec(`
     difficulty TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     image TEXT,
+    options TEXT,
     created_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS game_sessions (
@@ -58,6 +57,13 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS idx_questions_status ON questions(status);
   CREATE INDEX IF NOT EXISTS idx_asks_question ON question_asks(question_id);
 `);
+if (ver < 3) {
+  const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === 'options')) {
+    sqlite.exec(`ALTER TABLE questions ADD COLUMN options TEXT`);
+  }
+  sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
+}
 
 export const db = drizzle(sqlite, { schema });
 export { schema };

@@ -34,8 +34,13 @@ export interface QuestionView {
   difficulty: Difficulty;
   points: number;
   prompt: string;
-  /** Sprint/climax picture, TV and host only. Phones never receive it. */
+  /** Optional picture, TV and host only on ask. */
   image?: string;
+  /**
+   * Memory MCQ only: exactly four choices shown on TV/host after flip.
+   * The correct one is `answer` (host-only until you judge).
+   */
+  options?: [string, string, string, string];
   /** Only sent to /host, or to /tv once the question is resolved. */
   answer?: string;
   /** Host cheat-sheet, /host only. */
@@ -197,8 +202,10 @@ export interface QuestionDto {
   notes: string | null;
   difficulty: Difficulty;
   status: QuestionStatus;
-  /** Path relative to the pictures folder. Sprint and climax. */
+  /** Path relative to the pictures folder. */
   image: string | null;
+  /** Memory MCQ: JSON-serialized 4 strings in DB; parsed in DTOs. */
+  options: [string, string, string, string] | null;
 }
 
 /** One question in drafts/{bank}.json */
@@ -210,6 +217,8 @@ export interface BankDraftQuestion {
   difficulty: Difficulty;
   notes?: string;
   image?: string;
+  /** Memory only: exactly four choices; `answer` must match one. */
+  options?: [string, string, string, string];
   contributor?: string;
 }
 

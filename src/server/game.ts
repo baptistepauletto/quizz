@@ -45,8 +45,10 @@ export interface QuestionRec {
   prompt: string;
   answer: string;
   notes: string | null;
-  /** Relative path inside the pictures folder. Sprint only. */
+  /** Relative path inside the pictures folder. */
   image: string | null;
+  /** Memory MCQ: four choices; `answer` is the correct text. */
+  options: [string, string, string, string] | null;
 }
 
 export interface PlayerRec {
@@ -678,6 +680,7 @@ function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean; i
     points: POINTS[q.difficulty],
     prompt: q.prompt,
     ...(opts.image && q.image ? { image: mediaUrl(q.image) } : {}),
+    ...(q.options ? { options: q.options } : {}),
     ...(opts.answer ? { answer: q.answer } : {}),
     ...(opts.notes && q.notes ? { notes: q.notes } : {}),
   };
@@ -747,7 +750,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     askingCoord: m.askingCoord,
     asking:
       askingTile && !isPlay
-        ? questionView(g.questions[askingTile.questionId], { answer: isHost, notes: isHost })
+        ? questionView(g.questions[askingTile.questionId], { answer: isHost, notes: isHost, image: true })
         : null,
     remaining: m.tiles.filter((t) => t.face !== 'consumed').length,
   };

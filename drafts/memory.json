@@ -1,3 +1,493 @@
 {
-  "questions": []
+  "questions": [
+    {
+      "id": "m_001",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "image": "people/one-direction.webp",
+      "prompt": "Nomme ces cinq super beaux gosses.",
+      "answer": "Harry, Niall, Liam, Louis, Zayn",
+      "difficulty": "easy",
+      "notes": "Accepter les prénoms dans n’importe quel ordre."
+    },
+    {
+      "id": "m_002",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "prompt": "Comment s’intitule le film documentaire/concert sorti au cinéma en 2013 et réalisé par Morgan Spurlock ?",
+      "answer": "This Is Us",
+      "difficulty": "easy",
+      "options": ["Up All Night: The Live Tour", "This Is Us", "Where We Are", "On the Road Again"]
+    },
+    {
+      "id": "m_003",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "image": "random/our-moment-perfume.jpg",
+      "prompt": "Comment s’appelle ce tout premier parfum lancé par le groupe en 2013 ?",
+      "answer": "Our Moment",
+      "difficulty": "medium",
+      "options": ["Our Moment", "Our Song", "Our Love", "Our Life"]
+    },
+    {
+      "id": "m_004",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "prompt": "Quel est le premier single du groupe sorti en tant que quatuor après le départ de Zayn ?",
+      "answer": "Drag Me Down",
+      "difficulty": "medium",
+      "options": ["Drag Me Down", "Perfect", "Infinity", "History"]
+    },
+    {
+      "id": "m_005",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "prompt": "Dans les célèbres 'Video Diaries' de X Factor, de quel ustensile de cuisine Liam Payne avait-il une phobie très connue des fans ?",
+      "answer": "Les cuillères",
+      "difficulty": "medium",
+      "notes": "Un TRÈS grand classique du lore 1D de la première heure."
+    },
+    {
+      "id": "m_006",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "prompt": "Quelle chanson de leur toute première performance ensemble à l'étape de la 'Judges' Houses' (chez Simon Cowell à Marbella) leur a permis de se qualifier pour les lives ?",
+      "answer": "Torn",
+      "difficulty": "hard",
+      "options": ["Viva la Vida", "Torn", "Kids in America", "Total Eclipse of the Heart"],
+      "notes": "Reprise de la version de Natalie Imbruglia."
+    },
+    {
+      "id": "m_007",
+      "theme": "One Direction",
+      "contributor": "Laulo",
+      "image": "people/harry-styles-marcel.webp",
+      "prompt": "Dans le clip de 'Best Song Ever', les garçons jouent des employés de studio caricaturaux. Quel est le prénom du personnage de 'geek du marketing' incarné par Harry Styles ?",
+      "answer": "Marcel",
+      "difficulty": "hard"
+    },
+    {
+      "id": "m_008",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "image": "games/dofus/dofus-turquoise.webp",
+      "prompt": "Quel est le nom exact de ce Dofus Primordial et qui était son gardien historique en donjon avant son passage en quête ?",
+      "answer": "Le Dofus Turquoise (gardé par le Dragon Cochon ou le Chêne Mou)",
+      "difficulty": "easy",
+      "notes": "Accepter Dragon Cochon ou Chêne Mou pour le gardien (les deux le droppaient à l'époque)."
+    },
+    {
+      "id": "m_009",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "Sur l’île d’Otomaï, combien de donjons faut-il franchir dans l'ordre pour pouvoir réinitialiser ses caractéristiques ou accéder au Kralamoure Géant à l'ancienne ?",
+      "answer": "5 donjons",
+      "difficulty": "easy",
+      "options": ["3 donjons", "4 donjons", "5 donjons", "6 donjons"],
+      "notes": "Grotte Hesque, Arche d'Otomaï, Goulet du Rasboul, Laboratoire du Tynril, Canopée du Kimbo."
+    },
+    {
+      "id": "m_010",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "En forgemagie, quel est le poids exact (en densité de rune) d’une rune Ga PA et d'une rune Ga PME ?",
+      "answer": "100 pour le PA et 90 pour le PM",
+      "difficulty": "medium",
+      "options": [
+        "100 (PA) et 90 (PM)",
+        "100 (PA) et 80 (PM)",
+        "100 (PA) et 50 (PM)",
+        "90 (PA) et 50 (PM)"
+      ]
+    },
+    {
+      "id": "m_011",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "Combien d'archimonstres différents faut-il capturer lors de l'étape finale de la quête 'L'Éternelle Moisson' (+/- 20)?",
+      "answer": "286 archimonstres",
+      "difficulty": "medium",
+      "notes": "La quête compte 35 étapes au total, dont les 20 dernières sont consacrées aux 286 archimonstres."
+    },
+    {
+      "id": "m_012",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "Quels sont les 3 caractéristiques élémentaires principales de la célèbre Panoplie du Strigide?",
+      "answer": "Aucun élément fixe : elle donne uniquement de la Puissance !",
+      "difficulty": "medium",
+      "notes": "Question piège de connaisseur : la Strigide est la panoplie multi-éléments par excellence."
+    },
+    {
+      "id": "m_013",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "Dans le lore, quel est le nom des 6 Dragons Primordiaux qui ont pondu les 6 vrais Dofus (Émeraude, Pourpre, Turquoise, Ocre, Ivoire, Ébène) ? Cites-en au moins 3.",
+      "answer": "Aerafal, Ignemikhal, Aguabrial, Terrakourial, Dardondakal, Grougalorasalar",
+      "difficulty": "hard"
+    },
+    {
+      "id": "m_014",
+      "theme": "Dofus",
+      "contributor": "Corentin",
+      "prompt": "Avant la mise à jour 2.11 qui a limité le nombre de coups d'armes par tour, quel bâton de niveau 195 (issu de Frigost II) était spammé 3 fois par tour en zone par presque toutes les classes Feu ?",
+      "answer": "Le Bâton Brageut",
+      "difficulty": "hard",
+      "options": ["Le Bâton Brageut", "Le Bâton des Prophètes", "La Baguette des Limbes", "Le Bâton Champmanique"]
+    },
+    {
+      "id": "m_015",
+      "theme": "Lozère (48)",
+      "contributor": "Guilhem",
+      "prompt": "Quelles sont les quatre grandes régions naturelles qui composent traditionnellement le département de la Lozère ?",
+      "answer": "L'Aubrac, la Margeride, les Grands Causses (et Gorges du Tarn), et les Cévennes",
+      "difficulty": "easy",
+      "notes": "Les 4 régions doivent être citées (accepter 'Causses' ou 'Vallée du Lot' si l'idée géographique y est)."
+    },
+    {
+      "id": "m_016",
+      "theme": "Lozère (48)",
+      "contributor": "Guilhem",
+      "prompt": "Quel est le nom de la seule sous-préfecture du département de la Lozère ?",
+      "answer": "Florac (Florac Trois Rivières)",
+      "difficulty": "easy",
+      "options": ["Marvejols", "Saint-Chély-d'Apcher", "Florac", "Langogne"]
+    },
+    {
+      "id": "m_017",
+      "theme": "Lozère (48)",
+      "contributor": "Guilhem",
+      "image": "places/cathedrale-mende.jpg",
+      "prompt": "Dans la préfecture de Mende, comment s'appelle cette cathédrale gothique célèbre pour ses deux clochers asymétriques, autrefois dotée de la plus grosse cloche de la chrétienté (la Non-Pareille) ?",
+      "answer": "La cathédrale Notre-Dame-et-Saint-Privat de Mende",
+      "difficulty": "medium",
+      "notes": "Accepter « Cathédrale Saint-Privat » ou « Notre-Dame de Mende »."
+    },
+    {
+      "id": "m_018",
+      "theme": "Lozère (48)",
+      "contributor": "Guilhem",
+      "image": "places/garde-guerin.jpg",
+      "prompt": "Comment s’appelle ce village fortifié de chevaliers-pariers surplombant les gorges du Chassezac, classé parmi les Plus Beaux Villages de France ?",
+      "answer": "La Garde-Guérin",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_019",
+      "theme": "Lozère (48)",
+      "image": "people/stevenson.webp",
+      "contributor": "Guilhem",
+      "prompt": "Quel écrivain écossais a traversé la Lozère à pied en 1878 avec son ânesse Modestine, donnant son nom au célèbre sentier de grande randonnée GR 70 ?",
+      "answer": "Robert Louis Stevenson",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_020",
+      "theme": "Lozère (48)",
+      "image": "animal/bete-du-gevaudan.jpg",
+      "contributor": "Guilhem",
+      "prompt": "Le 19 juin 1767, quel chasseur local a officiellement abattu la Bête du Gévaudan au lieu-dit de la Sogne d'Auvers, avec des balles bénites ?",
+      "answer": "Jean Chastel",
+      "difficulty": "hard",
+      "options": ["François Antoine", "Jean Chastel", "Le comte de Morangiès", "Jean-Baptiste Duhamel"]
+    },
+    {
+      "id": "m_021",
+      "theme": "Lozère (48)",
+      "contributor": "Guilhem",
+      "prompt": "Lors du Tour de France (notamment en 1995, 2005, 2015, 2018 et 2022), quel est le nom exact de la redoutable montée finale de 3 km à plus de 10 % de moyenne qui mène à l'aérodrome de Mende ?",
+      "answer": "La côte de la Croix Neuve (ou Montée Laurent Jalabert)",
+      "difficulty": "hard",
+      "notes": "Accepter « Croix Neuve » ou « Montée Jalabert »."
+    },
+    {
+      "id": "m_022",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "prompt": "Dans quelle région glaciale des États-Unis (et en quelle année) se déroule le braquage du Prologue qui ouvre le mode Histoire de GTA V ?",
+      "answer": "North Yankton, en 2004",
+      "difficulty": "easy",
+      "notes": "Dans la ville fictive de Ludendorff. Accepter s'il donne au moins North Yankton (ou Ludendorff) et l'année 2004."
+    },
+    {
+      "id": "m_023",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "image": "games/gtav/chop.webp",
+      "prompt": "Comment s’appelle ce Rottweiler fidèle qui accompagne Franklin, et à qui appartient-il réellement au début du jeu ?",
+      "answer": "Chop (Lamar Davis)",
+      "difficulty": "easy",
+      "notes": "Il faut le nom du chien (Chop) et le prénom de son vrai maître (Lamar)."
+    },
+    {
+      "id": "m_024",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "image": "games/gtav/zentorno.webp",
+      "prompt": "Quel est le nom de cette supersportive mythique de la marque Pegassi (ajoutée avec la mise à jour High Life en 2014), longtemps redoutée en GTA Online car sa vitre arrière blindée empêchait de tirer sur le conducteur de dos ?",
+      "answer": "La Pegassi Zentorno",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_025",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "prompt": "Comment s’appelle la secte parodique de la Scientologie que Michael peut rejoindre en effectuant une longue série de missions secrètes (« Kifflom ! ») ?",
+      "answer": "Le Programme Epsilon (Epsilon Program)",
+      "difficulty": "medium",
+      "options": [
+        "La secte des Altruistes",
+        "Le Programme Epsilon",
+        "Les Enfants de la Montagne",
+        "La Fraternité de Zancudo"
+      ]
+    },
+    {
+      "id": "m_026",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "prompt": "Pour maximiser ses gains à plus de 2 milliards de dollars en solo grâce aux missions d'assassinat de Lester, sur quelles deux places boursières (les noms des deux marchés financiers fictifs du jeu) faut-il spéculer ?",
+      "answer": "LCN (Liberty City National) et BAWSAQ",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_027",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "prompt": "Lors du « Coup du siècle » (le braquage final de l'Union Depository), quelle est la somme exacte en lingots d'or (en dollars) dérobée par l'équipe avant répartition des parts ?",
+      "answer": "201 600 000 $ (environ 200 millions de dollars)",
+      "difficulty": "hard",
+      "options": [
+        "50 millions de dollars",
+        "100 millions de dollars",
+        "200 millions de dollars",
+        "500 millions de dollars"
+      ],
+      "notes": "Le butin brut est de 201,6 millions de dollars (quatre tonnes d'or)."
+    },
+    {
+      "id": "m_028",
+      "theme": "GTA V",
+      "contributor": "Nino",
+      "image": "games/gtav/mount-chiliad-mural.jpg",
+      "prompt": "Au sommet du Mont Chiliad se trouve cette célèbre fresque mystérieuse à l'intérieur de la gare du téléphérique. Quelles conditions exactes (2) le joueur doit-il remplir pour faire apparaître l'OVNI au sommet à 3h du matin ?",
+      "answer": "Il doit pleuvoir (ou y avoir un orage) et avoir 100 % d'achèvement du jeu",
+      "difficulty": "hard"
+    },
+    {
+      "id": "m_029",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "prompt": "En règles FIBA, lorsque l'équipe qui attaque capte un rebond offensif après que le ballon a touché l'anneau, à combien de secondes l'horloge des tirs (shot clock) est-elle réinitialisée ?",
+      "answer": "14 secondes",
+      "difficulty": "easy",
+      "options": ["12 secondes", "14 secondes", "18 secondes", "24 secondes"],
+      "notes": "24 secondes uniquement si le rebond est pris en zone arrière, 14 secondes en zone avant."
+    },
+    {
+      "id": "m_030",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "image": "sports/basketball/fiba-marcher.jpg",
+      "prompt": "Quelle violation l'arbitre signale-t-il lorsqu'il effectue ce moulinet avec ses deux poings fermés l'un autour de l'autre ?",
+      "answer": "Le marcher (Traveling)",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_031",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "image": "sports/basketball/fiba-antisportive.jpg",
+      "prompt": "Quel type de faute l'arbitre siffle-t-il lorsqu'il saisit son poignet au-dessus de sa tête comme sur cette image ?",
+      "answer": "Une faute antisportive",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_032",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "prompt": "Pour qu'un retour en zone (ballon retourné en zone arrière) soit sifflé contre un joueur qui dribble de la zone avant vers la zone arrière, quels éléments doivent avoir touché la zone arrière ?",
+      "answer": "Les deux pieds du joueur ET le ballon (les trois points d'appui)",
+      "difficulty": "medium",
+      "options": [
+        "Un seul pied ou le ballon",
+        "Les deux pieds uniquement, peu importe où est le ballon",
+        "Les deux pieds ET le ballon",
+        "Le ballon uniquement dès qu'il touche la ligne médiane"
+      ],
+      "notes": "Un dribbleur en provenance de sa zone avant n'établit un nouveau statut en zone arrière que lorsque ses deux pieds ET le ballon ont touché la zone arrière."
+    },
+    {
+      "id": "m_033",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "prompt": "Quelle combinaison de fautes personnelles spéciales entraîne l'expulsion (disqualification) automatique d'un joueur au cours d'un match FIBA ?",
+      "answer": "2 fautes techniques, OU 2 fautes antisportives, OU 1 faute technique + 1 faute antisportive",
+      "difficulty": "medium",
+      "notes": "Le cumul de 1 Technique + 1 Antisportive est la subtilité clé introduite par la FIBA il y a quelques années."
+    },
+    {
+      "id": "m_034",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "prompt": "Un joueur A1 effectue une remise en jeu sous le panier adverse. Il lance le ballon qui entre directement dans le panier sans qu'aucun joueur sur le terrain ne l'ait touché. Que décide l'arbitre ?",
+      "answer": "Violation : le panier est annulé et l'équipe adverse récupère une remise en jeu au niveau de la ligne des lancers francs prolongée",
+      "difficulty": "hard",
+      "notes": "Une remise en jeu ne peut jamais marquer directement un panier. La reprise ne se fait pas sous le cercle, mais à la ligne des lancers francs prolongée !"
+    },
+    {
+      "id": "m_035",
+      "theme": "Les règles du basketball",
+      "contributor": "Captain Titi",
+      "image": "sports/basketball/fiba-raquette.jpg",
+      "prompt": "À quelle distance exacte du centre de l'anneau (au sol) est tracé l'arc du demi-cercle de non-charge sous le panier en règles FIBA ?",
+      "answer": "1,25 mètre (1m25)",
+      "difficulty": "hard",
+      "options": ["1,12 mètre", "1,25 mètre", "1,30 mètre", "1,50 mètre"],
+      "notes": "En NBA, il est à 4 pieds, soit 1,22 m."
+    },
+    {
+      "id": "m_036",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "image": "games/aos/celestant-prime.jpg",
+      "prompt": "Comment s’appelle ce premier Stormcast Eternal forgé par Sigmar, qui manie Ghal Maraz (le Grand Fracasseur) au combat ?",
+      "answer": "Le Celestant-Prime",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_037",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "prompt": "Sur une table de jeu d'Age of Sigmar, quelle mécanique emblématique détermine quel joueur joue en premier à chaque nouveau round de bataille (à partir du round 2), pouvant ainsi offrir deux tours consécutifs au même joueur ?",
+      "answer": "Le jet de priorité (qui permet de faire un « Double Tour »)",
+      "difficulty": "easy",
+      "notes": "Accepter « Le Double Tour » ou « Le jet de priorité »."
+    },
+    {
+      "id": "m_038",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "image": "games/aos/gotrek-gurnisson.jpg",
+      "prompt": "Quel célèbre Tueur nain du Vieux Monde a survécu à la Fin des Temps dans le Royaume du Chaos pour réapparaître dans les Royaumes Mortels en tant que demi-dieu quasi intuable sur table ?",
+      "answer": "Gotrek Gurnisson",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_039",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "prompt": "Quel événement cataclysmique déclenché par Nagash (qui a inversé le cours de son grand rituel pyramidal à Shyish) a marqué le lancement de la 2e édition d'Age of Sigmar (Guerre des Âmes) ?",
+      "answer": "Le Nécroébranlement (Necroquake)",
+      "difficulty": "medium",
+      "options": [
+        "Le Nécroébranlement (Necroquake)",
+        "Le Rituel de la Vie d'Alarielle",
+        "L'Heure de la Ruine (Vermindoom)",
+        "L'Ère de la Bête"
+      ]
+    },
+    {
+      "id": "m_040",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "prompt": "Dans la 4e édition d'Age of Sigmar (2024), quelle lourde pénalité s'applique désormais à un joueur qui choisit de prendre le « Double Tour » lors du jet de priorité ?",
+      "answer": "Il ne peut pas choisir (ni accomplir) de Tactique de Bataille (Battle Tactic) pendant ce tour",
+      "difficulty": "medium",
+      "notes": "Changement majeur d'équilibrage de la V4 : prendre le double tour prive des points de victoire de tactique de bataille du tour."
+    },
+    {
+      "id": "m_041",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "prompt": "Dans quelles landes désolées situées entre Hysh et Ulgu le dieu Slaanesh est-il retenu prisonnier par des chaînes paradoxales forgées par Tyrion, Teclis, Malerion et Morathi ?",
+      "answer": "Uhl-Gysh (la Pénombre / le Royaume Crépusculaire)",
+      "difficulty": "hard",
+      "options": ["Le Huit-Points (Eightpoints)", "Uhl-Gysh", "Chamon", "LaSous-Empire (Blight City)"]
+    },
+    {
+      "id": "m_042",
+      "theme": "Age of Sigmar",
+      "contributor": "Hugo",
+      "image": "games/aos/archaeon-dorghar.jpg",
+      "prompt": "Comment s’appelle la monstrueuse monture démoniaque à trois têtes d'Archaon l'Élu Éternel, et à quels trois dieux du Chaos appartenaient les champions majeurs qu'elle a dévorés pour faire pousser ses trois têtes ?",
+      "answer": "Dorghar (têtes de Khorne, Nurgle et Tzeentch)",
+      "difficulty": "hard",
+      "notes": "Remarque : Dorghar n'a pas de tête de Slaanesh car Slaanesh était emprisonné."
+    },
+    {
+      "id": "m_043",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel actif hydratant star est une molécule 'humectante' capable de retenir jusqu'à 1 000 fois son poids en eau dans l'épiderme ?",
+      "answer": "L'acide hyaluronique",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_044",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "À quelle vitamine correspond la 'Niacinamide', cet actif ultra-polyvalent qui régule le sébum, resserre les pores et apaise les rougeurs ?",
+      "answer": "La vitamine B3 (ou vitamine PP)",
+      "difficulty": "easy",
+      "options": ["Vitamine B3", "Vitamine B5", "Vitamine E", "Vitamine F"],
+      "notes": "La vitamine B5 correspond au Panthénol, et la vitamine E au Tocophérol."
+    },
+    {
+      "id": "m_045",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Pourquoi est-il fortement recommandé d'appliquer ses soins au Rétinol (dérivé de la vitamine A) uniquement le soir ?",
+      "answer": "Parce que la molécule est photodégradable (détruite par les UV) ET photosensibilisante (elle affine la couche cornée et rend la peau vulnérable au soleil)",
+      "difficulty": "medium",
+      "notes": "Accepter dès qu'elle mentionne la sensibilité au soleil / aux rayons UV."
+    },
+    {
+      "id": "m_046",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quelle propriété physico-chimique fondamentale différencie les AHA (comme l'acide glycolique) des BHA (acide salicylique) ?",
+      "answer": "Les AHA sont hydrosolubles (solubles dans l'eau), tandis que les BHA sont liposolubles (solubles dans le gras/sébum)",
+      "difficulty": "medium",
+      "notes": "Les mots-clés attendus sont hydrosoluble vs liposoluble (ou eau vs gras/huile), cela explique pourquoi le BHA pénètre dans les pores riches en sébum."
+    },
+    {
+      "id": "m_047",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "image": "beauty/centella-asiatica.jpg",
+      "prompt": "Sous quel nom botanique (ou surnom asiatique) est connue cette plante cicatrisante star de la K-Beauty, dont on extrait le Madécassoside et l'Asiaticoside ?",
+      "answer": "La Centella Asiatica (ou Herbe du Tigre / Cica / Gotu Kola)",
+      "difficulty": "medium",
+      "options": [
+        "L'Houttuynia Cordata (Heartleaf)",
+        "La Centella Asiatica (Herbe du Tigre)",
+        "L'Artemisia Princeps (Armoise / Mugwort)",
+        "Le Panax Ginseng"
+      ]
+    },
+    {
+      "id": "m_048",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Pour que l'acide L-ascorbique (Vitamine C pure) puisse traverser efficacement la barrière cutanée, en dessous de quel seuil de pH acide la formule cosmétique doit-elle obligatoirement être stabilisée ?",
+      "answer": "Un pH inférieur à 3,5 (généralement entre 2,5 et 3,5)",
+      "difficulty": "hard",
+      "options": [
+        "pH inférieur à 3,5",
+        "pH neutre à 5,5 (pH physiologique de la peau)",
+        "pH exactement à 7,0",
+        "pH basique supérieur à 8,0"
+      ],
+      "notes": "En dessous du pKa de l'acide ascorbique (4,2), et idéalement sous 3,5 selon les études de Pinnell."
+    },
+    {
+      "id": "m_049",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel actif dicarboxylique (naturellement produit par un champignon à la surface de la peau et présent dans le blé ou l'orge) est prescrit à 15-20 % en dermatologie (ex: Finacea) pour traiter simultanément la rosacée, l'acné inflammatoire et l'hyperpigmentation ?",
+      "answer": "L'acide azélaïque",
+      "difficulty": "hard"
+    }
+  ]
 }

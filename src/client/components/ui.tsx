@@ -33,6 +33,33 @@ export function nameOf(players: PlayerView[], id: string | null | undefined): st
   return players.find((p) => p.id === id)?.name ?? '';
 }
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
+/** Memory MCQ choices on TV / host / swipe. */
+export function OptionsList({
+  options,
+  correct,
+}: {
+  options: readonly string[];
+  /** When set (host), mark the matching choice. */
+  correct?: string;
+}) {
+  return (
+    <ol className="q-options">
+      {options.map((text, i) => {
+        const letter = OPTION_LETTERS[i] ?? String(i + 1);
+        const isCorrect = correct !== undefined && text === correct;
+        return (
+          <li key={letter} className={isCorrect ? 'correct' : undefined}>
+            <span className="q-opt-letter">{letter}</span>
+            <span className="q-opt-text">{text}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** Small red pill when the socket is down, so nobody wonders why nothing moves. */
 export function ConnectionPill({ connection }: { connection: Connection }) {
   if (connection === 'open') return null;

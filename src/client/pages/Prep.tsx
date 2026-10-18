@@ -215,6 +215,11 @@ function PileBrowser() {
               </div>
               {q.image && <div className="muted">Photo : {q.image}</div>}
               <div>{q.prompt}</div>
+              {q.options && (
+                <div className="muted">
+                  QCM : {q.options.map((o, i) => `${'ABCD'[i]}. ${o}`).join(' · ')}
+                </div>
+              )}
               <div className="muted">
                 Réponse : <b style={{ color: 'var(--text)' }}>{q.answer}</b>
               </div>

@@ -2,42 +2,42 @@
   "questions": [
     {
       "id": "c_001",
-      "theme": "Finale",
+      "theme": "Fleurs",
       "prompt": "Combien y a-t-il de fleurs de lys sur le drapeau du Québec ?",
       "answer": "Quatre",
       "difficulty": "easy"
     },
     {
       "id": "c_002",
-      "theme": "Finale",
+      "theme": "Montréal",
       "prompt": "En quelle année Montréal a-t-elle accueilli l'Exposition universelle ?",
       "answer": "1967",
       "difficulty": "easy"
     },
     {
       "id": "c_003",
-      "theme": "Finale",
+      "theme": "Géographie",
       "prompt": "Quel détroit sépare le Labrador / Québec de l'île de Terre-Neuve au nord du golfe ?",
       "answer": "Le détroit de Belle-Isle",
       "difficulty": "hard"
     },
     {
       "id": "c_004",
-      "theme": "Finale",
+      "theme": "Sirop",
       "prompt": "Citez les quatre classes de sirop d'érable.",
       "answer": "Doré, ambré, foncé, très foncé",
       "difficulty": "medium"
     },
     {
       "id": "c_005",
-      "theme": "Espace",
-      "prompt": "En quelle année Voyager 1 a-t-elle été lancée ?",
+      "theme": "Exploration spatiale",
+      "prompt": "En quelle année Voyager 1 a-t-elle été lancée ? (daft punk lol)",
       "answer": "1977",
       "difficulty": "hard"
     },
     {
       "id": "c_006",
-      "theme": "Espace",
+      "theme": "Astronomie",
       "prompt": "Quelle est l'étoile la plus proche du Soleil ?",
       "answer": "Proxima du Centaure",
       "difficulty": "hard"
@@ -62,6 +62,68 @@
       "prompt": "Quelle épice est la plus chère au monde au poids ?",
       "answer": "Le safran",
       "difficulty": "medium"
+    },
+    {
+      "id": "c_010",
+      "theme": "Cinéma",
+      "difficulty": "medium",
+      "prompt": "Quel film sud-coréen réalisé par Bong Joon-ho est devenu, en 2020, le tout premier film non anglophone de l'histoire à remporter l'Oscar du meilleur film ?",
+      "answer": "Parasite",
+      "notes": "Accepter Parasite."
+    },
+    {
+      "id": "c_011",
+      "theme": "Jeux de société",
+      "difficulty": "easy",
+      "prompt": "Aux échecs, quelle est la seule pièce capable de sauter par-dessus d'autres pièces lors de son déplacement normal ?",
+      "answer": "Le cavalier (ou le cheval)",
+      "notes": "Accepter « cavalier » ou « cheval » (La tour ne saute le roi que lors du roque, qui est un coup spécial du roi)."
+    },
+    {
+      "id": "c_012",
+      "theme": "Cinéma d'animation",
+      "difficulty": "easy",
+      "prompt": "Dans le film Toy Story, quel est le prénom du garçon à qui appartiennent Woody et Buzz l'Éclair ?",
+      "answer": "Andy",
+      "notes": "Ne pas confondre avec Sid (le voisin tortionnaire de jouets)."
+    },
+    {
+      "id": "c_013",
+      "theme": "Géographie",
+      "difficulty": "easy",
+      "prompt": "Quel est le seul pays d'Amérique du Sud dont la langue officielle est le portugais ?",
+      "answer": "Le Brésil"
+    },
+    {
+      "id": "c_014",
+      "theme": "Zoologie",
+      "difficulty": "medium",
+      "prompt": "Quel est le seul mammifère au monde capable de voler activement (et non simplement de planer) ?",
+      "answer": "La chauve-souris",
+    },
+    {
+      "id": "c_015",
+      "theme": "Bande dessinée",
+      "difficulty": "easy",
+      "prompt": "Dans Astérix, comment s'appelle le druide du village gaulois qui prépare la fameuse potion magique ?",
+      "answer": "Panoramix",
+      "notes": "Ne pas confondre avec Assurancetourix (le barde) ou Abraracourcix (le chef)."
+    },
+    {
+      "id": "c_016",
+      "theme": "Histoire antique",
+      "difficulty": "medium",
+      "prompt": "Quel volcan italien est entré en éruption en l'an 79 après J.-C., ensevelissant les cités romaines de Pompéi et d'Herculanum sous les cendres ?",
+      "answer": "Le Vésuve",
+      "notes": "Ne pas confondre avec l'Etna ou le Stromboli (qui sont en Sicile)."
+    },
+    {
+      "id": "b_030",
+      "theme": "Anatomie & Médecine",
+      "difficulty": "hard",
+      "prompt": "Quel organe du corps humain a pour fonction de produire l'insuline afin de réguler le taux de sucre (glycémie) dans le sang ?",
+      "answer": "Le pancréas",
+      "notes": "Souvent confondu avec le foie ou les reins sous la pression du chrono."
     }
   ]
 }

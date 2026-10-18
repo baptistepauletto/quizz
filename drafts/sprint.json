@@ -139,7 +139,7 @@
     {
       "id": "s_018",
       "theme": "AI mashup",
-      "prompt": "Quel est ce chat et quel est le nom de la personnalité?",
+      "prompt": "Quel est ce tableau et quel est le nom de la personnalité?",
       "answer": "Nino et La jeune fille à la perle, Vermeer",
       "difficulty": "medium",
       "image": "ai-mashup/nino-perle.jpg"

@@ -15,6 +15,8 @@ export const questions = sqliteTable('questions', {
     .notNull()
     .default('draft'),
   image: text('image'),
+  /** JSON array of 4 strings for memory MCQ; null otherwise. */
+  options: text('options'),
   createdAt: integer('created_at').notNull(),
 });
 

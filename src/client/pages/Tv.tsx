@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { TvGrid } from '../components/MemoryGrid';
 import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
-import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
+import { ConnectionPill, DifficultyChip, OptionsList, nameOf, useNow } from '../components/ui';
 import { fetchInfo, lanOrigin } from '../lib/api';
 import type { LanInfo } from '../lib/api';
 import { playSfx } from '../lib/sfx';
@@ -185,7 +185,9 @@ function Memory({ state }: { state: GameView }) {
               <span className="chip">{m.asking.theme}</span>
               <DifficultyChip difficulty={m.asking.difficulty} />
             </div>
+            {m.asking.image && <img className="tv-photo" src={m.asking.image} alt="" />}
             <div className="tv-prompt">{m.asking.prompt}</div>
+            {m.asking.options && <OptionsList options={m.asking.options} />}
             <div className="tv-sub">Pour {nameOf(state.players, m.turnPlayerId)}</div>
           </div>
         </div>

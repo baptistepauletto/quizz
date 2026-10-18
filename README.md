@@ -44,12 +44,14 @@ Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is
     { "prompt": "Capital of Australia?", "answer": "Canberra", "difficulty": "medium", "notes": "optional" },
     { "prompt": "Who is this?", "answer": "Corentin", "difficulty": "medium", "image": "friends/corentin.jpg" }
   ]}],
-  "memory": [{ "theme": "Cinema", "contributor": "Alice", "questions": [ /* same shape, no image */ ] }],
-  "climax": [{ "theme": "Space", "questions": [ /* same shape, no image */ ] }]
+  "memory": [{ "theme": "Cinema", "contributor": "Alice", "questions": [
+    { "prompt": "Who directed Jaws?", "answer": "Spielberg", "difficulty": "medium", "image": "cinema/jaws.jpg" }
+  ] }],
+  "climax": [{ "theme": "Space", "questions": [ /* same shape; image optional */ ] }]
 }
 ```
 
-`difficulty` is `easy | medium | hard`. A sprint question can set `image` to a file inside the `pictures/` folder (see `pictures/README.md`). The TV blurs it, then sharpens it while people buzz. Phones never get the picture.
+`difficulty` is `easy | medium | hard`. Any bank can set optional `image` to a file inside `pictures/` (see `pictures/README.md`). Sprint blurs then sharpens while people buzz; memory and climax show the photo immediately on ask. Phones never get sprint pictures. Memory questions may also set `"options": ["…","…","…","…"]` (exactly four); `answer` must match one option exactly. The peek grid stays theme + difficulty only; choices appear on the TV after the host flips the tile.
 
 Imports are review batches, not separate nights. Everything you approve goes into one pile. Starting a night draws 8 sprint, 16 memory and 4 finale questions (or fewer, if the pile is smaller): never-asked first, then the ones asked longest ago. Sprint keeps a mix of difficulties. Memory spreads across themes.
 

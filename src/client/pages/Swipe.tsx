@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PinGate } from '../components/PinGate';
-import { DifficultyChip } from '../components/ui';
+import { DifficultyChip, OptionsList } from '../components/ui';
 import { api } from '../lib/api';
 import type { Bank, QuestionDto, QuestionStatus } from '../../shared/types';
 
@@ -218,6 +218,7 @@ function CardBody({ q, behind, dx = 0, animate, handlers }: CardBodyProps) {
       <DifficultyChip difficulty={q.difficulty} />
       {q.image && <img className="q-photo" src={'/media/' + q.image.split('/').map(encodeURIComponent).join('/')} alt="" />}
       <div className="prompt">{q.prompt}</div>
+      {q.options && <OptionsList options={q.options} correct={q.answer} />}
       <div className="answer">
         <div className="muted" style={{ fontSize: '0.8rem' }}>
           Réponse
