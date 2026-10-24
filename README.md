@@ -27,6 +27,8 @@ Dev mode with hot reload: `npm run dev` (client on 5173, server on 3000).
 
 Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is snapshotted, so a server restart resumes it.
 
+Results are kept for stats across nights (no screen for them yet): `games` (one row per game that scored anything), `plays` (every sprint answer or wrong buzz, memory tile, finale judgment with wager and typed answer, winner prediction with who was picked, and manual score changes, by player name), and `game_players` (final score and rank, written when the host ends the game). Players are matched across nights by name, so the guest list keeps spellings consistent.
+
 ## Game rules
 
 - Points: easy 1, medium 3, hard 5. Wrong answers cost nothing (except Phase 3).
@@ -34,7 +36,8 @@ Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is
 - **Memory Grid**: themes face-up for 60s, then face-down. Players take turns round-robin and call a coordinate (e.g. `B3`); host flips it. The tile is consumed on hit or miss.
 - **Winner prediction** (optional, before Sprint): everyone secretly picks who will finish first. Revealed after the finale; correct picks get +5 (can still reshuffle the podium). Ties for #1 all count.
 - **Finale**: players with 0 points sit out. Secret wager up to your score. Correct pays by difficulty — easy ≈1.5× total (`+round(wager/2)`), medium 2× (`+wager`), hard 3× (`+2×wager`). Wrong = full wager lost.
-- Reconnect by retyping your name.
+- Guest list (optional, top of `/prep/night`, one name per line): phones then pick their name from buttons instead of typing it, and other names are refused. Names already in the room and connected are greyed out; kick a player from `/host` to free their name.
+- Reconnect by retyping your name (or picking it again from the guest list).
 
 ## Draft JSON format
 

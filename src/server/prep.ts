@@ -7,9 +7,10 @@ import {
   setQuestionStatus,
   syncDraftsFromDisk,
 } from './packs';
+import { readGuests, saveGuests } from './guests';
 import { fillNightPlan, getNightPlan, saveNightPlan } from './night';
 import { BANKS } from '../shared/types';
-import type { Bank, QuestionStatus } from '../shared/types';
+import type { Bank, GuestsDto, QuestionStatus } from '../shared/types';
 
 async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   if (!isValidToken(tokenFromHeader(req.headers.authorization))) {
@@ -64,6 +65,14 @@ export async function prepRoutes(app: FastifyInstance) {
     api.post('/api/night/fill', async (req) => {
       const raw = String((req.body as { bank?: unknown } | null)?.bank ?? '');
       return fillNightPlan(BANKS.includes(raw as Bank) ? [raw as Bank] : BANKS);
+    });
+
+    api.get('/api/guests', async (): Promise<GuestsDto> => ({ names: readGuests() }));
+
+    api.put('/api/guests', async (req, reply): Promise<GuestsDto | void> => {
+      const names = (req.body as { names?: unknown } | null)?.names;
+      if (!Array.isArray(names)) return reply.code(400).send({ error: 'names doit être une liste de prénoms' });
+      return { names: saveGuests(names) };
     });
 
     api.get('/api/inbox', async () => draftQuestions());

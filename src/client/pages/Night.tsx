@@ -5,7 +5,7 @@ import { PinGate } from '../components/PinGate';
 import { DifficultyChip } from '../components/ui';
 import { api } from '../lib/api';
 import { BANKS, DIFFICULTIES, NIGHT_SIZE } from '../../shared/types';
-import type { Bank, NightPlanDto, QuestionDto } from '../../shared/types';
+import type { Bank, GuestsDto, NightPlanDto, QuestionDto } from '../../shared/types';
 
 const BANK_LABEL: Record<Bank, string> = {
   sprint: 'Sprint',
@@ -78,6 +78,62 @@ function useAutosave(onSaved: (plan: NightPlanDto) => void) {
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
   return { status, schedule, saveNow };
+}
+
+/** One name per line. The text stays as typed; the server's cleaned list only feeds the count. */
+function GuestsCard() {
+  const [text, setText] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    api<GuestsDto>('GET', '/api/guests')
+      .then((res) => {
+        setSaved(res.names);
+        setText(res.names.join('\n'));
+      })
+      .catch(() => setStatus('error'));
+    return () => window.clearTimeout(timer.current);
+  }, []);
+
+  function edit(next: string) {
+    setText(next);
+    setStatus('saving');
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      api<GuestsDto>('PUT', '/api/guests', { names: next.split('\n') })
+        .then((res) => {
+          setSaved(res.names);
+          setStatus('saved');
+        })
+        .catch(() => setStatus('error'));
+    }, 600);
+  }
+
+  const statusText =
+    status === 'saving' ? 'Enregistrement…' : status === 'saved' ? 'Enregistré' : status === 'error' ? 'Pas enregistré' : '';
+  return (
+    <section className="card stack">
+      <div className="row">
+        <b className="grow">Invités ce soir · {saved.length}</b>
+        <span className={`muted save-status ${status}`}>{statusText}</span>
+      </div>
+      <textarea
+        className="input"
+        rows={Math.min(10, Math.max(4, (text ?? '').split('\n').length + 1))}
+        placeholder={'Un prénom par ligne\nAlice\nBob'}
+        value={text ?? ''}
+        disabled={text === null}
+        onChange={(e) => edit(e.target.value)}
+      />
+      <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+        {saved.length > 0
+          ? 'Les joueurs touchent leur prénom pour rejoindre. Les autres prénoms sont refusés.'
+          : 'Liste vide : chacun tape son prénom pour rejoindre.'}
+      </p>
+    </section>
+  );
 }
 
 function NightPlanner() {
@@ -201,6 +257,7 @@ function NightPlanner() {
         <span className={`muted save-status ${status}`}>{statusText}</span>
       </div>
       <h1>Préparer la soirée</h1>
+      <GuestsCard />
 
       <div className="night-tabs" role="tablist">
         {BANKS.map((b) => {

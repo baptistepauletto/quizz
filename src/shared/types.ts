@@ -307,6 +307,20 @@ export interface NightPlanDto {
   asked: Record<number, number>;
 }
 
+/** Tonight's guests, as typed on /prep. Empty = anyone can type a name. */
+export interface GuestsDto {
+  names: string[];
+}
+
+/** What a phone sees before joining: the names it may pick for this room. */
+export interface JoinOptionsDto {
+  guests: Array<{
+    name: string;
+    /** Someone with this name is in the room and connected right now. */
+    taken: boolean;
+  }>;
+}
+
 export interface SyncResult {
   added: number;
   updated: number;

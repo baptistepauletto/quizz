@@ -58,6 +58,38 @@ sqlite.exec(`
     bank TEXT NOT NULL,
     position INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS guests (
+    position INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    join_code TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    UNIQUE (join_code, created_at)
+  );
+  CREATE TABLE IF NOT EXISTS game_players (
+    game_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    rank INTEGER NOT NULL,
+    PRIMARY KEY (game_id, name)
+  );
+  CREATE TABLE IF NOT EXISTS plays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    at INTEGER NOT NULL,
+    round TEXT NOT NULL,
+    question_id INTEGER,
+    player TEXT,
+    correct INTEGER,
+    points INTEGER NOT NULL DEFAULT 0,
+    wager INTEGER,
+    answer TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_plays_game ON plays(game_id);
+  CREATE INDEX IF NOT EXISTS idx_plays_player ON plays(player);
   CREATE INDEX IF NOT EXISTS idx_questions_bank ON questions(bank);
   CREATE INDEX IF NOT EXISTS idx_questions_status ON questions(status);
   CREATE INDEX IF NOT EXISTS idx_asks_question ON question_asks(question_id);

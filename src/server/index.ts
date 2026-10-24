@@ -67,6 +67,12 @@ app.register(async (ws) => {
 
 app.get('/api/info', async () => ({ ips: lanAddresses(), port: PORT }));
 
+// Public on purpose: phones are not logged in. Only answers for the live room's code.
+app.get('/api/join/:code', async (req, reply) => {
+  const options = room.joinOptions((req.params as { code: string }).code);
+  return options ?? reply.code(404).send({ error: 'Aucune partie avec ce code.' });
+});
+
 // Sprint photos. The path is relative to the pictures folder; nothing outside it is served.
 fs.mkdirSync(PICTURES_DIR, { recursive: true });
 app.get('/media/*', async (req, reply) => {
