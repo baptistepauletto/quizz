@@ -1,4 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
+import { Logo } from './components/Logo';
 import { Host } from './pages/Host';
 import { NightPage } from './pages/Night';
 import { Play } from './pages/Play';
@@ -9,9 +10,8 @@ import { Tv } from './pages/Tv';
 function Home() {
   return (
     <div className="home">
-      <h1 className="brand" style={{ fontSize: '2.4rem' }}>
-        <span className="brand-q">Quizz</span>
-        <span className="brand-in">In</span>
+      <h1 style={{ fontSize: '2.4rem' }}>
+        <Logo />
       </h1>
       <p className="muted">Choisis ton écran.</p>
       <Link className="btn primary big" to="/tv">

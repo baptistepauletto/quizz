@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ApiError, api, getToken, login } from '../lib/api';
+import { Logo } from './Logo';
 
 /** Asks for the host PIN once, then renders its children. Used by /prep and /host. */
 export function PinGate({ children }: { children: ReactNode }) {
@@ -36,9 +37,8 @@ export function PinGate({ children }: { children: ReactNode }) {
 
   return (
     <form className="home" onSubmit={submit}>
-      <h1 className="brand">
-        <span className="brand-q">Quizz</span>
-        <span className="brand-in">In</span>
+      <h1>
+        <Logo />
       </h1>
       <div className="field">
         <label htmlFor="pin">Code PIN hôte</label>

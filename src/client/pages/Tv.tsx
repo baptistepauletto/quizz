@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { Logo } from '../components/Logo';
 import { TvGrid } from '../components/MemoryGrid';
 import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
@@ -85,10 +86,7 @@ export function Tv() {
     >
       <div className="stage-lights" aria-hidden="true" />
       <header className="tv-head">
-        <div className="brand">
-          <span className="brand-q">Quizz</span>
-          <span className="brand-in">In</span>
-        </div>
+        <Logo />
         {state && state.phase !== 'lobby' && (
           <div className="tv-code">
             <small>code</small>
