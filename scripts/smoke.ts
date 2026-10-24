@@ -268,6 +268,9 @@ try {
   check(BANKS.every((b) => cleared.json.selected[b].length === 0), 'a prepared night can be cleared');
   const unauthed = await api('GET', '/api/night');
   check(unauthed.status === 401, 'the night plan needs the PIN');
+  check((await api('GET', '/api/guests')).status === 401, 'the guest list needs the PIN');
+  const guests = await api('PUT', '/api/guests', { names: [' Ann ', 'Bob', 'Cy', 'ann', ''] }, token);
+  check(JSON.stringify(guests.json.names) === '["Ann","Bob","Cy"]', 'guest list is trimmed and deduplicated');
 
   console.log('\nRoom');
   const tv = new Client('tv');
@@ -285,6 +288,10 @@ try {
   const code = host.state?.joinCode ?? '';
   check(/^[A-Z]{4}$/.test(code) && tv.state?.joinCode === code, `game created with code ${code}, visible on TV`);
 
+  const choices = await api('GET', `/api/join/${code}`);
+  check(choices.json?.guests?.length === 3 && choices.json.guests.every((g: { taken: boolean }) => !g.taken), 'phones see the guest list');
+  check((await api('GET', '/api/join/ZZZZ')).status === 404, 'no guest list for a wrong code');
+
   const ann = new Client('Ann');
   const bob = new Client('Bob');
   const cy = new Client('Cy');
@@ -293,6 +300,13 @@ try {
   await cy.connect({ t: 'hello', role: 'play', code, name: 'Cy' });
   clients.push(ann, bob, cy);
   check(host.state?.players.length === 3, 'three players joined');
+  const takenNow = await api('GET', `/api/join/${code}`);
+  check(takenNow.json.guests.every((g: { taken: boolean }) => g.taken), 'joined guests show as taken');
+
+  const stranger = new Client('Eve');
+  await stranger.connect({ t: 'hello', role: 'play', code, name: 'Eve' });
+  check(stranger.errors.length > 0 && host.state?.players.length === 3, 'a name not on the guest list is refused');
+  stranger.ws.close();
 
   const wrongCode = new Client('x');
   await wrongCode.connect({ t: 'hello', role: 'play', code: 'ZZZZ', name: 'Eve' });
@@ -307,6 +321,8 @@ try {
   ann.ws.close();
   await sleep(200);
   check(host.state?.players.find((p) => p.id === annId)?.connected === false, 'closing the socket marks the player disconnected');
+  const afterLeave = await api('GET', `/api/join/${code}`);
+  check(afterLeave.json.guests.find((g: { name: string }) => g.name === 'Ann')?.taken === false, 'a disconnected guest can pick their name again');
   const ann2 = new Client('Ann2');
   await ann2.connect({ t: 'hello', role: 'play', code, name: 'ANN' });
   clients.push(ann2);
@@ -546,6 +562,47 @@ try {
   await ann3.connect({ t: 'hello', role: 'play', code: joinCode, name: 'ann' });
   clients.push(ann3);
   check(ann3.playerId === annId, 'player rejoins by retyping their name after a restart');
+
+  console.log('\nStats');
+  const token2 = (await api('POST', '/api/auth', { pin: PIN })).json.token;
+  const host2 = new Client('host2');
+  await host2.connect({ t: 'hello', role: 'host', token: token2 });
+  clients.push(host2);
+  await host2.cmd({ t: 'game.end' });
+  const statsDb = new Database(path.join(dataDir, 'quizz-in.db'), { readonly: true });
+  const games = statsDb.prepare('SELECT id, ended_at FROM games').all() as { id: number; ended_at: number | null }[];
+  check(games.length === 1 && games[0].ended_at !== null, 'the game is recorded once, with its end time');
+  const finals = statsDb.prepare('SELECT name, score, rank FROM game_players ORDER BY rank, name').all() as {
+    name: string;
+    score: number;
+    rank: number;
+  }[];
+  check(finals[0]?.name === 'Ann' && finals[0].score === 32 && finals[0].rank === 1 && finals.length === 3, 'final scores and ranks are kept');
+  const sums = new Map(
+    (statsDb.prepare('SELECT player, SUM(points) AS pts FROM plays WHERE player IS NOT NULL GROUP BY player').all() as {
+      player: string;
+      pts: number;
+    }[]).map((r) => [r.player, r.pts]),
+  );
+  check(finals.every((f) => (sums.get(f.name) ?? 0) === f.score), 'recorded plays add up to every final score');
+  const predictionRows = statsDb.prepare("SELECT player, correct, answer FROM plays WHERE round = 'prediction'").all() as {
+    player: string;
+    correct: number;
+    answer: string;
+  }[];
+  check(
+    predictionRows.length === 3 && predictionRows.some((r) => r.player === 'Bob' && r.correct === 0 && r.answer === 'Bob'),
+    'winner predictions are recorded with who was picked',
+  );
+  const climaxRow = statsDb.prepare("SELECT wager, answer, points FROM plays WHERE round = 'climax' AND player = 'Ann' ORDER BY id LIMIT 1").get() as
+    | { wager: number; answer: string; points: number }
+    | undefined;
+  check(climaxRow?.wager === 6 && climaxRow.answer === 'Deux' && climaxRow.points === 12, 'finale rows keep the wager and typed answer');
+  check(
+    (statsDb.prepare("SELECT COUNT(*) AS n FROM plays WHERE round = 'sprint' AND correct = 0").get() as { n: number }).n >= 1,
+    'wrong sprint buzzes are recorded',
+  );
+  statsDb.close();
   server2.kill();
 } catch (err) {
   failures++;

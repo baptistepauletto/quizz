@@ -4,10 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token, useCountUp } from '../components/stage';
 import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
+import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
 import { climaxStackAmount, climaxWinDelta } from '../../shared/types';
-import type { GameView, PlayerView } from '../../shared/types';
+import type { GameView, JoinOptionsDto, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
 const STORAGE_KEY = 'quizzin.play';
@@ -129,6 +130,28 @@ function PlayScore({ score }: { score: number }) {
   );
 }
 
+/** Tonight's names for this room code, refreshed while the form is open; null when there is no list. */
+function useGuestChoices(code: string): JoinOptionsDto['guests'] | null {
+  const [guests, setGuests] = useState<JoinOptionsDto['guests'] | null>(null);
+  const clean = code.trim().toUpperCase();
+  useEffect(() => {
+    setGuests(null);
+    if (clean.length < 4) return;
+    let live = true;
+    const load = () =>
+      api<JoinOptionsDto>('GET', `/api/join/${encodeURIComponent(clean)}`)
+        .then((res) => live && setGuests(res.guests.length > 0 ? res.guests : null))
+        .catch(() => live && setGuests(null));
+    load();
+    const id = setInterval(load, 3000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, [clean]);
+  return guests;
+}
+
 function JoinForm(props: {
   initialCode: string;
   initialName: string;
@@ -137,6 +160,8 @@ function JoinForm(props: {
 }) {
   const [code, setCode] = useState(props.initialCode);
   const [name, setName] = useState(props.initialName);
+  const guests = useGuestChoices(code);
+  const sorted = guests && [...guests].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
   return (
     <form
       className="home"
@@ -162,23 +187,48 @@ function JoinForm(props: {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
         />
       </div>
-      <div className="field">
-        <label htmlFor="name">Ton prénom</label>
-        <input
-          id="name"
-          className="input"
-          value={name}
-          maxLength={20}
-          autoComplete="nickname"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <span className="muted" style={{ fontSize: '0.8rem' }}>
-          Page rafraîchie par accident ? Retape le même prénom pour récupérer tes points.
-        </span>
-      </div>
-      <button className="btn primary big" disabled={code.trim().length < 4 || !name.trim()}>
-        Rejoindre
-      </button>
+      {sorted ? (
+        <div className="field">
+          <label>Qui es-tu ?</label>
+          <div className="guest-grid">
+            {sorted.map((g) => (
+              <button
+                key={g.name}
+                type="button"
+                className="btn guest"
+                disabled={g.taken}
+                onClick={() => props.onJoin(code.trim().toUpperCase(), g.name)}
+              >
+                {g.name}
+                {g.taken && <small>déjà là</small>}
+              </button>
+            ))}
+          </div>
+          <span className="muted" style={{ fontSize: '0.8rem' }}>
+            Ton prénom n’est pas là ? Demande à l’hôte de t’ajouter.
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor="name">Ton prénom</label>
+            <input
+              id="name"
+              className="input"
+              value={name}
+              maxLength={20}
+              autoComplete="nickname"
+              onChange={(e) => setName(e.target.value)}
+            />
+            <span className="muted" style={{ fontSize: '0.8rem' }}>
+              Page rafraîchie par accident ? Retape le même prénom pour récupérer tes points.
+            </span>
+          </div>
+          <button className="btn primary big" disabled={code.trim().length < 4 || !name.trim()}>
+            Rejoindre
+          </button>
+        </>
+      )}
     </form>
   );
 }

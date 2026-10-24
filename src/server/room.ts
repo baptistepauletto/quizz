@@ -3,19 +3,23 @@ import { isValidToken } from './auth';
 import {
   GameError,
   applyCommand,
+  cleanName,
   createGame,
   joinPlayer,
+  nameKeyOf,
   playerAction,
   setConnected,
   tick,
   viewFor,
 } from './game';
 import type { Emit, Game } from './game';
+import { isGuest, readGuests } from './guests';
 import { recordAsk } from './history';
 import { nightHand } from './night';
 import { deleteSnapshot, loadLatestSnapshot, saveSnapshot } from './snapshot';
+import { recordEvent, recordGameEnd } from './stats';
 import type { ClientMessage, HelloMessage, HostCommand, PlayerMessage, ServerMessage } from '../shared/protocol';
-import type { GameEvent, GameEventType, Role } from '../shared/types';
+import type { GameEvent, GameEventType, JoinOptionsDto, Role } from '../shared/types';
 
 interface Conn {
   ws: WebSocket;
@@ -104,12 +108,18 @@ export class Room {
       if (!g || g.joinCode !== String(msg.code ?? '').trim().toUpperCase()) {
         return this.error(conn, 'join', 'Aucune partie avec ce code.');
       }
+      const guests = readGuests();
+      const name = String(msg.name ?? '');
+      const alreadyIn = g.players.some((p) => p.nameKey === nameKeyOf(cleanName(name)));
+      if (guests.length > 0 && !alreadyIn && !isGuest(guests, name)) {
+        return this.error(conn, 'join', 'Ce prénom n’est pas sur la liste des invités.');
+      }
       let joined: { id: string } | null = null;
       try {
         this.mutate((game, emit) => {
           const res = joinPlayer(
             game,
-            String(msg.name ?? ''),
+            name,
             msg.playerId,
             (id) => this.hasLiveConnection(id, conn),
             emit,
@@ -135,6 +145,18 @@ export class Room {
       this.send(conn, { t: 'hello.ok', role: 'play', playerId: player.id });
       this.sendState(conn);
     }
+  }
+
+  /** The guest names a phone can pick for this room, or null when the code does not match the live game. */
+  joinOptions(code: string): JoinOptionsDto | null {
+    const g = this.game;
+    if (!g || g.joinCode !== code.trim().toUpperCase()) return null;
+    return {
+      guests: readGuests().map((name) => {
+        const p = g.players.find((x) => x.nameKey === nameKeyOf(name));
+        return { name, taken: !!p && this.hasLiveConnection(p.id) };
+      }),
+    };
   }
 
   private onClose(conn: Conn): void {
@@ -203,7 +225,14 @@ export class Room {
   }
 
   private endGame(): void {
-    if (this.game) deleteSnapshot(this.game.joinCode);
+    if (this.game) {
+      try {
+        recordGameEnd(this.game);
+      } catch (err) {
+        console.error('Could not record final scores:', err);
+      }
+      deleteSnapshot(this.game.joinCode);
+    }
     this.game = null;
     for (const c of this.conns) {
       if (c.role === 'play') c.playerId = null;
@@ -234,6 +263,11 @@ export class Room {
         if (tile) recordAsk(tile.questionId, g.joinCode);
       }
       if (e.type === 'climax.announce' && g.climax.questionId !== null) recordAsk(g.climax.questionId, g.joinCode);
+      try {
+        recordEvent(g, e.type, e.payload);
+      } catch (err) {
+        console.error('Could not record stats:', err);
+      }
       const event: GameEvent = { seq: g.seq, type: e.type, at, payload: e.payload };
       this.broadcast({ t: 'event', event });
     }

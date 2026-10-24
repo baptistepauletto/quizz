@@ -716,6 +716,31 @@ textarea.input {
   text-align: center;
   display: block;
 }
+textarea.input {
+  font: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+.guest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.btn.guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.btn.guest small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
 
 /* ---------- swipe deck ---------- */
 
