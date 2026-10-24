@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Logo } from '../components/Logo';
 import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token, useCountUp } from '../components/stage';
 import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
 import { playerColors } from '../lib/colors';
@@ -144,9 +145,8 @@ function JoinForm(props: {
         props.onJoin(code.trim().toUpperCase(), name.trim());
       }}
     >
-      <h1 className="brand" style={{ fontSize: '2.2rem' }}>
-        <span className="brand-q">Quizz</span>
-        <span className="brand-in">In</span>
+      <h1 style={{ fontSize: '2.2rem' }}>
+        <Logo />
       </h1>
       {props.notice && <p className="error">{props.notice}</p>}
       <div className="field">
