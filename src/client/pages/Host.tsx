@@ -59,6 +59,7 @@ function NoGame({ game }: { game: UseGame }) {
     api<PileSummary>('GET', '/api/pile').then(setPile).catch(() =>
       setPile({
         approved: { sprint: 0, memory: 0, climax: 0 },
+        prepared: { sprint: 0, memory: 0, climax: 0 },
         tonight: { sprint: 0, memory: 0, climax: 0 },
         draft: 0,
         rejected: 0,
@@ -66,6 +67,7 @@ function NoGame({ game }: { game: UseGame }) {
     );
   }, []);
   const ready = pile !== null && pile.tonight.sprint > 0 && pile.tonight.memory > 0 && pile.tonight.climax > 0;
+  const prepared = pile !== null && (pile.prepared.sprint > 0 || pile.prepared.memory > 0 || pile.prepared.climax > 0);
 
   return (
     <>
@@ -86,14 +88,17 @@ function NoGame({ game }: { game: UseGame }) {
           </p>
           {ready ? (
             <p className="muted">
-              Ce soir : {pile.tonight.sprint} sprint, {pile.tonight.memory} grille et {pile.tonight.climax} finale. Les questions déjà posées restent en bas.
+              Ce soir : {pile.tonight.sprint} sprint, {pile.tonight.memory} grille et {pile.tonight.climax} finale.{' '}
+              {prepared
+                ? 'Soirée préparée sur /prep (les manches sans sélection sont tirées au hasard).'
+                : 'Tirage au hasard, les questions déjà posées restent en bas.'}
             </p>
           ) : (
             <p>Valide au moins une question sprint, une grille et une finale.</p>
           )}
           {ready ? (
             <button className="btn primary" onClick={() => game.send({ t: 'game.create' })}>
-              Tirer la soirée
+              {prepared ? 'Lancer la soirée' : 'Tirer la soirée'}
             </button>
           ) : (
             <Link className="btn primary" to="/prep" style={{ textAlign: 'center', textDecoration: 'none' }}>

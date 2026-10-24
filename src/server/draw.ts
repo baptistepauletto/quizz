@@ -1,10 +1,9 @@
-import type { Difficulty } from '../shared/types';
-import { DIFFICULTIES } from '../shared/types';
+import type { Bank, Difficulty } from '../shared/types';
+import { DIFFICULTIES, NIGHT_SIZE } from '../shared/types';
 import type { QuestionRec } from './game';
 import { shuffle } from './game';
 
-/** How many questions a night draws from each bank. Fewer if the pile is smaller. */
-export const NIGHT_SIZE = { sprint: 8, memory: 16, climax: 4 } as const;
+export { NIGHT_SIZE };
 
 /**
  * Draw one night from the approved pile.
@@ -18,12 +17,27 @@ export const NIGHT_SIZE = { sprint: 8, memory: 16, climax: 4 } as const;
  * so the grid is not twelve tiles of the same subject.
  */
 export function drawNight(questions: QuestionRec[], lastAsked: ReadonlyMap<number, number>): QuestionRec[] {
-  const of = (bank: QuestionRec['bank']) => questions.filter((q) => q.bank === bank);
-  return [
-    ...drawSprint(of('sprint'), lastAsked, NIGHT_SIZE.sprint),
-    ...drawSpread(of('memory'), lastAsked, NIGHT_SIZE.memory),
-    ...drawFresh(of('climax'), lastAsked, NIGHT_SIZE.climax, true),
-  ];
+  return (['sprint', 'memory', 'climax'] as const).flatMap((bank) =>
+    drawBank(
+      bank,
+      questions.filter((q) => q.bank === bank),
+      lastAsked,
+      NIGHT_SIZE[bank],
+    ),
+  );
+}
+
+/** `count` questions of one bank, with that bank's rules (difficulty mix, theme spread, freshness). */
+export function drawBank(
+  bank: Bank,
+  items: QuestionRec[],
+  lastAsked: ReadonlyMap<number, number>,
+  count: number,
+): QuestionRec[] {
+  if (count <= 0) return [];
+  if (bank === 'sprint') return drawSprint(items, lastAsked, count);
+  if (bank === 'memory') return drawSpread(items, lastAsked, count);
+  return drawFresh(items, lastAsked, count, true);
 }
 
 /** Never asked first, then oldest ask. Ties break on id so the pick is stable before the shuffle. */
@@ -48,7 +62,7 @@ function drawFresh(
   return mix ? shuffle(picked) : picked;
 }
 
-/** About 3 easy, 3 medium, 2 hard in a full hand of 8. Short buckets are filled from whatever is left. */
+/** About 3/8 easy, 3/8 medium, 2/8 hard. Short buckets are filled from whatever is left. */
 function sprintQuotas(n: number): Record<Difficulty, number> {
   const easy = Math.floor((n * 3) / 8);
   const medium = Math.floor((n * 3) / 8);

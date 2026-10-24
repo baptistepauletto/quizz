@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { asc, eq } from 'drizzle-orm';
-import { db, schema } from './db';
+import { db, schema, sqlite } from './db';
 import type {
   Bank,
   BankDraftQuestion,
@@ -76,16 +76,24 @@ export function pileSummary(): PileSummary {
     else if (q.status === 'draft') draft += 1;
     else if (q.status === 'rejected') rejected += 1;
   }
-  return {
-    approved,
-    tonight: {
-      sprint: Math.min(NIGHT_SIZE.sprint, approved.sprint),
-      memory: Math.min(NIGHT_SIZE.memory, approved.memory),
-      climax: Math.min(NIGHT_SIZE.climax, approved.climax),
-    },
-    draft,
-    rejected,
-  };
+  const prepared = preparedCounts();
+  const tonight = { sprint: 0, memory: 0, climax: 0 };
+  for (const bank of BANKS) tonight[bank] = prepared[bank] || Math.min(NIGHT_SIZE[bank], approved[bank]);
+  return { approved, prepared, tonight, draft, rejected };
+}
+
+/** Hand-picked questions per round that are still approved (see night.ts). */
+function preparedCounts(): Record<Bank, number> {
+  const rows = sqlite
+    .prepare(
+      `SELECT n.bank AS bank, COUNT(*) AS n FROM night_plan n
+       JOIN questions q ON q.id = n.question_id AND q.bank = n.bank AND q.status = 'approved'
+       GROUP BY n.bank`,
+    )
+    .all() as { bank: Bank; n: number }[];
+  const out = { sprint: 0, memory: 0, climax: 0 };
+  for (const row of rows) if (BANKS.includes(row.bank)) out[row.bank] = Math.min(row.n, NIGHT_SIZE[row.bank]);
+  return out;
 }
 
 export function pileQuestions(bank?: Bank): QuestionDto[] {

@@ -7,6 +7,7 @@ import {
   setQuestionStatus,
   syncDraftsFromDisk,
 } from './packs';
+import { fillNightPlan, getNightPlan, saveNightPlan } from './night';
 import { BANKS } from '../shared/types';
 import type { Bank, QuestionStatus } from '../shared/types';
 
@@ -43,6 +44,26 @@ export async function prepRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: 'bank doit être sprint, memory ou climax' });
       }
       return pileQuestions(raw ? (raw as Bank) : undefined);
+    });
+
+    api.get('/api/night', async () => getNightPlan());
+
+    api.put('/api/night', async (req, reply) => {
+      const selected = (req.body as { selected?: unknown } | null)?.selected;
+      if (!selected || typeof selected !== 'object') {
+        return reply.code(400).send({ error: 'selected doit lister les questions par manche' });
+      }
+      const lists: Partial<Record<Bank, number[]>> = {};
+      for (const bank of BANKS) {
+        const ids = (selected as Record<string, unknown>)[bank];
+        if (Array.isArray(ids)) lists[bank] = ids.map(Number).filter(Number.isInteger);
+      }
+      return saveNightPlan(lists);
+    });
+
+    api.post('/api/night/fill', async (req) => {
+      const raw = String((req.body as { bank?: unknown } | null)?.bank ?? '');
+      return fillNightPlan(BANKS.includes(raw as Bank) ? [raw as Bank] : BANKS);
     });
 
     api.get('/api/inbox', async () => draftQuestions());

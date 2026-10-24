@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 
 export type RevealMode = 'blur' | 'pixel' | 'zoomIn' | 'zoomOut';
 
@@ -8,6 +9,7 @@ const DURATION_MS = 12_000;
 const ZOOM_IN_START = 12;
 /** Tiny / pulled-out view that grows up to 1×. */
 const ZOOM_OUT_START = 0.12;
+const BLUR_START_PX = 28;
 /** Keep focus away from dead empty corners. */
 const ORIGIN_MIN = 0.15;
 const ORIGIN_MAX = 0.85;
@@ -42,227 +44,185 @@ interface Props {
   phase: Phase;
 }
 
+/**
+ * Reveal progress from 0 to 1. Time spent locked on a buzz does not count, so a
+ * wrong answer picks the reveal up exactly where it stopped.
+ */
+function useRevealClock(questionId: number, frozen: boolean, clear: boolean): () => number {
+  const clock = useRef({ start: 0, pausedAt: null as number | null });
+
+  useLayoutEffect(() => {
+    const now = performance.now();
+    clock.current = { start: now, pausedAt: null };
+  }, [questionId]);
+
+  useLayoutEffect(() => {
+    const c = clock.current;
+    const now = performance.now();
+    if (frozen && c.pausedAt === null) c.pausedAt = now;
+    if (!frozen && c.pausedAt !== null) {
+      c.start += now - c.pausedAt;
+      c.pausedAt = null;
+    }
+  }, [frozen, questionId]);
+
+  return useCallback(() => {
+    if (clear) return 1;
+    const c = clock.current;
+    return Math.min(1, Math.max(0, ((c.pausedAt ?? performance.now()) - c.start) / DURATION_MS));
+  }, [clear]);
+}
+
+/** Calls `paint` every frame while the reveal runs, once otherwise (and again on resize). */
+function useRevealLoop(
+  progress: () => number,
+  paint: (p: number) => void,
+  running: boolean,
+  target: RefObject<Element | null>,
+  deps: unknown[],
+) {
+  useEffect(() => {
+    let raf = 0;
+    const frame = () => {
+      const p = progress();
+      paint(p);
+      if (running && p < 1) raf = requestAnimationFrame(frame);
+    };
+    frame();
+    const el = target.current;
+    const ro = el ? new ResizeObserver(() => paint(progress())) : null;
+    if (el) ro!.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
+  }, [progress, running, ...deps]);
+}
+
 export function PhotoReveal({ src, questionId, phase }: Props) {
   const mode = useMemo(() => pickMode(questionId), [questionId]);
   const clear = phase === 'resolved';
   const frozen = phase === 'locked';
+  const progress = useRevealClock(questionId, frozen, clear);
+  const running = !clear && !frozen;
 
-  if (mode === 'pixel') {
-    return <PixelReveal src={src} clear={clear} frozen={frozen} questionId={questionId} />;
-  }
-  if (mode === 'zoomIn' || mode === 'zoomOut') {
-    return (
-      <ZoomReveal
-        src={src}
-        clear={clear}
-        frozen={frozen}
-        questionId={questionId}
-        from={mode === 'zoomIn' ? ZOOM_IN_START : ZOOM_OUT_START}
-      />
-    );
-  }
-  return <BlurReveal src={src} clear={clear} frozen={frozen} questionId={questionId} />;
-}
-
-function BlurReveal({
-  src,
-  clear,
-  frozen,
-  questionId,
-}: {
-  src: string;
-  clear: boolean;
-  frozen: boolean;
-  questionId: number;
-}) {
-  const className = ['reveal-photo', 'reveal-blur', clear ? 'clear' : '', frozen && !clear ? 'frozen' : '']
-    .filter(Boolean)
-    .join(' ');
+  if (mode === 'pixel') return <PixelReveal key={questionId} src={src} progress={progress} running={running} />;
   return (
-    <div className="reveal-frame">
-      <img key={questionId} className={className} src={src} alt="" />
-    </div>
+    <TransformReveal
+      key={questionId}
+      src={src}
+      mode={mode}
+      origin={pickOrigin(questionId)}
+      progress={progress}
+      running={running}
+    />
   );
 }
 
-function ZoomReveal({
+/** Blur and zoom: both are a style on the <img> recomputed from progress. */
+function TransformReveal({
   src,
-  clear,
-  frozen,
-  questionId,
-  from,
+  mode,
+  origin,
+  progress,
+  running,
 }: {
   src: string;
-  clear: boolean;
-  frozen: boolean;
-  questionId: number;
-  /** Scale at t=0; always ends at 1. */
-  from: number;
+  mode: Exclude<RevealMode, 'pixel'>;
+  origin: { x: number; y: number };
+  progress: () => number;
+  running: boolean;
 }) {
   const imgRef = useRef<HTMLImageElement>(null);
-  const startRef = useRef(0);
-  const freezeAtRef = useRef<number | null>(null);
-  const rafRef = useRef(0);
-  const origin = useMemo(() => pickOrigin(questionId), [questionId]);
 
-  useEffect(() => {
-    freezeAtRef.current = null;
-    startRef.current = performance.now();
-  }, [src, questionId, from]);
-
-  useEffect(() => {
-    if (frozen && freezeAtRef.current === null) {
-      freezeAtRef.current = Math.min(1, (performance.now() - startRef.current) / DURATION_MS);
-    }
-    if (!frozen && !clear) freezeAtRef.current = null;
-  }, [frozen, clear]);
-
-  useEffect(() => {
+  const paint = (p: number) => {
     const img = imgRef.current;
     if (!img) return;
-
+    // Ease out so the last seconds settle into a readable frame.
+    const eased = 1 - Math.pow(1 - p, 2);
+    if (mode === 'blur') {
+      img.style.filter = p >= 1 ? 'none' : `blur(${BLUR_START_PX * (1 - p)}px)`;
+      img.style.transform = `scale(${1.12 - 0.12 * p})`;
+      return;
+    }
+    const from = mode === 'zoomIn' ? ZOOM_IN_START : ZOOM_OUT_START;
     img.style.transformOrigin = `${origin.x * 100}% ${origin.y * 100}%`;
+    img.style.transform = `scale(${from + (1 - from) * eased})`;
+  };
 
-    const apply = (progress: number) => {
-      const p = clear ? 1 : Math.min(1, Math.max(0, progress));
-      // Ease out so the last seconds settle into a readable frame.
-      const eased = 1 - Math.pow(1 - p, 2);
-      const scale = from + (1 - from) * eased;
-      img.style.transform = `scale(${scale})`;
-    };
-
-    const tick = (now: number) => {
-      const t = clear ? 1 : frozen && freezeAtRef.current !== null ? freezeAtRef.current : (now - startRef.current) / DURATION_MS;
-      apply(t);
-      if (!clear && !frozen && t < 1) rafRef.current = requestAnimationFrame(tick);
-    };
-
-    if (clear) {
-      apply(1);
-      return;
-    }
-    if (frozen) {
-      apply(freezeAtRef.current ?? 0);
-      return;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [src, questionId, clear, frozen, from, origin.x, origin.y]);
+  useRevealLoop(progress, paint, running, imgRef, [mode, src]);
 
   return (
-    <div className="reveal-frame reveal-frame-zoom">
-      <img key={questionId} ref={imgRef} className="reveal-photo reveal-zoom" src={src} alt="" />
+    <div className="reveal-frame">
+      <img ref={imgRef} className="reveal-photo reveal-live" src={src} alt="" />
     </div>
   );
 }
 
-function PixelReveal({
-  src,
-  clear,
-  frozen,
-  questionId,
-}: {
-  src: string;
-  clear: boolean;
-  frozen: boolean;
-  questionId: number;
-}) {
+function PixelReveal({ src, progress, running }: { src: string; progress: () => number; running: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const startRef = useRef(0);
-  const freezeAtRef = useRef<number | null>(null);
-  const rafRef = useRef(0);
-  const [ready, setReady] = useState(false);
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    freezeAtRef.current = null;
-    startRef.current = performance.now();
-    setReady(false);
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => {
-      imgRef.current = img;
-      setReady(true);
-    };
-    img.src = src;
+    setImg(null);
+    const next = new Image();
+    next.decoding = 'async';
+    next.onload = () => setImg(next);
+    next.src = src;
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      imgRef.current = null;
+      next.onload = null;
     };
-  }, [src, questionId]);
+  }, [src]);
 
-  useEffect(() => {
-    if (frozen && freezeAtRef.current === null) {
-      freezeAtRef.current = Math.min(1, (performance.now() - startRef.current) / DURATION_MS);
-    }
-    if (!frozen && !clear) freezeAtRef.current = null;
-  }, [frozen, clear]);
-
-  useEffect(() => {
-    if (!ready) return;
+  const paint = (p: number) => {
     const canvas = canvasRef.current;
-    const img = imgRef.current;
     if (!canvas || !img) return;
+    const block = Math.max(1, Math.round(48 * (1 - p) + 1 * p));
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (w === 0 || h === 0) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cw = Math.round(w * dpr);
+    const ch = Math.round(h * dpr);
+    if (canvas.width !== cw || canvas.height !== ch) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#1a1230';
+    ctx.fillRect(0, 0, w, h);
 
-    const draw = (t: number) => {
-      const progress = clear ? 1 : frozen && freezeAtRef.current !== null ? freezeAtRef.current : Math.min(1, t);
-      const block = Math.max(1, Math.round(48 * (1 - progress) + 1 * progress));
-      const w = canvas.clientWidth || 640;
-      const h = canvas.clientHeight || 360;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = '#1a1230';
-      ctx.fillRect(0, 0, w, h);
+    const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+    const dw = img.naturalWidth * scale;
+    const dh = img.naturalHeight * scale;
+    const dx = (w - dw) / 2;
+    const dy = (h - dh) / 2;
 
-      const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-      const dw = img.naturalWidth * scale;
-      const dh = img.naturalHeight * scale;
-      const dx = (w - dw) / 2;
-      const dy = (h - dh) / 2;
-
-      if (progress >= 0.98) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(img, dx, dy, dw, dh);
-        return;
-      }
-
-      const sw = Math.max(1, Math.ceil(dw / block));
-      const sh = Math.max(1, Math.ceil(dh / block));
-      const tiny = document.createElement('canvas');
-      tiny.width = sw;
-      tiny.height = sh;
-      const tctx = tiny.getContext('2d');
-      if (!tctx) return;
-      tctx.imageSmoothingEnabled = true;
-      tctx.drawImage(img, 0, 0, sw, sh);
-      ctx.drawImage(tiny, 0, 0, sw, sh, dx, dy, dw, dh);
-    };
-
-    const tick = (now: number) => {
-      const t = (now - startRef.current) / DURATION_MS;
-      draw(t);
-      if (!clear && !frozen && t < 1) rafRef.current = requestAnimationFrame(tick);
-    };
-
-    if (clear) {
-      draw(1);
+    if (p >= 0.98) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, dx, dy, dw, dh);
       return;
     }
-    if (frozen) {
-      draw(freezeAtRef.current ?? 0);
-      return;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [ready, clear, frozen, src]);
+
+    const sw = Math.max(1, Math.ceil(dw / block));
+    const sh = Math.max(1, Math.ceil(dh / block));
+    const tiny = document.createElement('canvas');
+    tiny.width = sw;
+    tiny.height = sh;
+    const tctx = tiny.getContext('2d');
+    if (!tctx) return;
+    tctx.imageSmoothingEnabled = true;
+    tctx.drawImage(img, 0, 0, sw, sh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tiny, 0, 0, sw, sh, dx, dy, dw, dh);
+  };
+
+  useRevealLoop(progress, paint, running, canvasRef, [img]);
 
   return (
-    <div className="reveal-frame reveal-frame-pixel">
+    <div className="reveal-frame">
       <canvas ref={canvasRef} className="reveal-canvas" aria-hidden />
     </div>
   );

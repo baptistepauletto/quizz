@@ -13,6 +13,9 @@ export const POINTS: Record<Difficulty, number> = { easy: 1, medium: 3, hard: 5 
 export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 export const BANKS: Bank[] = ['sprint', 'memory', 'climax'];
 
+/** Questions per round in one night. Memory 49 fills a 7×7 grid. */
+export const NIGHT_SIZE: Record<Bank, number> = { sprint: 25, memory: 49, climax: 10 };
+
 // ---------------------------------------------------------------------------
 // Views (what clients receive)
 // ---------------------------------------------------------------------------
@@ -228,10 +231,19 @@ export interface BankDraftFile {
 
 export interface PileSummary {
   approved: Record<Bank, number>;
+  /** Questions picked by hand for the next night (0 = that round is drawn automatically). */
+  prepared: Record<Bank, number>;
   tonight: Record<Bank, number>;
   /** Waiting for swipe (new or content-changed). */
   draft: number;
   rejected: number;
+}
+
+/** The prepared night: approved question ids per round, in play order. */
+export interface NightPlanDto {
+  selected: Record<Bank, number[]>;
+  /** Question id → last time it was asked on the TV (ms). Missing = never asked. */
+  asked: Record<number, number>;
 }
 
 export interface SyncResult {

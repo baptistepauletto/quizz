@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
+import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token } from '../components/stage';
+import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
+import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
 import type { GameView, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
@@ -89,17 +92,21 @@ export function Play() {
   }
 
   const me = state?.players.find((p) => p.id === playerId);
+  const myColor = me && state ? playerColors(state.players).get(me.id) : undefined;
   return (
-    <div className="play">
+    <div className="play" data-phase={state?.phase} style={{ '--me': myColor } as CSSProperties}>
       <div className="play-head">
-        <div>
-          <div className="muted" style={{ fontSize: '0.8rem' }}>
-            {state ? `Salle ${state.joinCode}` : 'Connexion…'}
+        <div className="row">
+          <Token name={me?.name ?? session.name} color={myColor} />
+          <div>
+            <div className="muted" style={{ fontSize: '0.8rem' }}>
+              {state ? `Salle ${state.joinCode}` : 'Connexion…'}
+            </div>
+            <b>{me?.name ?? session.name}</b>
           </div>
-          <b>{me?.name ?? session.name}</b>
         </div>
-        <div className="score" key={me?.score}>
-          {me?.score ?? 0} <span className="muted" style={{ fontSize: '0.9rem' }}>pts</span>
+        <div className="score">
+          <CountUp value={me?.score ?? 0} /> <span className="muted" style={{ fontSize: '0.9rem' }}>pts</span>
         </div>
       </div>
       {state && me ? (
@@ -170,18 +177,20 @@ function JoinForm(props: {
 // ---------------------------------------------------------------------------
 
 function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseGame }) {
+  const colors = playerColors(state.players);
   switch (state.phase) {
     case 'lobby':
       return (
         <div className="play-body">
+          <Token name={me.name} color={colors.get(me.id)} className="hero" />
           <h2>Tu es dans la partie !</h2>
-          <p className="muted">Regarde la TV. L’hôte va bientôt lancer le jeu.</p>
+          <p className="muted">C’est ta couleur ce soir. Regarde la TV, l’hôte va bientôt lancer le jeu.</p>
         </div>
       );
     case 'sprint':
       return <Buzzer state={state} me={me} game={game} />;
     case 'memory':
-      return <MemoryInfo state={state} me={me} />;
+      return <MemoryInfo state={state} me={me} colors={colors} />;
     case 'climax':
       return <ClimaxPlayer state={state} me={me} game={game} />;
     case 'results': {
@@ -189,8 +198,9 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
       return (
         <div className="play-body">
           <p className="muted">Résultat final</p>
-          <h2 style={{ fontSize: '4rem' }}>#{rank}</h2>
+          <div className="rank-big">#{rank}</div>
           <p>{me.score} points</p>
+          {rank <= 3 && <Confetti colors={[colors.get(me.id) ?? '#ffd27a', '#ffd27a', '#f4efe4']} count={70} duration={3.5} />}
         </div>
       );
     }
@@ -245,7 +255,7 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
 
 // --- Phase 2 -----------------------------------------------------------------
 
-function MemoryInfo({ state, me }: { state: GameView; me: PlayerView }) {
+function MemoryInfo({ state, me, colors }: { state: GameView; me: PlayerView; colors: Map<string, string> }) {
   const m = state.memory;
   const myTurn = m.turnPlayerId === me.id;
   const asking = m.askingCoord ? m.tiles.find((t) => t.coord === m.askingCoord) : undefined;
@@ -284,13 +294,19 @@ function MemoryInfo({ state, me }: { state: GameView; me: PlayerView }) {
     <div className="play-body">
       {myTurn ? (
         <>
+          <Token name={me.name} color={colors.get(me.id)} className="hero pulse" />
           <h2>À toi !</h2>
           <p>Annonce une case, par exemple B3.</p>
         </>
       ) : (
         <>
           <p className="muted">Au tour de</p>
-          <h2>{nameOf(state.players, m.turnPlayerId)}</h2>
+          {m.turnPlayerId && (
+            <Token name={nameOf(state.players, m.turnPlayerId)} color={colors.get(m.turnPlayerId)} className="hero" />
+          )}
+          <h2 style={{ color: m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined }}>
+            {nameOf(state.players, m.turnPlayerId)}
+          </h2>
         </>
       )}
     </div>
@@ -356,7 +372,15 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     return (
       <div className="play-body">
         {header}
-        <div className="bet-amount">{amount}</div>
+        <div className="bet-pile">
+          <ChipStack mode="shown" amount={amount} />
+          <div className="bet-amount">{amount}</div>
+        </div>
+        <div className="chip-row">
+          {[1, 5, 10, 25].map((v) => (
+            <ChipButton key={v} value={v} disabled={amount >= max} onClick={() => setAmount((a) => Math.min(max, a + v))} />
+          ))}
+        </div>
         <input
           type="range"
           min={0}
@@ -367,13 +391,14 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
           aria-label="Mise"
         />
         <div className="row">
-          {[0.25, 0.5].map((f) => (
-            <button key={f} className="btn grow" onClick={() => setAmount(Math.floor(max * f))}>
-              {f * 100}%
-            </button>
-          ))}
+          <button className="btn grow" onClick={() => setAmount(0)}>
+            Reprendre
+          </button>
+          <button className="btn grow" onClick={() => setAmount(Math.floor(max / 2))}>
+            Moitié
+          </button>
           <button className="btn grow" onClick={() => setAmount(max)}>
-            Tout
+            Tapis
           </button>
         </div>
         <button className="btn primary big" disabled={placed} onClick={() => game.send({ t: 'bet', amount })}>
@@ -422,6 +447,9 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
       {c.status === 'resolved' &&
         (result ? (
           <>
+            <div className={`bet-pile ${result.correct ? 'won' : 'lost'}`}>
+              <ChipStack mode={result.correct ? 'won' : 'lost'} amount={result.correct ? 3 * result.wager : result.wager} />
+            </div>
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct ? `+${2 * result.wager}` : `-${result.wager}`}
             </div>
@@ -449,8 +477,6 @@ function ClimaxAnswering({
   myAnswer: string | null;
   game: UseGame;
 }) {
-  const now = useNow(250);
-  const left = answerUntil ? Math.max(0, Math.ceil((answerUntil - now) / 1000)) : 0;
   const [text, setText] = useState(myAnswer ?? '');
 
   useEffect(() => {
@@ -468,9 +494,7 @@ function ClimaxAnswering({
   return (
     <div className="play-body">
       {header}
-      <div className="bet-amount" style={{ fontSize: '2.5rem' }}>
-        {left}s
-      </div>
+      <CountdownRing until={answerUntil} className="phone-ring" />
       {question?.image && <img className="q-photo" src={question.image} alt="" />}
       {question?.prompt && <div className="prompt">{question.prompt}</div>}
       <div className="muted">Mise en jeu : {wager}</div>

@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Host } from './pages/Host';
+import { NightPage } from './pages/Night';
 import { Play } from './pages/Play';
 import { PilePage, PrepHome } from './pages/Prep';
 import { Swipe } from './pages/Swipe';
@@ -38,6 +39,7 @@ export function App() {
       <Route path="/play" element={<Play />} />
       <Route path="/prep" element={<PrepHome />} />
       <Route path="/prep/pile" element={<PilePage />} />
+      <Route path="/prep/night" element={<NightPage />} />
       <Route path="/prep/swipe" element={<Swipe />} />
       <Route path="*" element={<Home />} />
     </Routes>

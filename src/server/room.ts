@@ -11,9 +11,8 @@ import {
   viewFor,
 } from './game';
 import type { Emit, Game } from './game';
-import { drawNight } from './draw';
-import { lastAsked, recordAsk } from './history';
-import { approvedQuestions } from './packs';
+import { recordAsk } from './history';
+import { nightHand } from './night';
 import { deleteSnapshot, loadLatestSnapshot, saveSnapshot } from './snapshot';
 import type { ClientMessage, HelloMessage, HostCommand, PlayerMessage, ServerMessage } from '../shared/protocol';
 import type { GameEvent, GameEventType, Role } from '../shared/types';
@@ -193,7 +192,7 @@ export class Room {
 
   private createGame(): void {
     if (this.game) throw new GameError('Une partie est déjà en cours. Termine-la d’abord.');
-    const hand = drawNight(approvedQuestions(), lastAsked());
+    const hand = nightHand();
     const missing = (['sprint', 'memory', 'climax'] as const).filter((bank) => !hand.some((q) => q.bank === bank));
     if (missing.length > 0) {
       throw new GameError(`Valide au moins une question dans : ${missing.join(', ')}.`);

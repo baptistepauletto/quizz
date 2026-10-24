@@ -53,6 +53,11 @@ sqlite.exec(`
     join_code TEXT NOT NULL,
     asked_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS night_plan (
+    question_id INTEGER PRIMARY KEY,
+    bank TEXT NOT NULL,
+    position INTEGER NOT NULL
+  );
   CREATE INDEX IF NOT EXISTS idx_questions_bank ON questions(bank);
   CREATE INDEX IF NOT EXISTS idx_questions_status ON questions(status);
   CREATE INDEX IF NOT EXISTS idx_asks_question ON question_asks(question_id);

@@ -99,6 +99,20 @@ function PrepHub() {
           </section>
 
           <section className="stack">
+            <h2>La soirée</h2>
+            <p className="muted">
+              {BANKS.some((b) => pile.prepared[b] > 0)
+                ? BANKS.map((b) =>
+                    pile.prepared[b] > 0 ? `${BANK_LABEL[b]} ${pile.prepared[b]} choisies` : `${BANK_LABEL[b]} au hasard`,
+                  ).join(' · ')
+                : 'Rien de choisi : les questions seront tirées au hasard.'}
+            </p>
+            <Link to="/prep/night" className="btn primary big" style={{ textAlign: 'center', textDecoration: 'none' }}>
+              Choisir les questions de la soirée
+            </Link>
+          </section>
+
+          <section className="stack">
             <h2>À relire</h2>
             {pile.draft > 0 ? (
               <Link to="/prep/swipe" className="btn primary big" style={{ textAlign: 'center', textDecoration: 'none' }}>

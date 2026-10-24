@@ -7,7 +7,7 @@ Local multiplayer trivia for a living room: one PC runs the server and shows the
 | `/tv` | TV PC | Join code + QR, scoreboard, grid, question modal, podium |
 | `/play` | Players (via QR) | Buzzer, secret bets |
 | `/host` | You (phone) | Read answers, award points, change phase (PIN) |
-| `/prep` | You (phone) | Import JSON drafts, swipe to approve/discard (PIN) |
+| `/prep` | You (phone) | Import JSON drafts, swipe to approve/discard, choose the night's questions (PIN) |
 
 ## Run it
 
@@ -53,7 +53,7 @@ Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is
 
 `difficulty` is `easy | medium | hard`. Any bank can set optional `image` to a file inside `pictures/` (see `pictures/README.md`). Sprint blurs then sharpens while people buzz; memory and climax show the photo immediately on ask. Phones never get sprint pictures. Memory questions may also set `"options": ["…","…","…","…"]` (exactly four); `answer` must match one option exactly. The peek grid stays theme + difficulty only; choices appear on the TV after the host flips the tile.
 
-Imports are review batches, not separate nights. Everything you approve goes into one pile. Starting a night draws 8 sprint, 16 memory and 4 finale questions (or fewer, if the pile is smaller): never-asked first, then the ones asked longest ago. Sprint keeps a mix of difficulties. Memory spreads across themes.
+Imports are review batches, not separate nights. Everything you approve goes into one pile. A night has 25 sprint, 49 memory (a 7×7 grid) and 10 finale questions. To choose them yourself, open `/prep/night`: pick questions per round, set the sprint and finale order, or top a round up at random. The selection is saved as you go and stays until you change it. A round with nothing picked is drawn automatically (or fewer questions, if the pile is smaller): never-asked first, then the ones asked longest ago. Sprint keeps a mix of difficulties. Memory spreads across themes.
 
 Draft JSON files live in `drafts/` (for example `drafts/example.json` and `drafts/pictures.json`). Import them on `/prep`, swipe to approve, and they join the shared pile. The smoke test's questions live only inside `scripts/smoke.ts` and are thrown away with the test database. Marking an import finished still requires one approved question in each bank; that mark is only a reminder. The night itself only needs the pile to have one approved question in each bank.
 
@@ -67,4 +67,4 @@ Before a game night, friends open one page, set a nickname, and claim a theme. T
 - `npm run bots -- <CODE> <N>` – N fake players join room `<CODE>` and buzz/bet randomly.
 - `npm run typecheck`
 
-The audio layer is intentionally silent: gameplay events are already emitted and mapped in `src/client/lib/sfx.ts`, ready for sound files later.
+Sound effects are synthesized in the browser (`src/client/lib/sfx.ts`, no audio files). Browsers keep audio locked until the page gets a key press or a click, so press any key on the TV once; `m` mutes and unmutes.

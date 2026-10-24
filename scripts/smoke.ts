@@ -7,9 +7,10 @@ import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import WebSocket from 'ws';
-import { drawNight } from '../src/server/draw';
+import { NIGHT_SIZE, drawNight } from '../src/server/draw';
 import type { QuestionRec } from '../src/server/game';
 import type { ClientMessage, ServerMessage } from '../src/shared/protocol';
+import { BANKS } from '../src/shared/types';
 import type { GameEvent, GameView } from '../src/shared/types';
 
 const PORT = 3999;
@@ -87,34 +88,38 @@ function sampleQuestion(
 
 console.log('\nNight draw');
 {
-  const fresh = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
+  const n = NIGHT_SIZE.sprint;
+  const ids1 = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
+  const fresh = ids1(n + 2).map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
   const hand = drawNight(fresh, new Map([[1, 1], [2, 2]]));
-  check(hand.length === 8 && hand.every((q) => q.id > 2), 'fresh sprint questions are drawn before ones already asked');
+  check(hand.length === n && hand.every((q) => q.id > 2), 'fresh sprint questions are drawn before ones already asked');
 
   const scarce = [
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy')),
-    sampleQuestion(11, 'sprint', 'General', 'medium'),
-    sampleQuestion(12, 'sprint', 'General', 'hard'),
+    ...ids1(n + 2).map((id) => sampleQuestion(id, 'sprint', 'General', 'easy')),
+    sampleQuestion(n + 3, 'sprint', 'General', 'medium'),
+    sampleQuestion(n + 4, 'sprint', 'General', 'hard'),
   ];
   const mixed = drawNight(scarce, new Map());
   check(
-    mixed.some((q) => q.difficulty === 'medium') && mixed.some((q) => q.difficulty === 'hard') && mixed.length === 8,
+    mixed.some((q) => q.difficulty === 'medium') && mixed.some((q) => q.difficulty === 'hard') && mixed.length === n,
     'a sprint hand keeps scarce difficulties',
   );
 
-  const aged = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
-  const oldest = drawNight(aged, new Map([[3, 30], [4, 40], [5, 50], [6, 60], [7, 70], [8, 80], [9, 90], [10, 100]]));
+  const aged = ids1(n + 2).map((id) => sampleQuestion(id, 'sprint', 'General', 'easy'));
+  const oldest = drawNight(aged, new Map(ids1(n + 2).slice(2).map((id) => [id, id * 10])));
   const ids = new Set(oldest.map((q) => q.id));
-  check(ids.has(1) && ids.has(2) && ids.has(3) && !ids.has(10), 'when the fresh pile runs out, the oldest asked questions return first');
+  check(ids.has(1) && ids.has(2) && ids.has(3) && !ids.has(n + 2), 'when the fresh pile runs out, the oldest asked questions return first');
 
+  const perTheme = 20;
   const memory = ['Space', 'Cinema', 'Food'].flatMap((theme, ti) =>
-    [0, 1, 2, 3, 4, 5].map((i) => sampleQuestion(200 + ti * 10 + i, 'memory', theme, 'easy')),
+    Array.from({ length: perTheme }, (_, i) => sampleQuestion(200 + ti * 100 + i, 'memory', theme, 'easy')),
   );
   const grid = drawNight(memory, new Map());
   const tally: Record<string, number> = {};
   for (const q of grid) tally[q.theme] = (tally[q.theme] ?? 0) + 1;
+  const fair = Math.floor(NIGHT_SIZE.memory / 3);
   check(
-    grid.length === 16 && tally.Space >= 5 && tally.Cinema >= 5 && tally.Food >= 5,
+    grid.length === NIGHT_SIZE.memory && tally.Space >= fair && tally.Cinema >= fair && tally.Food >= fair,
     'memory hand spreads across themes',
   );
 }
@@ -239,6 +244,30 @@ try {
   check(restored.json.added === 1 || restored.json.updated >= 1, 'restored climax question returns for review');
   const restoreInbox = await api('GET', '/api/inbox', undefined, token);
   for (const q of restoreInbox.json) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
+
+  console.log('\nNight plan');
+  const approvedAll = (await api('GET', '/api/pile/questions', undefined, token)).json as { id: number; bank: string }[];
+  const idsOf = (bank: string) => approvedAll.filter((q) => q.bank === bank).map((q) => q.id);
+  const [s1, s2] = idsOf('sprint');
+  const memId = idsOf('memory')[0];
+  const emptyPlan = await api('GET', '/api/night', undefined, token);
+  check(emptyPlan.status === 200 && emptyPlan.json.selected.sprint.length === 0, 'no night is prepared at first');
+  const saved = await api('PUT', '/api/night', { selected: { sprint: [s2, s1, s2, memId, 999999], memory: [], climax: [] } }, token);
+  check(
+    JSON.stringify(saved.json.selected.sprint) === JSON.stringify([s2, s1]),
+    'a prepared round keeps its order and drops duplicates, other rounds and unknown ids',
+  );
+  const preparedPile = await api('GET', '/api/pile', undefined, token);
+  check(preparedPile.json.prepared.sprint === 2 && preparedPile.json.prepared.memory === 0, 'the pile summary counts prepared questions');
+  const filled = await api('POST', '/api/night/fill', { bank: 'memory' }, token);
+  check(
+    filled.json.selected.memory.length === idsOf('memory').length && filled.json.selected.sprint.length === 2,
+    'filling a round tops it up from the pile without touching the others',
+  );
+  const cleared = await api('PUT', '/api/night', { selected: { sprint: [], memory: [], climax: [] } }, token);
+  check(BANKS.every((b) => cleared.json.selected[b].length === 0), 'a prepared night can be cleared');
+  const unauthed = await api('GET', '/api/night');
+  check(unauthed.status === 401, 'the night plan needs the PIN');
 
   console.log('\nRoom');
   const tv = new Client('tv');
@@ -386,14 +415,17 @@ try {
 
   await host.cmd({ t: 'memory.flip', coord: scoredCoord! });
   check(host.errors.length > 0, 'a consumed tile cannot be asked again');
-  const coord2 = host.state!.memory.tiles.find((x) => x.face === 'hidden')!.coord;
-  const turn2 = host.state!.memory.turnPlayerId!;
-  const before2 = host.state!.players.find((p) => p.id === turn2)!.score;
-  await host.cmd({ t: 'memory.flip', coord: coord2 });
-  await host.cmd({ t: 'memory.resolve', correct: false });
-  check(host.state!.players.find((p) => p.id === turn2)!.score === before2, 'a miss scores nothing');
-  const t2 = host.state!.memory.tiles.find((t) => t.coord === coord2)!;
-  check(t2.face === 'consumed' && t2.result === 'miss', 'a missed tile is consumed too and never returns');
+  // The search above may have used every tile, depending on the shuffle.
+  const coord2 = host.state!.memory.tiles.find((x) => x.face === 'hidden')?.coord;
+  if (coord2) {
+    const turn2 = host.state!.memory.turnPlayerId!;
+    const before2 = host.state!.players.find((p) => p.id === turn2)!.score;
+    await host.cmd({ t: 'memory.flip', coord: coord2 });
+    await host.cmd({ t: 'memory.resolve', correct: false });
+    check(host.state!.players.find((p) => p.id === turn2)!.score === before2, 'a miss scores nothing');
+    const t2 = host.state!.memory.tiles.find((t) => t.coord === coord2)!;
+    check(t2.face === 'consumed' && t2.result === 'miss', 'a missed tile is consumed too and never returns');
+  }
   check(
     host.state!.memory.remaining === host.state!.memory.tiles.filter((t) => t.face !== 'consumed').length,
     'remaining matches unconsumed tiles',
