@@ -2,7 +2,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { computeGrid, coordsFor } from '../shared/grid';
 import { mediaUrl } from './pictures';
 import type { HostCommand, PlayerMessage } from '../shared/protocol';
-import { POINTS } from '../shared/types';
+import { POINTS, PREDICTION_BONUS, climaxWinDelta } from '../shared/types';
 import type {
   Bank,
   ClimaxCandidate,
@@ -16,6 +16,9 @@ import type {
   MemoryView,
   Phase,
   PlayerView,
+  PredictionPick,
+  PredictionStatus,
+  PredictionsView,
   QuestionView,
   Role,
   SprintStatus,
@@ -25,7 +28,7 @@ import type {
 } from '../shared/types';
 
 /** How long the themes stay face-up before the grid flips face-down on its own. */
-export const PREVIEW_MS = 30_000;
+export const PREVIEW_MS = 60_000;
 /** How long climax bettors have to type after the question is revealed. */
 export const CLIMAX_ANSWER_MS = Number(process.env.CLIMAX_ANSWER_MS ?? 30_000);
 export const MAX_PLAYERS = 16;
@@ -105,6 +108,18 @@ export interface Game {
     answerUntil: number | null;
     results: ClimaxResult[];
   };
+  predictions: {
+    status: PredictionStatus;
+    /** voterId → targetPlayerId */
+    picks: Record<string, string>;
+    /** Frozen when entering reveal: everyone tied for #1 after climax. */
+    winnerIds: string[];
+    /** Join-order of voters who made a pick (stable reveal sequence). */
+    revealOrder: string[];
+    /** -1 teaser; 0..n-1 last revealed index; >= n all shown. */
+    revealIndex: number;
+    awarded: boolean;
+  };
 }
 
 export class GameError extends Error {}
@@ -173,7 +188,25 @@ export function createGame(packId: number, packTitle: string, questions: Questio
       answerUntil: null,
       results: [],
     },
+    predictions: emptyPredictions(),
   };
+}
+
+function emptyPredictions(): Game['predictions'] {
+  return {
+    status: 'idle',
+    picks: {},
+    winnerIds: [],
+    revealOrder: [],
+    revealIndex: -1,
+    awarded: false,
+  };
+}
+
+/** Fill fields missing from older snapshots so a mid-game restart still loads. */
+export function hydrateGame(g: Game): Game {
+  if (!g.predictions) g.predictions = emptyPredictions();
+  return g;
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +294,12 @@ function removePlayer(g: Game, playerId: string, emit: Emit) {
   g.climax.eligible = g.climax.eligible.filter((id) => id !== playerId);
   delete g.climax.bets[playerId];
   delete g.climax.answers[playerId];
+  delete g.predictions.picks[playerId];
+  for (const [voter, target] of Object.entries(g.predictions.picks)) {
+    if (target === playerId) delete g.predictions.picks[voter];
+  }
+  g.predictions.revealOrder = g.predictions.revealOrder.filter((id) => id !== playerId && g.predictions.picks[id]);
+  g.predictions.winnerIds = g.predictions.winnerIds.filter((id) => id !== playerId);
   maybeResolveClimax(g, emit);
 }
 
@@ -308,6 +347,17 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
       .slice(0, MAX_ANSWER_LENGTH);
     c.answers[playerId] = text;
     emit('climax.answer', { playerId });
+    return true;
+  }
+
+  if (msg.t === 'predict') {
+    const pred = g.predictions;
+    if (g.phase !== 'predictions' || pred.status !== 'open') {
+      throw new GameError('Les paris sur le vainqueur ne sont pas ouverts.');
+    }
+    playerOf(g, msg.playerId); // target must exist
+    pred.picks[playerId] = msg.playerId;
+    emit('predictions.pick', { playerId });
     return true;
   }
 
@@ -368,6 +418,15 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
     case 'climax.reset':
       return climaxReset(g);
 
+    case 'predictions.lock':
+      return lockPredictions(g, emit);
+    case 'reveal.next':
+      return revealNext(g, emit);
+    case 'reveal.all':
+      return revealAll(g, emit);
+    case 'reveal.award':
+      return revealAward(g, emit);
+
     default:
       throw new GameError('Commande inconnue.');
   }
@@ -375,9 +434,18 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
 
 function setPhase(g: Game, phase: Phase, emit: Emit) {
   if (g.phase === phase) return;
+  // Leaving the prediction mini-step without an explicit lock still seals the picks.
+  if (g.phase === 'predictions' && g.predictions.status === 'open' && phase !== 'predictions') {
+    lockPredictions(g, emit);
+  }
   g.phase = phase;
   emit('phase.changed', { phase });
+  if (phase === 'predictions' && g.predictions.status === 'idle') {
+    g.predictions.status = 'open';
+    emit('predictions.open', {});
+  }
   if (phase === 'memory' && g.memory.status === 'idle') startMemory(g, emit);
+  if (phase === 'reveal') beginReveal(g, emit);
 }
 
 function requirePhase(g: Game, phase: Phase) {
@@ -620,17 +688,80 @@ function pendingJudge(g: Game): string[] {
   );
 }
 
-/** Correct: the wager is tripled (+2x on top of the stake). Wrong: the wager is wiped out. */
+/** Correct: net gain scales with difficulty (≈1.5× / 2× / 3× total). Wrong: full wager lost. */
 function climaxJudge(g: Game, playerId: string, correct: boolean, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
   if (c.status !== 'asking') throw new GameError('La question n’est pas ouverte au jugement.');
   if (!pendingJudge(g).includes(playerId)) throw new GameError('Ce joueur n’a rien à juger.');
   const wager = c.bets[playerId];
-  addScore(g, playerId, correct ? 2 * wager : -wager, emit, 'climax');
+  const difficulty = c.questionId !== null ? question(g, c.questionId).difficulty : 'hard';
+  const delta = correct ? climaxWinDelta(wager, difficulty) : -wager;
+  addScore(g, playerId, delta, emit, 'climax');
   c.results.push({ playerId, wager, correct });
-  emit('climax.judged', { playerId, wager, correct });
+  emit('climax.judged', { playerId, wager, correct, delta, difficulty });
   maybeResolveClimax(g, emit);
+}
+
+// --- Opening predictions + reveal -------------------------------------------
+
+function lockPredictions(g: Game, emit: Emit) {
+  const pred = g.predictions;
+  if (pred.status === 'locked') return;
+  if (pred.status !== 'open' && g.phase !== 'predictions') {
+    throw new GameError('Les paris sur le vainqueur ne sont pas ouverts.');
+  }
+  pred.status = 'locked';
+  emit('predictions.locked', { count: Object.keys(pred.picks).length });
+}
+
+function beginReveal(g: Game, emit: Emit) {
+  const pred = g.predictions;
+  if (pred.status === 'open') lockPredictions(g, emit);
+  const top = Math.max(0, ...g.players.map((p) => p.score));
+  pred.winnerIds = g.players.filter((p) => p.score === top).map((p) => p.id);
+  pred.revealOrder = g.players.map((p) => p.id).filter((id) => pred.picks[id]);
+  pred.revealIndex = -1;
+  pred.awarded = false;
+}
+
+function revealPicksComplete(pred: Game['predictions']): boolean {
+  const n = pred.revealOrder.length;
+  if (n === 0) return pred.revealIndex >= 0; // skip the teaser, then nothing to show
+  return pred.revealIndex >= n - 1;
+}
+
+function revealNext(g: Game, emit: Emit) {
+  requirePhase(g, 'reveal');
+  const pred = g.predictions;
+  if (revealPicksComplete(pred)) return;
+  pred.revealIndex += 1;
+  emit('reveal.next', { index: pred.revealIndex });
+}
+
+function revealAll(g: Game, emit: Emit) {
+  requirePhase(g, 'reveal');
+  const pred = g.predictions;
+  pred.revealIndex = Math.max(0, pred.revealOrder.length - 1);
+  emit('reveal.next', { index: pred.revealIndex });
+}
+
+function revealAward(g: Game, emit: Emit) {
+  requirePhase(g, 'reveal');
+  const pred = g.predictions;
+  if (pred.awarded) throw new GameError('Les bonus ont déjà été appliqués.');
+  if (!revealPicksComplete(pred)) throw new GameError('Révèle d’abord tous les paris.');
+  const winners = new Set(pred.winnerIds);
+  const paid: string[] = [];
+  for (const voterId of pred.revealOrder) {
+    const target = pred.picks[voterId];
+    if (target && winners.has(target)) {
+      addScore(g, voterId, PREDICTION_BONUS, emit, 'prediction');
+      paid.push(voterId);
+    }
+  }
+  pred.awarded = true;
+  emit('reveal.awarded', { paid, bonus: PREDICTION_BONUS });
 }
 
 function maybeResolveClimax(g: Game, emit: Emit) {
@@ -708,6 +839,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     score: p.score,
     connected: p.connected,
     hasBet: c.bets[p.id] !== undefined,
+    hasPick: g.predictions.picks[p.id] !== undefined,
     sitOut: sitOutOf(p.id, p.score),
   }));
 
@@ -787,6 +919,8 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     results: c.results,
   };
 
+  const predictions = predictionsView(g, role, playerId);
+
   return {
     joinCode: g.joinCode,
     packTitle: g.packTitle,
@@ -796,6 +930,40 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     sprint,
     memory,
     climax,
+    predictions,
     you: isPlay && playerId ? { playerId } : null,
+  };
+}
+
+function predictionsView(g: Game, role: Role, playerId: string | null): PredictionsView {
+  const pred = g.predictions;
+  const winners = new Set(pred.winnerIds);
+  const frozen = g.phase === 'reveal' || g.phase === 'results' || pred.winnerIds.length > 0;
+
+  const asPick = (voterId: string): PredictionPick => {
+    const targetId = pred.picks[voterId]!;
+    return {
+      voterId,
+      targetId,
+      correct: frozen ? winners.has(targetId) : null,
+    };
+  };
+
+  let picks: PredictionPick[] = [];
+  if (role === 'host') {
+    picks = Object.keys(pred.picks).map(asPick);
+  } else if (g.phase === 'reveal' || g.phase === 'results') {
+    const shown = pred.revealIndex < 0 ? 0 : Math.min(pred.revealIndex + 1, pred.revealOrder.length);
+    picks = pred.revealOrder.slice(0, shown).map(asPick);
+  }
+
+  return {
+    status: pred.status,
+    myPick: role === 'play' && playerId ? (pred.picks[playerId] ?? null) : null,
+    picks,
+    winnerIds: g.phase === 'reveal' || g.phase === 'results' ? pred.winnerIds : [],
+    revealIndex: pred.revealIndex,
+    awarded: pred.awarded,
+    bonus: PREDICTION_BONUS,
   };
 }

@@ -217,13 +217,20 @@ export function sfxFor(event: GameEvent): SfxName | null {
       return 'tick';
     case 'climax.betting_open':
     case 'climax.bet':
+    case 'predictions.open':
+    case 'predictions.pick':
       return 'chip';
     case 'climax.betting_locked':
+    case 'predictions.locked':
       return 'lock';
     case 'climax.answers_locked':
       return 'drumroll';
     case 'climax.judged':
       return p.correct ? 'correct' : 'wrong';
+    case 'reveal.next':
+      return 'reveal';
+    case 'reveal.awarded':
+      return 'fanfare';
     default:
       return null;
   }

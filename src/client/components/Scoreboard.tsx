@@ -2,12 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { playerColors } from '../lib/colors';
 import type { PlayerView } from '../../shared/types';
-import { CountUp, Token } from './stage';
+import { ChipStack, Token, useCountUp } from './stage';
 
 interface Props {
   players: PlayerView[];
   turnPlayerId?: string | null;
   buzzPlayerId?: string | null;
+  /** Compact chip stacks next to the number (TV scoreboard). */
+  chips?: boolean;
 }
 
 interface Delta {
@@ -73,7 +75,7 @@ function useFlip(order: string) {
  * Live ranking. The rows share the panel height (CSS grid 1fr rows), so ~10 players
  * fit as cleanly on a TV as 4 would, and the font scales with the screen height.
  */
-export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
+export function Scoreboard({ players, turnPlayerId, buzzPlayerId, chips = false }: Props) {
   const ranked = players
     .map((p, joinOrder) => ({ p, joinOrder }))
     .sort((a, b) => b.p.score - a.p.score || a.joinOrder - b.joinOrder);
@@ -83,7 +85,7 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
   const ref = useFlip(ranked.map(({ p }) => p.id).join(','));
 
   return (
-    <div className="scoreboard">
+    <div className={`scoreboard ${chips ? 'with-chips' : ''}`}>
       {ranked.map(({ p }, i) => {
         const delta = deltas[p.id];
         return (
@@ -107,17 +109,27 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId }: Props) {
               {p.name}
               {p.sitOut && <span className="tag"> passe</span>}
             </span>
-            <span className="pts">
-              {delta && (
-                <span className="delta" key={delta.key}>
-                  {delta.value > 0 ? `+${delta.value}` : delta.value}
-                </span>
-              )}
-              <CountUp value={p.score} ms={900} />
-            </span>
+            <ScorePts score={p.score} delta={delta} chips={chips} />
           </div>
         );
       })}
     </div>
+  );
+}
+
+function ScorePts({ score, delta, chips }: { score: number; delta?: Delta; chips: boolean }) {
+  const shown = useCountUp(score, 900);
+  return (
+    <span className="pts">
+      {delta && (
+        <span className="delta" key={delta.key}>
+          {delta.value > 0 ? `+${delta.value}` : delta.value}
+        </span>
+      )}
+      {shown}
+      {chips && (
+        <ChipStack mode={shown > 0 ? 'shown' : 'empty'} amount={shown} showLabel={false} className="score-chips" />
+      )}
+    </span>
   );
 }
