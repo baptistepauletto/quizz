@@ -90,21 +90,16 @@
       "id": "m_010",
       "theme": "Dofus",
       "contributor": "Corentin",
-      "prompt": "En forgemagie, quel est le poids exact (en densité de rune) d’une rune Ga PA et d'une rune Ga PME ?",
-      "answer": "100 pour le PA et 90 pour le PM",
+      "prompt": "Avant que le nombre de métiers par personnage ne devienne illimité (mise à jour 2.29 en 2015), combien de métiers principaux et combien de spécialisations de forgemagie un personnage pouvait-il apprendre au maximum ?",
+      "answer": "3 métiers principaux et 3 spécialisations de forgemagie",
       "difficulty": "medium",
-      "options": [
-        "100 (PA) et 90 (PM)",
-        "100 (PA) et 80 (PM)",
-        "100 (PA) et 50 (PM)",
-        "90 (PA) et 50 (PM)"
-      ]
+      "notes": "Accepter « 3 métiers » (et il fallait monter niveau 30 dans un métier pour pouvoir en apprendre un deuxième, puis niveau 65 pour la spécialisation FM)."
     },
     {
       "id": "m_011",
       "theme": "Dofus",
       "contributor": "Corentin",
-      "prompt": "Combien d'archimonstres différents faut-il capturer lors de l'étape finale de la quête 'L'Éternelle Moisson' (+/- 20)?",
+      "prompt": "Combien d'archimonstres différents faut-il capturer lors de l'étape finale de la quête 'L'Éternelle Moisson' (+/- 30)?",
       "answer": "286 archimonstres",
       "difficulty": "medium",
       "notes": "La quête compte 35 étapes au total, dont les 20 dernières sont consacrées aux 286 archimonstres."
@@ -130,10 +125,10 @@
       "id": "m_014",
       "theme": "Dofus",
       "contributor": "Corentin",
-      "prompt": "Avant la mise à jour 2.11 qui a limité le nombre de coups d'armes par tour, quel bâton de niveau 195 (issu de Frigost II) était spammé 3 fois par tour en zone par presque toutes les classes Feu ?",
+      "prompt": "Avant la mise à jour 2.11 qui a limité le nombre de coups d'armes par tour, quel bâton de niveau 195 (frigost II) était spammé 3 fois par tour en zone par presque toutes les classes Feu ?",
       "answer": "Le Bâton Brageut",
       "difficulty": "hard",
-      "options": ["Le Bâton Brageut", "Le Bâton des Prophètes", "La Baguette des Limbes", "Le Bâton Champmanique"]
+      "options": ["Le Bâton Brageut", "Sceptre du Roi Joueur", "Grésilosceptre", "Le Bâton Beau"]
     },
     {
       "id": "m_015",
@@ -149,7 +144,7 @@
       "theme": "Lozère (48)",
       "contributor": "Guilhem",
       "prompt": "Quel est le nom de la seule sous-préfecture du département de la Lozère ?",
-      "answer": "Florac (Florac Trois Rivières)",
+      "answer": "Florac",
       "difficulty": "easy",
       "options": ["Marvejols", "Saint-Chély-d'Apcher", "Florac", "Langogne"]
     },
@@ -233,7 +228,7 @@
       "theme": "GTA V",
       "contributor": "Nino",
       "prompt": "Comment s’appelle la secte parodique de la Scientologie que Michael peut rejoindre en effectuant une longue série de missions secrètes (« Kifflom ! ») ?",
-      "answer": "Le Programme Epsilon (Epsilon Program)",
+      "answer": "Le Programme Epsilon",
       "difficulty": "medium",
       "options": [
         "La secte des Altruistes",
@@ -255,7 +250,7 @@
       "theme": "GTA V",
       "contributor": "Nino",
       "prompt": "Lors du « Coup du siècle » (le braquage final de l'Union Depository), quelle est la somme exacte en lingots d'or (en dollars) dérobée par l'équipe avant répartition des parts ?",
-      "answer": "201 600 000 $ (environ 200 millions de dollars)",
+      "answer": "200 millions de dollars",
       "difficulty": "hard",
       "options": [
         "50 millions de dollars",
@@ -307,7 +302,7 @@
       "theme": "Les règles du basketball",
       "contributor": "Captain Titi",
       "prompt": "Pour qu'un retour en zone (ballon retourné en zone arrière) soit sifflé contre un joueur qui dribble de la zone avant vers la zone arrière, quels éléments doivent avoir touché la zone arrière ?",
-      "answer": "Les deux pieds du joueur ET le ballon (les trois points d'appui)",
+      "answer": "Les deux pieds ET le ballon",
       "difficulty": "medium",
       "options": [
         "Un seul pied ou le ballon",
@@ -339,9 +334,9 @@
       "id": "m_035",
       "theme": "Les règles du basketball",
       "contributor": "Captain Titi",
-      "image": "sports/basketball/fiba-raquette.jpg",
+      "image": "sports/basketball/fiba-raquette.png",
       "prompt": "À quelle distance exacte du centre de l'anneau (au sol) est tracé l'arc du demi-cercle de non-charge sous le panier en règles FIBA ?",
-      "answer": "1,25 mètre (1m25)",
+      "answer": "1,25 mètre",
       "difficulty": "hard",
       "options": ["1,12 mètre", "1,25 mètre", "1,30 mètre", "1,50 mètre"],
       "notes": "En NBA, il est à 4 pieds, soit 1,22 m."
@@ -401,15 +396,16 @@
       "theme": "Age of Sigmar",
       "contributor": "Hugo",
       "prompt": "Dans quelles landes désolées situées entre Hysh et Ulgu le dieu Slaanesh est-il retenu prisonnier par des chaînes paradoxales forgées par Tyrion, Teclis, Malerion et Morathi ?",
-      "answer": "Uhl-Gysh (la Pénombre / le Royaume Crépusculaire)",
+      "answer": "Uhl-Gysh",
       "difficulty": "hard",
-      "options": ["Le Huit-Points (Eightpoints)", "Uhl-Gysh", "Chamon", "LaSous-Empire (Blight City)"]
+      "options": ["Le Huit-Points (Eightpoints)", "Uhl-Gysh", "Chamon", "LaSous-Empire (Blight City)"],
+      "notes": " Uhl-Gysh (la Pénombre / le Royaume Crépusculaire)"
     },
     {
       "id": "m_042",
       "theme": "Age of Sigmar",
       "contributor": "Hugo",
-      "image": "games/aos/archaeon-dorghar.jpg",
+      "image": "games/aos/archaeon-dorghar.webp",
       "prompt": "Comment s’appelle la monstrueuse monture démoniaque à trois têtes d'Archaon l'Élu Éternel, et à quels trois dieux du Chaos appartenaient les champions majeurs qu'elle a dévorés pour faire pousser ses trois têtes ?",
       "answer": "Dorghar (têtes de Khorne, Nurgle et Tzeentch)",
       "difficulty": "hard",
@@ -428,10 +424,10 @@
       "theme": "Actifs beauté",
       "contributor": "Anaïs",
       "prompt": "À quelle vitamine correspond la 'Niacinamide', cet actif ultra-polyvalent qui régule le sébum, resserre les pores et apaise les rougeurs ?",
-      "answer": "La vitamine B3 (ou vitamine PP)",
+      "answer": "Vitamine B3",
       "difficulty": "easy",
       "options": ["Vitamine B3", "Vitamine B5", "Vitamine E", "Vitamine F"],
-      "notes": "La vitamine B5 correspond au Panthénol, et la vitamine E au Tocophérol."
+      "notes": "Accepter aussi vitamine PP.La vitamine B5 correspond au Panthénol, et la vitamine E au Tocophérol."
     },
     {
       "id": "m_045",
@@ -457,7 +453,7 @@
       "contributor": "Anaïs",
       "image": "beauty/centella-asiatica.jpg",
       "prompt": "Sous quel nom botanique (ou surnom asiatique) est connue cette plante cicatrisante star de la K-Beauty, dont on extrait le Madécassoside et l'Asiaticoside ?",
-      "answer": "La Centella Asiatica (ou Herbe du Tigre / Cica / Gotu Kola)",
+      "answer": "La Centella Asiatica (Herbe du Tigre)",
       "difficulty": "medium",
       "options": [
         "L'Houttuynia Cordata (Heartleaf)",
@@ -471,7 +467,7 @@
       "theme": "Actifs beauté",
       "contributor": "Anaïs",
       "prompt": "Pour que l'acide L-ascorbique (Vitamine C pure) puisse traverser efficacement la barrière cutanée, en dessous de quel seuil de pH acide la formule cosmétique doit-elle obligatoirement être stabilisée ?",
-      "answer": "Un pH inférieur à 3,5 (généralement entre 2,5 et 3,5)",
+      "answer": "pH inférieur à 3,5",
       "difficulty": "hard",
       "options": [
         "pH inférieur à 3,5",
@@ -479,7 +475,7 @@
         "pH exactement à 7,0",
         "pH basique supérieur à 8,0"
       ],
-      "notes": "En dessous du pKa de l'acide ascorbique (4,2), et idéalement sous 3,5 selon les études de Pinnell."
+      "notes": "En dessous du pKa de l'acide ascorbique (4,2), et idéalement sous 3,5 selon les études de Pinnell (généralement entre 2,5 et 3,5)."
     },
     {
       "id": "m_049",

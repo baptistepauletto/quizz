@@ -99,7 +99,7 @@
       "theme": "Zoologie",
       "difficulty": "medium",
       "prompt": "Quel est le seul mammifère au monde capable de voler activement (et non simplement de planer) ?",
-      "answer": "La chauve-souris",
+      "answer": "La chauve-souris"
     },
     {
       "id": "c_015",
@@ -118,12 +118,42 @@
       "notes": "Ne pas confondre avec l'Etna ou le Stromboli (qui sont en Sicile)."
     },
     {
-      "id": "b_030",
-      "theme": "Anatomie & Médecine",
+      "id": "c_017",
+      "theme": "Anatomie",
       "difficulty": "hard",
       "prompt": "Quel organe du corps humain a pour fonction de produire l'insuline afin de réguler le taux de sucre (glycémie) dans le sang ?",
       "answer": "Le pancréas",
       "notes": "Souvent confondu avec le foie ou les reins sous la pression du chrono."
+    },
+    {
+      "id": "b_018",
+      "theme": "Cuisine",
+      "difficulty": "easy",
+      "prompt": "Dans la recette traditionnelle italienne des pâtes à la Carbonara, quelle charcuterie issue de la joue de porc utilise-t-on à la place des lardons (et sans crème fraîche) ?",
+      "answer": "Le guanciale"
+    },
+    {
+      "id": "b_019",
+      "theme": "Sport automobile",
+      "difficulty": "medium",
+      "prompt": "En Formule 1, quelle couleur de drapeau est agitée pour disqualifier un pilote et lui ordonner de rentrer immédiatement aux stands ?",
+      "answer": "Le drapeau noir"
+    },
+    {
+      "id": "b_020",
+      "theme": "Physique",
+      "difficulty": "hard",
+      "prompt": "À quelle température exacte les échelles Celsius (°C) et Fahrenheit (°F) se croisent-elles et affichent-elles exactement la même valeur négative ?",
+      "answer": "-40 degrés (-40°C = -40°F)",
+      "notes": "Accepter « -40 »."
+    },
+    {
+      "id": "b_021",
+      "theme": "Anatomie",
+      "difficulty": "hard",
+      "prompt": "Quel est l'os le plus long, le plus lourd et le plus solide du squelette humain ?",
+      "answer": "Le fémur (l'os de la cuisse)",
+      "notes": "Accepter « fémur »."
     }
   ]
 }
