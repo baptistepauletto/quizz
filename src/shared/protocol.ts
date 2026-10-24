@@ -12,7 +12,8 @@ export type HelloMessage =
 export type PlayerMessage =
   | { t: 'buzz' }
   | { t: 'bet'; amount: number }
-  | { t: 'answer'; text: string };
+  | { t: 'answer'; text: string }
+  | { t: 'predict'; playerId: string };
 
 /** Everything the host can do. Players can never send these. */
 export type HostCommand =
@@ -21,6 +22,8 @@ export type HostCommand =
   | { t: 'phase.set'; phase: Phase }
   | { t: 'score.adjust'; playerId: string; delta: number }
   | { t: 'player.kick'; playerId: string }
+  // Opening winner predictions
+  | { t: 'predictions.lock' }
   // Phase 1
   | { t: 'sprint.next' }
   | { t: 'sprint.award' }
@@ -38,7 +41,11 @@ export type HostCommand =
   | { t: 'climax.lockBets' }
   | { t: 'climax.lockAnswers' }
   | { t: 'climax.judge'; playerId: string; correct: boolean }
-  | { t: 'climax.reset' };
+  | { t: 'climax.reset' }
+  // Post-climax prediction reveal
+  | { t: 'reveal.next' }
+  | { t: 'reveal.all' }
+  | { t: 'reveal.award' };
 
 export type ClientMessage = HelloMessage | PlayerMessage | HostCommand;
 

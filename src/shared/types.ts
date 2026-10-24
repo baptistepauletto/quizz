@@ -4,11 +4,31 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Bank = 'sprint' | 'memory' | 'climax';
-export type Phase = 'lobby' | 'sprint' | 'memory' | 'climax' | 'results';
+export type Phase = 'lobby' | 'predictions' | 'sprint' | 'memory' | 'climax' | 'reveal' | 'results';
 export type Role = 'tv' | 'host' | 'play';
 
 /** Points awarded for a correct answer in phases 1 and 2. */
 export const POINTS: Record<Difficulty, number> = { easy: 1, medium: 3, hard: 5 };
+
+/**
+ * Net points gained on a correct climax wager (stake stays in the score).
+ * Easy ≈ 1.5× total, medium 2×, hard 3×. Wrong answers always lose the full wager.
+ */
+export function climaxWinDelta(wager: number, difficulty: Difficulty): number {
+  const w = Math.max(0, Math.floor(wager));
+  if (difficulty === 'easy') return Math.round(w / 2);
+  if (difficulty === 'medium') return w;
+  return 2 * w;
+}
+
+/** Chip-stack amount shown after a climax judgment (won stack = stake + net). */
+export function climaxStackAmount(wager: number, correct: boolean, difficulty: Difficulty): number {
+  const w = Math.max(0, Math.floor(wager));
+  return correct ? w + climaxWinDelta(w, difficulty) : w;
+}
+
+/** Bonus for correctly predicting the night's winner (after climax, before podium). */
+export const PREDICTION_BONUS = 5;
 
 export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 export const BANKS: Bank[] = ['sprint', 'memory', 'climax'];
@@ -27,6 +47,8 @@ export interface PlayerView {
   connected: boolean;
   /** Climax only: this player has placed a bet (amount is never shown publicly). */
   hasBet: boolean;
+  /** Opening prediction: this player has picked a winner (target is secret until reveal). */
+  hasPick: boolean;
   /** Climax only: this player cannot take part in the current round. */
   sitOut: boolean;
 }
@@ -138,6 +160,37 @@ export interface ClimaxView {
   results: ClimaxResult[];
 }
 
+export type PredictionStatus = 'idle' | 'open' | 'locked';
+
+/** One opening prediction, revealed (or about to be) on the TV. */
+export interface PredictionPick {
+  voterId: string;
+  targetId: string;
+  /** Set once winners are frozen at the start of reveal. */
+  correct: boolean | null;
+}
+
+export interface PredictionsView {
+  status: PredictionStatus;
+  /** /play only: who you picked (null if none yet). */
+  myPick: string | null;
+  /**
+   * Host: always once someone has picked.
+   * TV/play: only during reveal, truncated to `revealIndex + 1` (empty while teaser).
+   */
+  picks: PredictionPick[];
+  /** Frozen at reveal start: everyone tied for #1 after climax. */
+  winnerIds: string[];
+  /**
+   * Reveal cursor: -1 = teaser, 0..n-1 = last revealed pick index (all shown at n-1).
+   * With zero picks, 0 means the empty reveal is done.
+   */
+  revealIndex: number;
+  /** Whether the +PREDICTION_BONUS scores have been applied. */
+  awarded: boolean;
+  bonus: number;
+}
+
 export interface GameView {
   joinCode: string;
   packTitle: string;
@@ -147,6 +200,7 @@ export interface GameView {
   sprint: SprintView;
   memory: MemoryView;
   climax: ClimaxView;
+  predictions: PredictionsView;
   /** /play only. */
   you: { playerId: string } | null;
 }
@@ -179,6 +233,11 @@ export type GameEventType =
   | 'climax.answers_locked'
   | 'climax.judged'
   | 'climax.resolved'
+  | 'predictions.open'
+  | 'predictions.pick'
+  | 'predictions.locked'
+  | 'reveal.next'
+  | 'reveal.awarded'
   | 'score.updated';
 
 export interface GameEvent {

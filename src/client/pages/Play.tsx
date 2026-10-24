@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token } from '../components/stage';
+import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token, useCountUp } from '../components/stage';
 import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
+import { climaxStackAmount, climaxWinDelta } from '../../shared/types';
 import type { GameView, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
@@ -105,9 +106,7 @@ export function Play() {
             <b>{me?.name ?? session.name}</b>
           </div>
         </div>
-        <div className="score">
-          <CountUp value={me?.score ?? 0} /> <span className="muted" style={{ fontSize: '0.9rem' }}>pts</span>
-        </div>
+        <PlayScore score={me?.score ?? 0} />
       </div>
       {state && me ? (
         <Body state={state} me={me} game={game} />
@@ -115,6 +114,16 @@ export function Play() {
         <div className="play-body muted">Connexion…</div>
       )}
       <ConnectionPill connection={connection} />
+    </div>
+  );
+}
+
+function PlayScore({ score }: { score: number }) {
+  const shown = useCountUp(score, 900);
+  return (
+    <div className="score">
+      <CountUp value={score} />
+      <ChipStack mode={shown > 0 ? 'shown' : 'empty'} amount={shown} showLabel={false} className="play-score-chips" />
     </div>
   );
 }
@@ -187,12 +196,26 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
           <p className="muted">C’est ta couleur ce soir. Regarde la TV, l’hôte va bientôt lancer le jeu.</p>
         </div>
       );
+    case 'predictions':
+      return <PredictWinner state={state} me={me} game={game} colors={colors} />;
     case 'sprint':
       return <Buzzer state={state} me={me} game={game} />;
     case 'memory':
       return <MemoryInfo state={state} me={me} colors={colors} />;
     case 'climax':
       return <ClimaxPlayer state={state} me={me} game={game} />;
+    case 'reveal':
+      return (
+        <div className="play-body">
+          <h2>Révélation</h2>
+          <p className="muted">Les paris s’affichent sur la TV. +{state.predictions.bonus} pts si tu as vu juste.</p>
+          {state.predictions.myPick && (
+            <p>
+              Tu avais choisi <b>{nameOf(state.players, state.predictions.myPick)}</b>
+            </p>
+          )}
+        </div>
+      );
     case 'results': {
       const rank = [...state.players].sort((a, b) => b.score - a.score).findIndex((p) => p.id === me.id) + 1;
       return (
@@ -205,6 +228,52 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
       );
     }
   }
+}
+
+function PredictWinner({
+  state,
+  me,
+  game,
+  colors,
+}: {
+  state: GameView;
+  me: PlayerView;
+  game: UseGame;
+  colors: Map<string, string>;
+}) {
+  const pred = state.predictions;
+  const locked = pred.status === 'locked';
+  const myPick = pred.myPick;
+  return (
+    <div className="play-body">
+      <h2>Qui va gagner ?</h2>
+      <p className="muted">
+        {locked
+          ? 'Paris verrouillés — on verra après la finale.'
+          : `Tape un prénom. Tu peux changer jusqu’au verrouillage. +${pred.bonus} pts si tu as raison (peut changer le podium).`}
+      </p>
+      <div className="predict-pick-grid">
+        {state.players.map((p) => {
+          const selected = myPick === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              className={`predict-pick ${selected ? 'selected' : ''}`}
+              style={{ '--pc': colors.get(p.id) } as CSSProperties}
+              disabled={locked}
+              onClick={() => game.send({ t: 'predict', playerId: p.id })}
+            >
+              <Token name={p.name} color={colors.get(p.id)} />
+              <span>{p.name}</span>
+              {p.id === me.id && <small>toi</small>}
+            </button>
+          );
+        })}
+      </div>
+      {myPick && !locked && <p className="muted">Choix enregistré — tu peux encore changer.</p>}
+    </div>
+  );
 }
 
 // --- Phase 1 -----------------------------------------------------------------
@@ -448,12 +517,17 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
         (result ? (
           <>
             <div className={`bet-pile ${result.correct ? 'won' : 'lost'}`}>
-              <ChipStack mode={result.correct ? 'won' : 'lost'} amount={result.correct ? 3 * result.wager : result.wager} />
+              <ChipStack
+                mode={result.correct ? 'won' : 'lost'}
+                amount={climaxStackAmount(result.wager, result.correct, c.difficulty ?? 'hard')}
+              />
             </div>
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
-              {result.correct ? `+${2 * result.wager}` : `-${result.wager}`}
+              {result.correct
+                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard')}`
+                : `-${result.wager}`}
             </div>
-            <p>{result.correct ? 'Ta mise est triplée !' : 'Ta mise est perdue.'}</p>
+            <p>{result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}</p>
           </>
         ) : (
           <p className="muted">Tu n’as pas misé ce tour.</p>

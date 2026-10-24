@@ -12,6 +12,7 @@ import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
 import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
+import { climaxStackAmount, climaxWinDelta } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
 
 const HELLO = { t: 'hello', role: 'tv' } as const;
@@ -107,12 +108,15 @@ export function Tv() {
       ) : (
         <div className="tv-body">
           <div className="tv-main">
+            {state.phase === 'predictions' && <PredictionsBoard state={state} colors={colors} />}
             {state.phase === 'sprint' && <Sprint state={state} colors={colors} />}
             {state.phase === 'memory' && <Memory state={state} colors={colors} />}
             {state.phase === 'climax' && <Climax state={state} colors={colors} />}
+            {state.phase === 'reveal' && <RevealBoard state={state} colors={colors} />}
           </div>
           <Scoreboard
             players={state.players}
+            chips
             turnPlayerId={state.phase === 'memory' ? state.memory.turnPlayerId : null}
             buzzPlayerId={state.phase === 'sprint' ? state.sprint.buzzPlayerId : null}
           />
@@ -174,9 +178,15 @@ function usePhaseCard(phase: Phase | null): { phase: Phase; key: number } | null
 }
 
 const PHASE_CARDS: Partial<Record<Phase, { kicker: string; title: string; sub: string }>> = {
+  predictions: {
+    kicker: 'Avant le jeu',
+    title: 'Le Pari du soir',
+    sub: 'Qui va gagner ? Voyez juste pour gagner des points !',
+  },
   sprint: { kicker: 'Phase 1', title: 'Le Sprint', sub: 'Le plus rapide au buzzer répond' },
   memory: { kicker: 'Phase 2', title: 'La Grille', sub: 'Mémorisez les thèmes, choisissez votre case' },
-  climax: { kicker: 'Phase 3', title: 'Quitte ou double', sub: 'Misez vos points en secret' },
+  climax: { kicker: 'Phase 3', title: 'La Finale', sub: 'Misez selon la difficulté · 1,5× / 2× / 3×' },
+  reveal: { kicker: 'Avant le podium', title: 'Révélation', sub: 'Qui avait parié sur qui ?' },
   results: { kicker: 'Fin de partie', title: 'Le Classement', sub: 'Qui monte sur le podium ?' },
 };
 
@@ -362,7 +372,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
         <Marquee>
           <div className="climax-sign">Quitte ou double</div>
         </Marquee>
-        <div className="tv-sub">Bonne réponse : ta mise est triplée. Mauvaise : tu la perds.</div>
+        <div className="tv-sub">Bonne réponse : ta mise est multipliée. Mauvaise : tu la perds.</div>
       </div>
     );
   }
@@ -423,12 +433,14 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
               const s = c.submissions.find((x) => x.playerId === p.id);
               const r = c.results.find((x) => x.playerId === p.id);
               const wager = s?.wager ?? 0;
-              return r?.correct ? wager * 3 : wager;
+              const diff = c.difficulty ?? 'hard';
+              return r ? climaxStackAmount(wager, r.correct, diff) : wager;
             }}
             caption={(p) => {
               const r = c.results.find((x) => x.playerId === p.id);
               if (!r) return null;
-              return r.correct ? `+${2 * r.wager}` : `-${r.wager}`;
+              const diff = c.difficulty ?? 'hard';
+              return r.correct ? `+${climaxWinDelta(r.wager, diff)}` : `-${r.wager}`;
             }}
             answer={(p) => c.submissions.find((x) => x.playerId === p.id)?.text || '—'}
           />
@@ -475,6 +487,99 @@ function Table({
   );
 }
 
+// --- Predictions (opening) -----------------------------------------------------
+
+function PredictionsBoard({ state, colors }: { state: GameView; colors: Map<string, string> }) {
+  const picked = state.players.filter((p) => p.hasPick).length;
+  const locked = state.predictions.status === 'locked';
+  return (
+    <div className="tv-center">
+      <div className="tv-title">{locked ? 'Paris verrouillés' : 'Qui va gagner ce soir ?'}</div>
+      <div className="tv-sub">
+        {locked
+          ? `Révélation après la finale · +${state.predictions.bonus} pts si vous avez vu juste`
+          : `Choisissez sur votre téléphone · ${picked} / ${state.players.length}`}
+      </div>
+      <div className="predict-grid">
+        {state.players.map((p) => (
+          <div
+            key={p.id}
+            className={`predict-seat ${p.hasPick ? 'ready' : ''}`}
+            style={{ '--pc': colors.get(p.id) } as CSSProperties}
+          >
+            <Token name={p.name} color={colors.get(p.id)} />
+            <span>{p.name}</span>
+            <small>{p.hasPick ? 'paré' : '…'}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Reveal (post-climax) ------------------------------------------------------
+
+function RevealBoard({ state, colors }: { state: GameView; colors: Map<string, string> }) {
+  const pred = state.predictions;
+  const totalPicks = state.players.filter((p) => p.hasPick).length;
+  const last = pred.picks[pred.picks.length - 1];
+  const allShown = pred.revealIndex >= 0 && (totalPicks === 0 || pred.revealIndex >= totalPicks - 1);
+
+  if (pred.revealIndex < 0) {
+    return (
+      <div className="tv-center">
+        <div className="tv-title">Les paris du soir…</div>
+        <div className="tv-sub">Qui avait vu juste ?</div>
+      </div>
+    );
+  }
+
+  if (totalPicks === 0) {
+    return (
+      <div className="tv-center">
+        <div className="tv-title">Personne n’avait parié</div>
+        <div className="tv-sub">Direction le podium</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="tv-center reveal-board">
+      <div className="tv-sub">
+        En tête après la finale :{' '}
+        {pred.winnerIds.map((id) => nameOf(state.players, id)).filter(Boolean).join(' · ') || '—'}
+      </div>
+      <div className="reveal-list">
+        {pred.picks.map((pick) => {
+          const isLast = last?.voterId === pick.voterId;
+          const ok = pick.correct === true;
+          return (
+            <div
+              key={pick.voterId}
+              className={`reveal-row ${isLast ? 'focus' : ''} ${ok ? 'ok' : 'bad'}`}
+              style={
+                {
+                  '--vc': colors.get(pick.voterId),
+                  '--tc': colors.get(pick.targetId),
+                } as CSSProperties
+              }
+            >
+              <Token name={nameOf(state.players, pick.voterId)} color={colors.get(pick.voterId)} />
+              <span className="reveal-voter">{nameOf(state.players, pick.voterId)}</span>
+              <span className="reveal-arrow">→</span>
+              <Token name={nameOf(state.players, pick.targetId)} color={colors.get(pick.targetId)} />
+              <span className="reveal-target">{nameOf(state.players, pick.targetId)}</span>
+              <span className={`reveal-tag ${ok ? 'ok' : 'bad'}`}>{ok ? `+${pred.bonus}` : 'raté'}</span>
+            </div>
+          );
+        })}
+      </div>
+      {pred.awarded && <div className="tv-sub">Bonus appliqués · place au podium</div>}
+      {allShown && !pred.awarded && <div className="tv-sub">En attente des bonus…</div>}
+    </div>
+  );
+}
+
 // --- Results -------------------------------------------------------------------
 
 function Results({ state, colors }: { state: GameView; colors: Map<string, string> }) {
@@ -507,7 +612,7 @@ function Results({ state, colors }: { state: GameView; colors: Map<string, strin
           </div>
         </div>
       </div>
-      <Scoreboard players={state.players} />
+      <Scoreboard players={state.players} chips />
       <Confetti colors={confettiColors} count={160} duration={4.5} />
     </div>
   );

@@ -1,6 +1,6 @@
 import { desc, eq, gt } from 'drizzle-orm';
 import { db, schema } from './db';
-import type { Game } from './game';
+import { hydrateGame, type Game } from './game';
 
 const { gameSessions } = schema;
 
@@ -30,7 +30,7 @@ export function loadLatestSnapshot(): Game | null {
     .get();
   if (!row) return null;
   try {
-    const game = JSON.parse(row.stateJson) as Game;
+    const game = hydrateGame(JSON.parse(row.stateJson) as Game);
     for (const p of game.players) p.connected = false; // nobody is connected after a restart
     return game;
   } catch {

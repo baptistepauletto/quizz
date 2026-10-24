@@ -767,9 +767,25 @@ textarea.input {
   color: var(--ink);
 }
 .play-head .score {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-family: var(--display);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
+}
+.play-score-chips {
+  --chip-w: 1.7em;
+  --chip-h: 0.72em;
+  --step: 0.16em;
+  font-size: 0.7rem;
+  align-self: flex-end;
+}
+.play-score-chips .cchip {
+  animation: none;
+  box-shadow:
+    0 0.16em 0 color-mix(in srgb, var(--face) 55%, #000),
+    0 0.2em 0.18em rgba(0, 0, 0, 0.35);
 }
 .play-body h2 {
   font-family: var(--display);
@@ -1283,6 +1299,9 @@ input[type='range'] {
   border-radius: 8px;
   transition: background-color 0.4s;
 }
+.scoreboard.with-chips .score-row {
+  grid-template-columns: 1.4em auto 1fr auto;
+}
 .score-row > * {
   position: relative;
 }
@@ -1322,10 +1341,30 @@ input[type='range'] {
 }
 .score-row .pts {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
   font-family: var(--display);
   font-weight: 400;
   font-size: 1.4em;
   font-variant-numeric: tabular-nums;
+}
+.score-row .score-chips {
+  --chip-w: 1.55em;
+  --chip-h: 0.68em;
+  --step: 0.16em;
+  font-size: 0.55em;
+  align-self: flex-end;
+}
+.score-row .score-chips .cchip {
+  animation: none;
+  box-shadow:
+    0 0.18em 0 color-mix(in srgb, var(--face) 55%, #000),
+    0 0.22em 0.2em rgba(0, 0, 0, 0.35);
+}
+.score-row .score-chips.empty {
+  width: var(--chip-w);
+  border-width: 0.08em;
 }
 .score-row.offline {
   opacity: 0.5;
@@ -2068,6 +2107,119 @@ input[type='range'] {
     opacity: 0;
   }
 }
+/* opening predictions + reveal */
+.predict-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2vh 1.5vw;
+  margin-top: 2vh;
+  max-width: 70vw;
+}
+.predict-seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  min-width: 5.5em;
+  padding: 0.8em 0.6em;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pc) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pc) 35%, transparent);
+  opacity: 0.55;
+  transition: opacity 0.35s, background 0.35s;
+}
+.predict-seat.ready {
+  opacity: 1;
+  background: color-mix(in srgb, var(--pc) 28%, transparent);
+}
+.predict-seat small {
+  color: var(--muted);
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.predict-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.7rem;
+  width: 100%;
+}
+.predict-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.5rem;
+  border-radius: 14px;
+  border: 2px solid color-mix(in srgb, var(--pc) 40%, transparent);
+  background: color-mix(in srgb, var(--pc) 14%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+}
+.predict-pick.selected {
+  border-color: var(--pc);
+  background: color-mix(in srgb, var(--pc) 32%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc) 50%, transparent);
+}
+.predict-pick:disabled {
+  opacity: 0.7;
+}
+.predict-pick small {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.reveal-board {
+  width: min(720px, 92%);
+}
+.reveal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1vh;
+  margin-top: 2vh;
+  width: 100%;
+}
+.reveal-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto 1fr auto;
+  align-items: center;
+  gap: 0.55em;
+  padding: 0.85em 1em;
+  border-radius: 12px;
+  background: rgba(12, 8, 22, 0.45);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  animation: pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.reveal-row.focus {
+  border-color: color-mix(in srgb, var(--bulb) 70%, transparent);
+  background: color-mix(in srgb, var(--bulb) 12%, rgba(12, 8, 22, 0.55));
+}
+.reveal-row.ok .reveal-tag {
+  color: var(--ok);
+}
+.reveal-row.bad .reveal-tag {
+  color: var(--bad);
+}
+.reveal-voter,
+.reveal-target {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reveal-arrow {
+  color: var(--muted);
+  font-size: 1.2em;
+}
+.reveal-tag {
+  font-family: var(--display);
+  font-size: 1.15em;
+  min-width: 3.2em;
+  text-align: right;
+}
+
 @keyframes chip-drop {
   from {
     transform: translateY(-3em);

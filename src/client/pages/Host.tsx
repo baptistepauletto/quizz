@@ -7,9 +7,20 @@ import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
 import { parseCoord } from '../../shared/grid';
 import type { HostCommand } from '../../shared/protocol';
+import { PREDICTION_BONUS, climaxWinDelta } from '../../shared/types';
 import type { GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
 
-const PHASES: Phase[] = ['lobby', 'sprint', 'memory', 'climax', 'results'];
+const PHASES: Phase[] = ['lobby', 'predictions', 'sprint', 'memory', 'climax', 'reveal', 'results'];
+
+const PHASE_LABEL: Record<Phase, string> = {
+  lobby: 'salon',
+  predictions: 'pari',
+  sprint: 'sprint',
+  memory: 'mémoire',
+  climax: 'finale',
+  reveal: 'révélation',
+  results: 'classement',
+};
 
 export function Host() {
   return (
@@ -136,15 +147,17 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
       <div className="phase-tabs">
         {PHASES.map((p) => (
           <button key={p} className={state.phase === p ? 'active' : ''} onClick={() => send({ t: 'phase.set', phase: p })}>
-            {{ lobby: 'salon', sprint: 'sprint', memory: 'mémoire', climax: 'finale', results: 'classement' }[p]}
+            {PHASE_LABEL[p]}
           </button>
         ))}
       </div>
 
       {state.phase === 'lobby' && <LobbyPanel state={state} send={send} />}
+      {state.phase === 'predictions' && <PredictionsPanel state={state} send={send} />}
       {state.phase === 'sprint' && <SprintPanel state={state} send={send} />}
       {state.phase === 'memory' && <MemoryPanel state={state} send={send} />}
       {state.phase === 'climax' && <ClimaxPanel state={state} send={send} />}
+      {state.phase === 'reveal' && <RevealPanel state={state} send={send} />}
       {state.phase === 'results' && (
         <div className="card center">
           <h2>Partie terminée</h2>
@@ -191,9 +204,109 @@ function LobbyPanel({ state, send }: { state: GameView; send: Send }) {
       <p>
         Les joueurs rejoignent avec le code <b>{state.joinCode}</b> (QR sur la TV). {state.players.length} dans la salle.
       </p>
+      <p className="muted" style={{ fontSize: '0.9rem' }}>
+        Avant le sprint : chacun parie en secret sur le vainqueur (+{PREDICTION_BONUS} pts à la révélation — ça peut encore
+        changer le classement).
+      </p>
+      <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'predictions' })}>
+        Pari du soir
+      </button>
+      <button className="btn ghost" onClick={() => send({ t: 'phase.set', phase: 'sprint' })}>
+        Passer · lancer le Sprint
+      </button>
+    </div>
+  );
+}
+
+function PredictionsPanel({ state, send }: { state: GameView; send: Send }) {
+  const pred = state.predictions;
+  const picked = state.players.filter((p) => p.hasPick).length;
+  const locked = pred.status === 'locked';
+  return (
+    <div className="card stack">
+      <h2>Pari du soir</h2>
+      <p className="muted">
+        Chaque joueur choisit qui va gagner. Secret jusqu’à après la finale. Bonne pioche = +{PREDICTION_BONUS} pts (peut
+        bousculer le podium).
+      </p>
+      <div className="card stack">
+        <b>
+          Paris ({picked}/{state.players.length}){locked ? ' · verrouillés' : ''}
+        </b>
+        {state.players.map((p) => {
+          const target = pred.picks.find((x) => x.voterId === p.id)?.targetId;
+          return (
+            <div key={p.id} className="player-row">
+              <span className="name">{p.name}</span>
+              <span className={`chip ${p.hasPick ? 'ok' : ''}`}>
+                {p.hasPick ? `→ ${nameOf(state.players, target)}` : '…'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {!locked && (
+        <button className="btn primary big" onClick={() => send({ t: 'predictions.lock' })}>
+          Verrouiller les paris
+        </button>
+      )}
       <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'sprint' })}>
         Lancer la phase 1 : Le Sprint
       </button>
+    </div>
+  );
+}
+
+function RevealPanel({ state, send }: { state: GameView; send: Send }) {
+  const pred = state.predictions;
+  const total = pred.picks.length;
+  const allShown = pred.revealIndex >= 0 && (total === 0 || pred.revealIndex >= total - 1);
+  return (
+    <div className="card stack">
+      <h2>Révélation des paris</h2>
+      <p className="muted">
+        En tête après la finale :{' '}
+        <b>{pred.winnerIds.map((id) => nameOf(state.players, id)).filter(Boolean).join(', ') || '—'}</b>
+      </p>
+      {pred.revealIndex < 0 && (
+        <button className="btn primary big" onClick={() => send({ t: 'reveal.next' })}>
+          Commencer la révélation
+        </button>
+      )}
+      {pred.revealIndex >= 0 && !allShown && (
+        <div className="row">
+          <button className="btn primary big grow" onClick={() => send({ t: 'reveal.next' })}>
+            Suivant ({Math.min(pred.revealIndex + 1, total)}/{total})
+          </button>
+          <button className="btn" onClick={() => send({ t: 'reveal.all' })}>
+            Tout révéler
+          </button>
+        </div>
+      )}
+      {allShown && !pred.awarded && (
+        <button className="btn ok big" onClick={() => send({ t: 'reveal.award' })}>
+          Appliquer les +{PREDICTION_BONUS}
+        </button>
+      )}
+      {pred.awarded && (
+        <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'results' })}>
+          Afficher le podium
+        </button>
+      )}
+      {allShown && (
+        <div className="card stack">
+          {pred.picks.map((pick) => (
+            <div key={pick.voterId} className="player-row">
+              <span className="name">
+                {nameOf(state.players, pick.voterId)} → {nameOf(state.players, pick.targetId)}
+              </span>
+              <span className={`chip ${pick.correct ? 'ok' : 'bad'}`}>
+                {pick.correct ? `+${pred.bonus}` : 'raté'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -395,7 +508,9 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             {c.results.map((r) => (
               <div key={r.playerId} className="card row">
                 <b className="grow">{nameOf(state.players, r.playerId)}</b>
-                <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>{r.correct ? `+${2 * r.wager}` : `-${r.wager}`}</span>
+                <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
+                  {r.correct ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard')}` : `-${r.wager}`}
+                </span>
               </div>
             ))}
           </>
@@ -417,8 +532,8 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
           </div>
         ))}
         {c.status === 'resolved' && (
-          <button className="btn" onClick={() => send({ t: 'phase.set', phase: 'results' })}>
-            Finir : afficher le classement
+          <button className="btn primary big" onClick={() => send({ t: 'phase.set', phase: 'reveal' })}>
+            Révéler les paris du soir
           </button>
         )}
       </div>
@@ -500,7 +615,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                 </div>
                 <div className="row">
                   <button className="btn ok grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: true })}>
-                    Correct (+{2 * c.bets[id]})
+                    Correct (+{climaxWinDelta(c.bets[id], c.difficulty ?? 'hard')})
                   </button>
                   <button className="btn bad grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: false })}>
                     Faux (-{c.bets[id]})

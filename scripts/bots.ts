@@ -38,6 +38,14 @@ function startBot(name: string) {
         setTimeout(() => send({ t: 'buzz' }), 300 + Math.random() * 2500);
       }
     }
+    if (s.phase === 'predictions' && s.predictions.status === 'open') {
+      const key = 'predict';
+      if (key !== lastKey) {
+        lastKey = key;
+        const target = s.players[Math.floor(Math.random() * s.players.length)];
+        if (target) setTimeout(() => send({ t: 'predict', playerId: target.id }), 400 + Math.random() * 2000);
+      }
+    }
     if (s.phase === 'climax' && s.climax.status === 'betting' && !self.sitOut && self.score > 0) {
       const key = `bet-${s.climax.theme ?? ''}-${s.climax.difficulty ?? ''}-${s.climax.results.length}`;
       if (key !== lastKey) {

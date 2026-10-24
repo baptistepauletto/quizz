@@ -68,7 +68,7 @@ export class Room {
       if (!conn.role) return this.error(conn, 'bad', 'Dis bonjour d’abord.');
 
       if (conn.role === 'play') {
-        if (msg.t !== 'buzz' && msg.t !== 'bet' && msg.t !== 'answer') {
+        if (msg.t !== 'buzz' && msg.t !== 'bet' && msg.t !== 'answer' && msg.t !== 'predict') {
           return this.error(conn, 'command', 'Les joueurs ne peuvent pas faire ça.');
         }
         return this.playerMessage(conn, msg);

@@ -31,8 +31,9 @@ Data lives in `data/quizz-in.db` (override with `DATA_DIR`). The running game is
 
 - Points: easy 1, medium 3, hard 5. Wrong answers cost nothing (except Phase 3).
 - **Sprint**: first buzz (server arrival time) wins. Host says Correct / Wrong. Wrong reopens the buzzer, the previous buzzer is locked out for that question.
-- **Memory Grid**: themes face-up for 30s, then face-down. Players take turns round-robin and call a coordinate (e.g. `B3`); host flips it. The tile is consumed on hit or miss.
-- **Double or Nothing**: players with 0 points sit out. Secret wager up to your score; correct = wager tripled (+2x net), wrong = wager lost.
+- **Memory Grid**: themes face-up for 60s, then face-down. Players take turns round-robin and call a coordinate (e.g. `B3`); host flips it. The tile is consumed on hit or miss.
+- **Winner prediction** (optional, before Sprint): everyone secretly picks who will finish first. Revealed after the finale; correct picks get +5 (can still reshuffle the podium). Ties for #1 all count.
+- **Finale**: players with 0 points sit out. Secret wager up to your score. Correct pays by difficulty — easy ≈1.5× total (`+round(wager/2)`), medium 2× (`+wager`), hard 3× (`+2×wager`). Wrong = full wager lost.
 - Reconnect by retyping your name.
 
 ## Draft JSON format

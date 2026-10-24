@@ -174,13 +174,18 @@ export function ChipStack({
   amount = 0,
   color,
   name = '',
+  showLabel = true,
+  className = '',
 }: {
   mode: StackMode;
   amount?: number;
   color?: string;
   name?: string;
+  /** When false, chips are decorative (score is shown elsewhere). */
+  showLabel?: boolean;
+  className?: string;
 }) {
-  if (mode === 'empty') return <div className="chip-stack empty" aria-hidden="true" />;
+  if (mode === 'empty') return <div className={`chip-stack empty ${className}`} aria-hidden="true" />;
 
   const chips: Denomination[] =
     mode === 'secret'
@@ -191,10 +196,10 @@ export function ChipStack({
 
   return (
     <div
-      className={`chip-stack ${mode}`}
+      className={`chip-stack ${mode} ${className}`}
       style={{ '--n': chips.length } as CSSProperties}
       role="img"
-      aria-label={mode === 'secret' ? 'Mise cachée' : `${amount} points misés`}
+      aria-label={mode === 'secret' ? 'Mise cachée' : `${amount} points`}
       key={`${mode}-${amount}`}
     >
       {chips.map((c, i) => (
@@ -203,7 +208,7 @@ export function ChipStack({
           className="cchip"
           style={{ '--i': i, '--face': c.face, '--stripe': c.stripe, '--label': c.ink } as CSSProperties}
         >
-          {i === chips.length - 1 && <b>{label}</b>}
+          {showLabel && i === chips.length - 1 && <b>{label}</b>}
         </span>
       ))}
     </div>

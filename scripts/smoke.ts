@@ -313,6 +313,26 @@ try {
   check(ann2.playerId === annId && host.state?.players.find((p) => p.id === annId)?.connected === true, 'retyping the name reclaims the same player');
   const players = { ann: ann2, bob, cy };
 
+  console.log('\nOpening: winner predictions');
+  await host.cmd({ t: 'phase.set', phase: 'predictions' });
+  check(host.state!.predictions.status === 'open', 'predictions open when entering the mini-step');
+  check(tv.state!.predictions.picks.length === 0, 'TV does not see pick targets before reveal');
+  await players.ann.cmd({ t: 'predict', playerId: players.bob.playerId! });
+  await players.bob.cmd({ t: 'predict', playerId: players.bob.playerId! });
+  await players.cy.cmd({ t: 'predict', playerId: players.ann.playerId! });
+  check(players.ann.state!.predictions.myPick === players.bob.playerId, 'phone keeps its own pick');
+  check(players.ann.state!.players.find((p) => p.id === players.ann.playerId)?.hasPick === true, 'hasPick is set on the voter');
+  check(
+    host.state!.predictions.picks.some((p) => p.voterId === players.ann.playerId && p.targetId === players.bob.playerId),
+    'host sees who picked whom',
+  );
+  await players.ann.cmd({ t: 'predict', playerId: players.ann.playerId! });
+  check(players.ann.state!.predictions.myPick === players.ann.playerId, 'picks can change until lock');
+  await host.cmd({ t: 'predictions.lock' });
+  await players.cy.cmd({ t: 'predict', playerId: players.cy.playerId! });
+  check(players.cy.errors.length > 0, 'picks cannot change after lock');
+  check(host.state!.predictions.status === 'locked', 'predictions locked');
+
   console.log('\nPhase 1: Sprint');
   await host.cmd({ t: 'phase.set', phase: 'sprint' });
   await players.bob.cmd({ t: 'buzz' });
@@ -431,7 +451,7 @@ try {
     'remaining matches unconsumed tiles',
   );
 
-  console.log('\nPhase 3: Double or Nothing');
+  console.log('\nPhase 3: Finale');
   // Ann 10, Bob 4, Cy 0 -> Cy sits out.
   for (const p of host.state!.players) {
     const target = { ann: 10, bob: 4, cy: 0 }[p.name.toLowerCase() as 'ann' | 'bob' | 'cy'];
@@ -470,11 +490,35 @@ try {
     'submissions include Ann and Bob answers with wagers',
   );
   await host.cmd({ t: 'climax.judge', playerId: players.ann.playerId!, correct: true });
-  check(scoreOf('ann') === 10 + 2 * 6, 'correct answer triples the wager (10 -> 22)');
+  check(scoreOf('ann') === 10 + 2 * 6, 'hard correct pays +2× wager (10 -> 22)');
   check(host.state!.climax.status === 'asking', 'round stays open until everybody is judged');
   await host.cmd({ t: 'climax.judge', playerId: players.bob.playerId!, correct: false });
   check(scoreOf('bob') === 0, 'wrong answer wipes the wagered points (4 -> 0)');
   check(tv.state!.climax.status === 'resolved' && tv.state!.climax.question?.answer !== undefined, 'round resolved, answer revealed on TV');
+
+  // Medium payout: Ann bets 5 on a medium question and wins → +5 (2× total).
+  const mediumQ = host.state!.climax.candidates.find((c) => c.difficulty === 'medium')!;
+  await host.cmd({ t: 'climax.pick', questionId: mediumQ.id });
+  await host.cmd({ t: 'climax.openBetting' });
+  await players.ann.cmd({ t: 'bet', amount: 5 });
+  await host.cmd({ t: 'climax.lockBets' });
+  await players.ann.cmd({ t: 'answer', text: 'Hitchcock' });
+  await host.cmd({ t: 'climax.lockAnswers' });
+  await host.cmd({ t: 'climax.judge', playerId: players.ann.playerId!, correct: true });
+  check(scoreOf('ann') === 22 + 5, 'medium correct pays +1× wager (22 -> 27)');
+
+  console.log('\nReveal predictions');
+  // Ann leads with 27; she picked herself earlier → +5. Bob picked himself (wrong). Cy picked Ann (correct).
+  await host.cmd({ t: 'phase.set', phase: 'reveal' });
+  check(host.state!.predictions.winnerIds.includes(players.ann.playerId!), 'Ann is frozen as #1 for the bet');
+  check(tv.state!.predictions.picks.length === 0 && tv.state!.predictions.revealIndex === -1, 'TV starts on the teaser');
+  await host.cmd({ t: 'reveal.all' });
+  check(tv.state!.predictions.picks.length === 3, 'TV shows every pick after reveal.all');
+  await host.cmd({ t: 'reveal.award' });
+  check(scoreOf('ann') === 27 + 5, 'correct prediction awards +5 to Ann');
+  check(scoreOf('cy') === 5, 'correct prediction awards +5 to Cy');
+  check(scoreOf('bob') === 0, 'wrong prediction awards nothing');
+  check(host.state!.predictions.awarded === true, 'bonus flagged as awarded');
 
   const askedDb = new Database(path.join(dataDir, 'quizz-in.db'));
   const askedCount = (askedDb.prepare('SELECT COUNT(DISTINCT question_id) AS n FROM question_asks').get() as { n: number }).n;
@@ -497,7 +541,7 @@ try {
   await tv2.connect({ t: 'hello', role: 'tv' });
   clients.push(tv2);
   check(tv2.state?.joinCode === joinCode && tv2.state.seq === seq && tv2.state.phase === 'results', 'game resumed from the snapshot after a restart');
-  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 22, 'scores survived the restart');
+  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 32, 'scores survived the restart');
   const ann3 = new Client('Ann3');
   await ann3.connect({ t: 'hello', role: 'play', code: joinCode, name: 'ann' });
   clients.push(ann3);
