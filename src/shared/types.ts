@@ -56,6 +56,8 @@ export interface PlayerView {
 export interface QuestionView {
   id: number;
   theme: string;
+  /** Who brought this theme to the night, if known. */
+  contributor?: string;
   difficulty: Difficulty;
   points: number;
   prompt: string;

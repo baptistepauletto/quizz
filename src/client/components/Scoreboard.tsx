@@ -10,6 +10,8 @@ interface Props {
   buzzPlayerId?: string | null;
   /** Compact chip stacks next to the number (TV scoreboard). */
   chips?: boolean;
+  /** One horizontal row of pills instead of a column (TV memory grid). */
+  strip?: boolean;
 }
 
 interface Delta {
@@ -49,21 +51,21 @@ function useDeltas(players: PlayerView[]): Record<string, Delta> {
 /** Rows slide to their new rank instead of jumping (FLIP). */
 function useFlip(order: string) {
   const rows = useRef(new Map<string, HTMLElement>());
-  const tops = useRef(new Map<string, number>());
+  const spots = useRef(new Map<string, { x: number; y: number }>());
   useLayoutEffect(() => {
-    const next = new Map<string, number>();
+    const next = new Map<string, { x: number; y: number }>();
     for (const [id, el] of rows.current) {
-      const top = el.offsetTop;
-      next.set(id, top);
-      const before = tops.current.get(id);
-      if (before !== undefined && before !== top) {
-        el.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], {
+      const now = { x: el.offsetLeft, y: el.offsetTop };
+      next.set(id, now);
+      const before = spots.current.get(id);
+      if (before && (before.x !== now.x || before.y !== now.y)) {
+        el.animate([{ transform: `translate(${before.x - now.x}px, ${before.y - now.y}px)` }, { transform: 'none' }], {
           duration: 650,
           easing: 'cubic-bezier(.2,.9,.3,1.2)',
         });
       }
     }
-    tops.current = next;
+    spots.current = next;
   }, [order]);
   return (id: string) => (el: HTMLElement | null) => {
     if (el) rows.current.set(id, el);
@@ -75,7 +77,7 @@ function useFlip(order: string) {
  * Live ranking. The rows share the panel height (CSS grid 1fr rows), so ~10 players
  * fit as cleanly on a TV as 4 would, and the font scales with the screen height.
  */
-export function Scoreboard({ players, turnPlayerId, buzzPlayerId, chips = false }: Props) {
+export function Scoreboard({ players, turnPlayerId, buzzPlayerId, chips = false, strip = false }: Props) {
   const ranked = players
     .map((p, joinOrder) => ({ p, joinOrder }))
     .sort((a, b) => b.p.score - a.p.score || a.joinOrder - b.joinOrder);
@@ -85,7 +87,7 @@ export function Scoreboard({ players, turnPlayerId, buzzPlayerId, chips = false 
   const ref = useFlip(ranked.map(({ p }) => p.id).join(','));
 
   return (
-    <div className={`scoreboard ${chips ? 'with-chips' : ''}`}>
+    <div className={['scoreboard', chips ? 'with-chips' : '', strip ? 'strip' : ''].join(' ')}>
       {ranked.map(({ p }, i) => {
         const delta = deltas[p.id];
         return (

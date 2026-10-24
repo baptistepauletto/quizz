@@ -807,6 +807,7 @@ function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean; i
   return {
     id: q.id,
     theme: q.theme,
+    ...(q.contributor ? { contributor: q.contributor } : {}),
     difficulty: q.difficulty,
     points: POINTS[q.difficulty],
     prompt: q.prompt,
