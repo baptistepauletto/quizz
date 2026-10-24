@@ -87,6 +87,7 @@ export function Tv() {
       <div className="stage-lights" aria-hidden="true" />
       <header className="tv-head">
         <Logo />
+        {state?.phase === 'memory' && <MemoryStatus state={state} colors={colors} />}
         {state && state.phase !== 'lobby' && (
           <div className="tv-code">
             <small>code</small>
@@ -114,7 +115,8 @@ export function Tv() {
           </div>
           <Scoreboard
             players={state.players}
-            chips
+            chips={state.phase !== 'memory'}
+            strip={state.phase === 'memory'}
             turnPlayerId={state.phase === 'memory' ? state.memory.turnPlayerId : null}
             buzzPlayerId={state.phase === 'sprint' ? state.sprint.buzzPlayerId : null}
           />
@@ -309,50 +311,65 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
   }
 
   const turnName = nameOf(state.players, m.turnPlayerId);
+  const q = m.asking;
   return (
     <>
-      <div className="turn-banner">
-        {m.status === 'preview' ? (
-          <>
-            <span>Mémorisez les thèmes !</span>
-            <CountdownRing until={m.previewUntil} className="inline" />
-          </>
-        ) : m.status === 'finished' ? (
-          'Grille terminée !'
-        ) : (
-          <>
-            {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
-            <span>
-              <b style={{ color: m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined }}>{turnName}</b>, annonce une case
-            </span>
-            <span className="muted">· {m.remaining} restantes</span>
-          </>
-        )}
-      </div>
       <TvGrid memory={m} />
-      {m.asking && m.askingCoord && (
+      {q && m.askingCoord && (
         <div className="modal">
           <Marquee className="modal-marquee" key={m.askingCoord}>
             <div className="modal-card">
-              <div className="modal-coord">{m.askingCoord}</div>
-              <div className="tv-badges">
-                <span className="chip">{m.asking.theme}</span>
-                <DifficultyChip difficulty={m.asking.difficulty} />
+              <div className="modal-head">
+                <div className="modal-coord">{m.askingCoord}</div>
+                <div className="modal-tags">
+                  <span className="chip">{q.theme}</span>
+                  {q.contributor && <span className="modal-by">par {q.contributor}</span>}
+                  <DifficultyChip difficulty={q.difficulty} />
+                </div>
+                <div className="modal-who">
+                  pour
+                  <b style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties} className="modal-for">
+                    {turnName}
+                  </b>
+                </div>
               </div>
-              {m.asking.image && <img className="tv-photo" src={m.asking.image} alt="" />}
-              <div className="tv-prompt">{m.asking.prompt}</div>
-              {m.asking.options && <OptionsList options={m.asking.options} />}
-              <div className="tv-sub">
-                Pour{' '}
-                <b style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties} className="modal-for">
-                  {turnName}
-                </b>
+              <div className={`modal-body ${q.image ? 'with-photo' : ''}`}>
+                {q.image && <img className="tv-photo" src={q.image} alt="" />}
+                <div className="modal-q">
+                  <div className="tv-prompt">{q.prompt}</div>
+                  {q.options && <OptionsList options={q.options} />}
+                </div>
               </div>
             </div>
           </Marquee>
         </div>
       )}
     </>
+  );
+}
+
+/** One slim line in the TV header instead of a full-width banner above the grid. */
+function MemoryStatus({ state, colors }: { state: GameView; colors: Map<string, string> }) {
+  const m = state.memory;
+  if (m.status === 'preview') {
+    return (
+      <div className="mem-status">
+        <span>Mémorisez les thèmes !</span>
+        <CountdownRing until={m.previewUntil} className="inline" />
+      </div>
+    );
+  }
+  if (m.status === 'finished') return <div className="mem-status">Grille terminée !</div>;
+  if (m.status !== 'playing') return null;
+  const turnName = nameOf(state.players, m.turnPlayerId);
+  return (
+    <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
+      {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+      <span>
+        <b>{turnName}</b> annonce une case
+      </span>
+      <span className="muted">· {m.remaining} restante{m.remaining > 1 ? 's' : ''}</span>
+    </div>
   );
 }
 
