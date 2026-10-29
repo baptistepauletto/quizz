@@ -89,13 +89,28 @@ export function recordEvent(g: Game, type: GameEventType, payload: Record<string
     case 'memory.consumed': {
       const tile = g.memory.tiles.find((t) => t.coord === payload.coord);
       const correct = payload.result === 'hit';
-      return insert(g, {
+      const activePoints = Number(payload.points ?? 0);
+      insert(g, {
         round: 'memory',
         questionId: tile?.questionId,
         playerId,
         correct,
-        points: correct ? pointsOf(g, tile?.questionId) : 0,
+        points: correct ? activePoints : 0,
       });
+      const leechIds = Array.isArray(payload.leechIds)
+        ? payload.leechIds.filter((id): id is string => typeof id === 'string')
+        : [];
+      for (const leechId of leechIds) {
+        insert(g, {
+          round: 'memory',
+          questionId: tile?.questionId,
+          playerId: leechId,
+          correct: true,
+          points: 1,
+          answer: 'leech',
+        });
+      }
+      return;
     }
     case 'climax.judged': {
       const correct = payload.correct === true;

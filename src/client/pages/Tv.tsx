@@ -184,7 +184,7 @@ const PHASE_CARDS: Partial<Record<Phase, { kicker: string; title: string; sub: s
     sub: 'Qui va gagner ? Voyez juste pour gagner des points !',
   },
   sprint: { kicker: 'Phase 1', title: 'Le Sprint', sub: 'Le plus rapide au buzzer répond' },
-  memory: { kicker: 'Phase 2', title: 'La Grille', sub: 'Mémorisez les thèmes, choisissez votre case' },
+  memory: { kicker: 'Phase 2', title: 'La Grille', sub: 'Choisissez une case · les autres peuvent leech' },
   climax: { kicker: 'Phase 3', title: 'La Finale', sub: 'Misez selon la difficulté · 1,5× / 2× / 3×' },
   reveal: { kicker: 'Avant le podium', title: 'Révélation', sub: 'Qui avait parié sur qui ?' },
   results: { kicker: 'Fin de partie', title: 'Le Classement', sub: 'Qui monte sur le podium ?' },
@@ -314,7 +314,7 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
   const q = m.asking;
   return (
     <>
-      <TvGrid memory={m} />
+      <TvGrid memory={m} players={state.players} colors={colors} />
       {q && m.askingCoord && (
         <div className="modal">
           <Marquee className="modal-marquee" key={m.askingCoord}>
@@ -324,7 +324,7 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
                 <div className="modal-tags">
                   <span className="chip">{q.theme}</span>
                   {q.contributor && <span className="modal-by">par {q.contributor}</span>}
-                  <DifficultyChip difficulty={q.difficulty} />
+                  <DifficultyChip difficulty={q.difficulty} points={q.points} />
                 </div>
                 <div className="modal-who">
                   pour
@@ -337,7 +337,14 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
                 {q.image && <img className="tv-photo" src={q.image} alt="" />}
                 <div className="modal-q">
                   <div className="tv-prompt">{q.prompt}</div>
+                  {m.clue && <div className="tv-clue">Indice : {m.clue}</div>}
                   {q.options && <OptionsList options={q.options} />}
+                  {m.askStatus === 'leeching' && (
+                    <div className="tv-leech-wait">
+                      Leech sur les téléphones…
+                      <CountdownRing until={m.leechUntil} className="inline" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -351,17 +358,30 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
 /** One slim line in the TV header instead of a full-width banner above the grid. */
 function MemoryStatus({ state, colors }: { state: GameView; colors: Map<string, string> }) {
   const m = state.memory;
-  if (m.status === 'preview') {
-    return (
-      <div className="mem-status">
-        <span>Mémorisez les thèmes !</span>
-        <CountdownRing until={m.previewUntil} className="inline" />
-      </div>
-    );
-  }
   if (m.status === 'finished') return <div className="mem-status">Grille terminée !</div>;
   if (m.status !== 'playing') return null;
   const turnName = nameOf(state.players, m.turnPlayerId);
+  if (m.askStatus === 'leeching') {
+    return (
+      <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
+        {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+        <span>
+          Leech · <b>{turnName}</b> réfléchit
+        </span>
+        <CountdownRing until={m.leechUntil} className="inline" />
+      </div>
+    );
+  }
+  if (m.askStatus === 'answering') {
+    return (
+      <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
+        {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+        <span>
+          <b>{turnName}</b> répond à voix haute
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
       {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}

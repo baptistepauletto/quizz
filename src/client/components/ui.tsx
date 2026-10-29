@@ -9,8 +9,17 @@ const DIFFICULTY_FR: Record<Difficulty, string> = {
   hard: 'difficile',
 };
 
-export function DifficultyChip({ difficulty, withPoints = true }: { difficulty: Difficulty; withPoints?: boolean }) {
-  const pts = POINTS[difficulty];
+export function DifficultyChip({
+  difficulty,
+  withPoints = true,
+  points,
+}: {
+  difficulty: Difficulty;
+  withPoints?: boolean;
+  /** Override when phase points differ from Sprint (e.g. Grid). */
+  points?: number;
+}) {
+  const pts = points ?? POINTS[difficulty];
   return (
     <span className={`chip ${difficulty}`}>
       {DIFFICULTY_FR[difficulty]}

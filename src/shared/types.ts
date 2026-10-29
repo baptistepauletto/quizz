@@ -7,8 +7,53 @@ export type Bank = 'sprint' | 'memory' | 'climax';
 export type Phase = 'lobby' | 'predictions' | 'sprint' | 'memory' | 'climax' | 'reveal' | 'results';
 export type Role = 'tv' | 'host' | 'play';
 
-/** Points awarded for a correct answer in phases 1 and 2. */
+/** Points awarded for a correct answer in the Sprint (phase 1). */
 export const POINTS: Record<Difficulty, number> = { easy: 1, medium: 3, hard: 5 };
+
+/** Base points for a correct active answer on the Grid (phase 2), before hints/leeches. */
+export const MEMORY_POINTS: Record<Difficulty, number> = { easy: 2, medium: 4, hard: 6 };
+
+/** Minimum payout the active player keeps when correct, even if leeches drain the card. */
+export const MEMORY_FLOOR: Record<Difficulty, number> = { easy: 1, medium: 2, hard: 3 };
+
+/** Silent phone window for spectators to lock a leech answer. */
+export const MEMORY_LEECH_MS = 15_000;
+
+export function memoryMaxHints(difficulty: Difficulty): number {
+  if (difficulty === 'easy') return 0;
+  if (difficulty === 'medium') return 1;
+  return 2;
+}
+
+/** Point cost of applying hint number `n` (1-based). */
+export function memoryHintCost(difficulty: Difficulty, n: number): number {
+  if (difficulty === 'medium' && n === 1) return 2;
+  if (difficulty === 'hard' && n === 1) return 1;
+  if (difficulty === 'hard' && n === 2) return 2;
+  return 0;
+}
+
+export function memoryHintsCostTotal(difficulty: Difficulty, hintsUsed: number): number {
+  let total = 0;
+  for (let i = 1; i <= hintsUsed; i++) total += memoryHintCost(difficulty, i);
+  return total;
+}
+
+/** Card value after hints, before leech steals. */
+export function memoryCurrentValue(difficulty: Difficulty, hintsUsed: number): number {
+  return MEMORY_POINTS[difficulty] - memoryHintsCostTotal(difficulty, hintsUsed);
+}
+
+/** Active-player payout for a resolved grid card. */
+export function memoryActivePayout(
+  difficulty: Difficulty,
+  hintsUsed: number,
+  correctLeechCount: number,
+  correct: boolean,
+): number {
+  if (!correct) return 0;
+  return Math.max(MEMORY_FLOOR[difficulty], memoryCurrentValue(difficulty, hintsUsed) - correctLeechCount);
+}
 
 /**
  * Net points gained on a correct climax wager (stake stays in the score).
@@ -64,10 +109,13 @@ export interface QuestionView {
   /** Optional picture, TV and host only on ask. */
   image?: string;
   /**
-   * Memory MCQ only: exactly four choices shown on TV/host after flip.
+   * Memory choices: up to four (two after a 50/50 hint).
+   * Shown on TV from the start only when `isMcq`; otherwise revealed by a format-drop hint.
    * The correct one is `answer` (host-only until you judge).
    */
-  options?: [string, string, string, string];
+  options?: string[];
+  /** Memory: true when the four options are shown as soon as the card opens. */
+  isMcq?: boolean;
   /** Only sent to /host, or to /tv once the question is resolved. */
   answer?: string;
   /** Host cheat-sheet, /host only. */
@@ -85,29 +133,53 @@ export interface SprintView {
   lockedOut: string[];
 }
 
-export type TileFace = 'preview' | 'hidden' | 'asking' | 'consumed';
+/** `open` = available on the always-face-up grid; `asking` = live question; `consumed` = done. */
+export type TileFace = 'open' | 'asking' | 'consumed';
 
 export interface TileView {
   coord: string;
   face: TileFace;
   result?: 'hit' | 'miss';
-  /** Only present when the tile is face-up (preview / asking / consumed). */
   theme?: string;
   difficulty?: Difficulty;
+  /** Who brought the theme, when known — used to tint tiles with a matching player color. */
+  contributor?: string;
 }
 
-export type MemoryStatus = 'idle' | 'preview' | 'playing' | 'finished';
+export type MemoryStatus = 'idle' | 'playing' | 'finished';
+
+/** Phase of the currently opened grid card (null when none is open). */
+export type MemoryAskStatus = 'leeching' | 'answering';
+
+/** Spectator phone answer shown on the host dashboard after the leech window. */
+export interface MemoryLeechSubmission {
+  playerId: string;
+  name: string;
+  text: string;
+}
 
 export interface MemoryView {
   status: MemoryStatus;
   cols: number;
   rows: number;
-  previewUntil: number | null;
   tiles: TileView[];
   turnPlayerId: string | null;
   askingCoord: string | null;
   asking: QuestionView | null;
   remaining: number;
+  /** null when no card is open. */
+  askStatus: MemoryAskStatus | null;
+  /** Wall-clock end of the silent leech window (leeching only). */
+  leechUntil: number | null;
+  /** How many host hints have been applied on the open card. */
+  hintsUsed: number;
+  maxHints: number;
+  /** Context clue on TV once Hard hint 1 is used (host always has notes on `asking`). */
+  clue: string | null;
+  /** /play: your locked leech text (null if none / you are active). */
+  myLeech: string | null;
+  /** /host once leeching ends: non-empty spectator answers to validate. */
+  leeches: MemoryLeechSubmission[];
 }
 
 export type ClimaxStatus = 'idle' | 'announce' | 'betting' | 'answering' | 'asking' | 'resolved';
@@ -220,10 +292,12 @@ export type GameEventType =
   | 'sprint.buzz_won'
   | 'sprint.pass'
   | 'sprint.resolved'
-  | 'memory.preview'
-  | 'memory.hidden'
+  | 'memory.started'
   | 'memory.flipped'
   | 'memory.asking'
+  | 'memory.leech'
+  | 'memory.leech_locked'
+  | 'memory.hint'
   | 'memory.consumed'
   | 'memory.turn'
   | 'climax.announce'
@@ -268,8 +342,13 @@ export interface QuestionDto {
   status: QuestionStatus;
   /** Path relative to the pictures folder. */
   image: string | null;
-  /** Memory MCQ: JSON-serialized 4 strings in DB; parsed in DTOs. */
+  /** Memory: JSON-serialized 4 strings in DB; parsed in DTOs. */
   options: [string, string, string, string] | null;
+  /**
+   * Memory: when true, options are shown on TV as soon as the card opens.
+   * When false, options (if any) are reserved for a format-drop hint.
+   */
+  isMcq: boolean;
 }
 
 /** One question in drafts/{bank}.json */
@@ -281,8 +360,16 @@ export interface BankDraftQuestion {
   difficulty: Difficulty;
   notes?: string;
   image?: string;
-  /** Memory only: exactly four choices; `answer` must match one. */
+  /**
+   * Memory only: exactly four choices; `answer` must match one.
+   * Use with `is_mcq: true` to show them immediately, or `is_mcq: false` to keep them for a hint.
+   */
   options?: [string, string, string, string];
+  /**
+   * Memory only. JSON field name is `is_mcq`.
+   * Defaults to true when `options` are present and the flag is omitted (legacy drafts).
+   */
+  is_mcq?: boolean;
   contributor?: string;
 }
 

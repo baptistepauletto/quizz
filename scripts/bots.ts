@@ -1,6 +1,6 @@
 // Fake players for testing the TV and host screens on your own.
 //   npm run bots -- ABCD 9        (room code, number of bots; the default server is localhost:3000)
-// Bots join, buzz at a random moment when a sprint question opens, and bet a random share of their points.
+// Bots join, buzz, leech on the grid, and bet a random share of their points.
 import WebSocket from 'ws';
 import type { ClientMessage, ServerMessage } from '../src/shared/protocol';
 import type { GameView } from '../src/shared/types';
@@ -12,6 +12,7 @@ if (!code) {
 }
 const url = process.env.QUIZZ_WS ?? 'ws://localhost:3000/ws';
 const NAMES = ['Ava', 'Ben', 'Chloe', 'Dan', 'Eli', 'Fay', 'Gus', 'Hana', 'Ivan', 'Jade', 'Kai', 'Lea', 'Max', 'Nina', 'Omar', 'Pia'];
+const LEECH_GUESSES = ['Paris', 'Jupiter', 'Spielberg', 'Avocado', 'Japan', 'Armstrong', 'Blue', '42', 'Oui', 'Non'];
 
 function startBot(name: string) {
   const ws = new WebSocket(url);
@@ -44,6 +45,19 @@ function startBot(name: string) {
         lastKey = key;
         const target = s.players[Math.floor(Math.random() * s.players.length)];
         if (target) setTimeout(() => send({ t: 'predict', playerId: target.id }), 400 + Math.random() * 2000);
+      }
+    }
+    if (
+      s.phase === 'memory' &&
+      s.memory.askStatus === 'leeching' &&
+      s.memory.turnPlayerId !== me &&
+      s.memory.myLeech === null
+    ) {
+      const key = `leech-${s.memory.askingCoord}`;
+      if (key !== lastKey && Math.random() < 0.85) {
+        lastKey = key;
+        const guess = LEECH_GUESSES[Math.floor(Math.random() * LEECH_GUESSES.length)]!;
+        setTimeout(() => send({ t: 'answer', text: guess }), 200 + Math.random() * 4000);
       }
     }
     if (s.phase === 'climax' && s.climax.status === 'betting' && !self.sitOut && self.score > 0) {

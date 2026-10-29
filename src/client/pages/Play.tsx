@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token, useCountUp } from '../components/stage';
-import { ConnectionPill, DifficultyChip, nameOf } from '../components/ui';
+import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
@@ -251,7 +251,7 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
     case 'sprint':
       return <Buzzer state={state} me={me} game={game} />;
     case 'memory':
-      return <MemoryInfo state={state} me={me} colors={colors} />;
+      return <MemoryInfo state={state} me={me} colors={colors} game={game} />;
     case 'climax':
       return <ClimaxPlayer state={state} me={me} game={game} />;
     case 'reveal':
@@ -374,33 +374,27 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
 
 // --- Phase 2 -----------------------------------------------------------------
 
-function MemoryInfo({ state, me, colors }: { state: GameView; me: PlayerView; colors: Map<string, string> }) {
+function MemoryInfo({
+  state,
+  me,
+  colors,
+  game,
+}: {
+  state: GameView;
+  me: PlayerView;
+  colors: Map<string, string>;
+  game: UseGame;
+}) {
   const m = state.memory;
   const myTurn = m.turnPlayerId === me.id;
   const asking = m.askingCoord ? m.tiles.find((t) => t.coord === m.askingCoord) : undefined;
+  const [leechText, setLeechText] = useState('');
+  const now = useNow(200);
 
-  if (m.status === 'preview') {
-    return (
-      <div className="play-body">
-        <h2>Mémorise !</h2>
-        <p className="muted">Les thèmes sont sur la TV. Ils vont bientôt se retourner.</p>
-      </div>
-    );
-  }
-  if (asking) {
-    return (
-      <div className="play-body">
-        <p className="muted">Case {asking.coord}</p>
-        <h2>{asking.theme}</h2>
-        {asking.difficulty && (
-          <div>
-            <DifficultyChip difficulty={asking.difficulty} />
-          </div>
-        )}
-        <p className="muted">{myTurn ? 'C’est ta question, écoute !' : `${nameOf(state.players, m.turnPlayerId)} répond`}</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    setLeechText('');
+  }, [m.askingCoord]);
+
   if (m.status === 'finished') {
     return (
       <div className="play-body">
@@ -409,13 +403,119 @@ function MemoryInfo({ state, me, colors }: { state: GameView; me: PlayerView; co
       </div>
     );
   }
+
+  if (asking && m.askStatus === 'leeching') {
+    if (myTurn) {
+      return (
+        <div className="play-body">
+          <p className="muted">Case {asking.coord}</p>
+          <h2>{asking.theme}</h2>
+          {asking.difficulty && (
+            <div>
+              <DifficultyChip difficulty={asking.difficulty} withPoints={false} />
+            </div>
+          )}
+          <CountdownRing until={m.leechUntil} className="phone-ring" />
+          <Token name={me.name} color={colors.get(me.id)} className="hero pulse" />
+          <h2>À toi !</h2>
+          <p>Regarde la TV et réponds à voix haute.</p>
+          <p className="muted">Les autres tentent un leech sur leur téléphone…</p>
+        </div>
+      );
+    }
+
+    const locked = m.myLeech !== null;
+    return (
+      <div className="play-body">
+        <p className="muted">Leech · case {asking.coord}</p>
+        <h2>{asking.theme}</h2>
+        {asking.difficulty && (
+          <div>
+            <DifficultyChip difficulty={asking.difficulty} withPoints={false} />
+          </div>
+        )}
+        <CountdownRing until={m.leechUntil} className="phone-ring" />
+        <div className="leech-bar phone">
+          <div
+            className="leech-bar-fill"
+            style={{
+              width: m.leechUntil
+                ? `${Math.max(0, Math.min(100, ((m.leechUntil - now) / 15_000) * 100))}%`
+                : '0%',
+            }}
+          />
+        </div>
+        {locked ? (
+          <>
+            <p>
+              Leech verrouillé : <b>{m.myLeech}</b>
+            </p>
+            <p className="muted">En attente de la réponse à voix haute…</p>
+          </>
+        ) : (
+          <>
+            <input
+              className="input"
+              maxLength={200}
+              placeholder="Ta réponse leech…"
+              value={leechText}
+              onChange={(e) => setLeechText(e.target.value)}
+              autoFocus
+            />
+            <button
+              className="btn primary big"
+              disabled={!leechText.trim()}
+              onClick={() => game.send({ t: 'answer', text: leechText })}
+            >
+              Valider le leech
+            </button>
+            <p className="muted">Une seule chance — pas de modification après envoi.</p>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (asking && m.askStatus === 'answering') {
+    return (
+      <div className="play-body">
+        <p className="muted">Case {asking.coord}</p>
+        <h2>{asking.theme}</h2>
+        {asking.difficulty && (
+          <div>
+            <DifficultyChip difficulty={asking.difficulty} withPoints={false} />
+          </div>
+        )}
+        {myTurn ? (
+          <>
+            <Token name={me.name} color={colors.get(me.id)} className="hero pulse" />
+            <h2>Réponds à voix haute</h2>
+            <p className="muted">Regarde la TV — indices éventuels sur l’écran.</p>
+          </>
+        ) : (
+          <>
+            <p className="muted">
+              {nameOf(state.players, m.turnPlayerId)} répond
+              {m.myLeech ? (
+                <>
+                  {' '}
+                  · ton leech : <b>{m.myLeech}</b>
+                </>
+              ) : null}
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="play-body">
       {myTurn ? (
         <>
           <Token name={me.name} color={colors.get(me.id)} className="hero pulse" />
           <h2>À toi !</h2>
-          <p>Annonce une case, par exemple B3.</p>
+          <p>Annonce une case à voix haute, par exemple B3.</p>
         </>
       ) : (
         <>

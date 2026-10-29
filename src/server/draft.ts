@@ -89,6 +89,24 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
       }
     }
 
+    let isMcq: boolean | undefined;
+    if (rec.is_mcq !== undefined) {
+      if (bank !== 'memory') {
+        bad(`${where}: "is_mcq" n’est autorisé qu’en grille mémoire.`);
+      } else if (typeof rec.is_mcq !== 'boolean') {
+        bad(`${where}: "is_mcq" doit être true ou false.`);
+      } else {
+        isMcq = rec.is_mcq;
+      }
+    } else if (options) {
+      // Legacy drafts: options without the flag meant “show as QCM immediately”.
+      isMcq = true;
+    }
+
+    if (isMcq === true && !options) {
+      bad(`${where}: "is_mcq": true exige un tableau "options" de 4 choix.`);
+    }
+
     if (id && theme && prompt && answer && DIFFICULTIES.includes(difficulty) && (!imageRaw || image)) {
       const notes = str(rec.notes);
       const contributor = str(rec.contributor);
@@ -101,6 +119,7 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
         ...(notes ? { notes } : {}),
         ...(image ? { image } : {}),
         ...(options ? { options } : {}),
+        ...(isMcq !== undefined ? { is_mcq: isMcq } : {}),
         ...(contributor ? { contributor } : {}),
       });
     }
@@ -115,9 +134,11 @@ export function fingerprint(
   answer: string,
   difficulty: string,
   options?: string[] | null,
+  isMcq?: boolean,
 ): string {
   const opt = options && options.length ? `\n${JSON.stringify(options)}` : '';
-  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}`;
+  const mcq = options && options.length ? `\nis_mcq:${isMcq ? 1 : 0}` : '';
+  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}${mcq}`;
 }
 
 export function serializeOptions(options: [string, string, string, string] | null | undefined): string | null {

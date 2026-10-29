@@ -2,7 +2,16 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { computeGrid, coordsFor } from '../shared/grid';
 import { mediaUrl } from './pictures';
 import type { HostCommand, PlayerMessage } from '../shared/protocol';
-import { POINTS, PREDICTION_BONUS, climaxWinDelta } from '../shared/types';
+import {
+  MEMORY_LEECH_MS,
+  MEMORY_POINTS,
+  POINTS,
+  PREDICTION_BONUS,
+  climaxWinDelta,
+  memoryActivePayout,
+  memoryCurrentValue,
+  memoryMaxHints,
+} from '../shared/types';
 import type {
   Bank,
   ClimaxCandidate,
@@ -12,6 +21,7 @@ import type {
   Difficulty,
   GameEventType,
   GameView,
+  MemoryAskStatus,
   MemoryStatus,
   MemoryView,
   Phase,
@@ -27,8 +37,6 @@ import type {
   TileView,
 } from '../shared/types';
 
-/** How long the themes stay face-up before the grid flips face-down on its own. */
-export const PREVIEW_MS = 60_000;
 /** How long climax bettors have to type after the question is revealed. */
 export const CLIMAX_ANSWER_MS = Number(process.env.CLIMAX_ANSWER_MS ?? 30_000);
 export const MAX_PLAYERS = 16;
@@ -50,8 +58,10 @@ export interface QuestionRec {
   notes: string | null;
   /** Relative path inside the pictures folder. */
   image: string | null;
-  /** Memory MCQ: four choices; `answer` is the correct text. */
+  /** Memory: four choices; `answer` is the correct text. */
   options: [string, string, string, string] | null;
+  /** When true, options are shown on open; when false they wait for a format-drop hint. */
+  isMcq: boolean;
 }
 
 export interface PlayerRec {
@@ -94,7 +104,14 @@ export interface Game {
     tiles: TileRec[];
     turnPlayerId: string | null;
     askingCoord: string | null;
-    previewUntil: number | null;
+    askStatus: MemoryAskStatus | null;
+    leechUntil: number | null;
+    /** Locked non-empty leech answers by player id. */
+    leeches: Record<string, string>;
+    hintsUsed: number;
+    /** Options currently shown on TV (native MCQ or after a format-drop hint). */
+    displayOptions: string[] | null;
+    clueRevealed: boolean;
   };
   climax: {
     candidates: number[];
@@ -168,15 +185,7 @@ export function createGame(packId: number, packTitle: string, questions: Questio
       buzzNs: null,
       lockedOut: [],
     },
-    memory: {
-      status: 'idle',
-      cols: 0,
-      rows: 0,
-      tiles: [],
-      turnPlayerId: null,
-      askingCoord: null,
-      previewUntil: null,
-    },
+    memory: emptyMemory(),
     climax: {
       candidates: climax.map((q) => q.id),
       used: [],
@@ -203,9 +212,53 @@ function emptyPredictions(): Game['predictions'] {
   };
 }
 
+function emptyMemory(): Game['memory'] {
+  return {
+    status: 'idle',
+    cols: 0,
+    rows: 0,
+    tiles: [],
+    turnPlayerId: null,
+    askingCoord: null,
+    askStatus: null,
+    leechUntil: null,
+    leeches: {},
+    hintsUsed: 0,
+    displayOptions: null,
+    clueRevealed: false,
+  };
+}
+
+function clearAsk(m: Game['memory']) {
+  m.askingCoord = null;
+  m.askStatus = null;
+  m.leechUntil = null;
+  m.leeches = {};
+  m.hintsUsed = 0;
+  m.displayOptions = null;
+  m.clueRevealed = false;
+}
+
 /** Fill fields missing from older snapshots so a mid-game restart still loads. */
 export function hydrateGame(g: Game): Game {
   if (!g.predictions) g.predictions = emptyPredictions();
+  if (!g.memory) g.memory = emptyMemory();
+  for (const q of Object.values(g.questions)) {
+    if (q.isMcq === undefined) q.isMcq = q.options !== null;
+  }
+  const m = g.memory as Game['memory'] & { previewUntil?: number | null };
+  if (m.askStatus === undefined) m.askStatus = m.askingCoord ? 'answering' : null;
+  if (m.leechUntil === undefined) m.leechUntil = null;
+  if (!m.leeches) m.leeches = {};
+  if (m.hintsUsed === undefined) m.hintsUsed = 0;
+  if (m.displayOptions === undefined) m.displayOptions = null;
+  if (m.clueRevealed === undefined) m.clueRevealed = false;
+  if ('previewUntil' in m) delete m.previewUntil;
+  if ((m.status as string) === 'preview') m.status = 'playing';
+  for (const t of m.tiles) {
+    const face = t.face as string;
+    if (face === 'preview' || face === 'hidden') t.face = 'open';
+  }
   return g;
 }
 
@@ -294,6 +347,7 @@ function removePlayer(g: Game, playerId: string, emit: Emit) {
   g.climax.eligible = g.climax.eligible.filter((id) => id !== playerId);
   delete g.climax.bets[playerId];
   delete g.climax.answers[playerId];
+  delete g.memory.leeches[playerId];
   delete g.predictions.picks[playerId];
   for (const [voter, target] of Object.entries(g.predictions.picks)) {
     if (target === playerId) delete g.predictions.picks[voter];
@@ -336,15 +390,18 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
   }
 
   if (msg.t === 'answer') {
-    const c = g.climax;
-    if (g.phase !== 'climax' || c.status !== 'answering') throw new GameError('Ce n’est pas le moment de répondre.');
-    if (!c.eligible.includes(playerId)) throw new GameError('Tu passes ce tour.');
-    if ((c.bets[playerId] ?? 0) <= 0) throw new GameError('Tu n’as pas misé.');
     const text = String(msg.text ?? '')
       .normalize('NFKC')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, MAX_ANSWER_LENGTH);
+
+    if (g.phase === 'memory') return memoryLeechAnswer(g, playerId, text, emit);
+
+    const c = g.climax;
+    if (g.phase !== 'climax' || c.status !== 'answering') throw new GameError('Ce n’est pas le moment de répondre.');
+    if (!c.eligible.includes(playerId)) throw new GameError('Tu passes ce tour.');
+    if ((c.bets[playerId] ?? 0) <= 0) throw new GameError('Tu n’as pas misé.');
     c.answers[playerId] = text;
     emit('climax.answer', { playerId });
     return true;
@@ -391,17 +448,21 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
       return sprintSkip(g, emit);
 
     // Phase 2
-    case 'memory.hide':
-      return hideTiles(g, emit);
     case 'memory.flip':
       return memoryFlip(g, cmd.coord, emit);
+    case 'memory.endLeech':
+      return memoryEndLeech(g, emit);
+    case 'memory.hint':
+      return memoryHint(g, emit);
     case 'memory.resolve':
-      return memoryResolve(g, cmd.correct, emit);
+      return memoryResolve(g, cmd.correct, cmd.leechIds ?? [], emit);
     case 'memory.setTurn':
+      if (g.memory.askingCoord) throw new GameError('Termine d’abord la question en cours.');
       playerOf(g, cmd.playerId);
       g.memory.turnPlayerId = cmd.playerId;
       return emit('memory.turn', { playerId: cmd.playerId });
     case 'memory.skipTurn':
+      if (g.memory.askingCoord) throw new GameError('Termine d’abord la question en cours.');
       return advanceTurn(g, emit);
 
     // Phase 3
@@ -515,6 +576,7 @@ function sprintSkip(g: Game, emit: Emit) {
 function startMemory(g: Game, emit: Emit) {
   const ids = shuffle(Object.values(g.questions).filter((q) => q.bank === 'memory').map((q) => q.id));
   const m = g.memory;
+  Object.assign(m, emptyMemory());
   if (ids.length === 0) {
     m.status = 'finished';
     return;
@@ -523,24 +585,10 @@ function startMemory(g: Game, emit: Emit) {
   const coords = coordsFor(size, ids.length);
   m.cols = size.cols;
   m.rows = size.rows;
-  m.tiles = ids.map((questionId, i) => ({ coord: coords[i], questionId, face: 'preview' as TileFace }));
-  m.status = 'preview';
-  m.previewUntil = Date.now() + PREVIEW_MS;
-  m.askingCoord = null;
-  m.turnPlayerId = g.players[0]?.id ?? null;
-  emit('memory.preview', { until: m.previewUntil, tiles: m.tiles.length });
-  if (m.turnPlayerId) emit('memory.turn', { playerId: m.turnPlayerId });
-}
-
-function hideTiles(g: Game, emit: Emit) {
-  requirePhase(g, 'memory');
-  const m = g.memory;
-  if (m.status !== 'preview') throw new GameError('Les cases ne sont pas en aperçu.');
-  for (const t of m.tiles) if (t.face === 'preview') t.face = 'hidden';
+  m.tiles = ids.map((questionId, i) => ({ coord: coords[i], questionId, face: 'open' as TileFace }));
   m.status = 'playing';
-  m.previewUntil = null;
-  if (!m.turnPlayerId) m.turnPlayerId = g.players[0]?.id ?? null;
-  emit('memory.hidden', {});
+  m.turnPlayerId = g.players[0]?.id ?? null;
+  emit('memory.started', { tiles: m.tiles.length });
   if (m.turnPlayerId) emit('memory.turn', { playerId: m.turnPlayerId });
 }
 
@@ -552,29 +600,141 @@ function memoryFlip(g: Game, rawCoord: string, emit: Emit) {
   const coord = String(rawCoord).trim().toUpperCase();
   const tile = m.tiles.find((t) => t.coord === coord);
   if (!tile) throw new GameError(`Il n’y a pas de case ${coord}.`);
-  if (tile.face !== 'hidden') throw new GameError(`${coord} a déjà été jouée.`);
+  if (tile.face !== 'open') throw new GameError(`${coord} a déjà été jouée.`);
   const q = question(g, tile.questionId);
   tile.face = 'asking';
   m.askingCoord = coord;
+  m.askStatus = 'leeching';
+  m.leechUntil = Date.now() + MEMORY_LEECH_MS;
+  m.leeches = {};
+  m.hintsUsed = 0;
+  m.displayOptions = q.isMcq && q.options ? [...q.options] : null;
+  m.clueRevealed = false;
   emit('memory.flipped', { coord, theme: q.theme, difficulty: q.difficulty });
   emit('memory.asking', { coord });
+  maybeEndLeechEarly(g, emit);
+}
+
+function memoryLeechAnswer(g: Game, playerId: string, text: string, emit: Emit): boolean {
+  requirePhase(g, 'memory');
+  const m = g.memory;
+  if (m.askStatus !== 'leeching') throw new GameError('La fenêtre de leech est fermée.');
+  if (playerId === m.turnPlayerId) throw new GameError('C’est ton tour : réponds à voix haute.');
+  if (m.leeches[playerId] !== undefined) throw new GameError('Réponse déjà verrouillée.');
+  if (!text) throw new GameError('Écris une réponse.');
+  playerOf(g, playerId);
+  m.leeches[playerId] = text;
+  emit('memory.leech', { playerId });
+  maybeEndLeechEarly(g, emit);
+  return true;
+}
+
+/** Connected non-active players who still need to lock a leech (empty room = wait out the timer). */
+function pendingLeechers(g: Game): PlayerRec[] {
+  const m = g.memory;
+  return g.players.filter((p) => p.connected && p.id !== m.turnPlayerId && m.leeches[p.id] === undefined);
+}
+
+function maybeEndLeechEarly(g: Game, emit: Emit) {
+  const m = g.memory;
+  if (m.askStatus !== 'leeching') return;
+  const spectators = g.players.filter((p) => p.connected && p.id !== m.turnPlayerId);
+  if (spectators.length > 0 && pendingLeechers(g).length === 0) memoryEndLeech(g, emit);
+}
+
+function memoryEndLeech(g: Game, emit: Emit) {
+  requirePhase(g, 'memory');
+  const m = g.memory;
+  if (m.askStatus !== 'leeching') throw new GameError('Pas de fenêtre de leech à fermer.');
+  m.askStatus = 'answering';
+  m.leechUntil = null;
+  emit('memory.leech_locked', { count: Object.keys(m.leeches).length });
+}
+
+/**
+ * Tiered host hints (disabled until leech lock):
+ * - Easy: none
+ * - Medium: format drop (−2) — reveal MCQ or 50/50
+ * - Hard: clue (−1) then format drop (−2)
+ */
+function memoryHint(g: Game, emit: Emit) {
+  requirePhase(g, 'memory');
+  const m = g.memory;
+  if (!m.askingCoord || m.askStatus !== 'answering') {
+    throw new GameError('Les indices ne sont dispo qu’après la fenêtre de leech.');
+  }
+  const tile = m.tiles.find((t) => t.coord === m.askingCoord)!;
+  const q = question(g, tile.questionId);
+  const next = m.hintsUsed + 1;
+  if (next > memoryMaxHints(q.difficulty)) throw new GameError('Plus d’indice pour cette carte.');
+
+  if (q.difficulty === 'hard' && next === 1) {
+    if (!q.notes?.trim()) throw new GameError('Pas d’indice contexte sur cette question.');
+    m.clueRevealed = true;
+  } else {
+    applyFormatDrop(m, q);
+  }
+
+  m.hintsUsed = next;
+  emit('memory.hint', {
+    hintsUsed: m.hintsUsed,
+    points: memoryCurrentValue(q.difficulty, m.hintsUsed),
+    clue: m.clueRevealed,
+  });
+}
+
+/** Reveal 4 options on an open question, or strip two wrong answers on an MCQ (50/50). */
+function applyFormatDrop(m: Game['memory'], q: QuestionRec) {
+  if (!q.options) throw new GameError('Cette question n’a pas d’options pour l’indice.');
+  const alreadyShowing = m.displayOptions !== null && m.displayOptions.length >= 2;
+  if (alreadyShowing && m.displayOptions!.length <= 2) {
+    throw new GameError('Le 50/50 est déjà appliqué.');
+  }
+  if (alreadyShowing) {
+    m.displayOptions = fiftyFifty(q.options, q.answer);
+  } else {
+    m.displayOptions = [...q.options];
+  }
+}
+
+/** Keep the correct answer and one random wrong choice. */
+function fiftyFifty(options: [string, string, string, string], answer: string): string[] {
+  const wrong = shuffle(options.filter((o) => o !== answer));
+  const keepWrong = wrong[0] ?? options.find((o) => o !== answer) ?? options[0];
+  return shuffle([answer, keepWrong]);
 }
 
 /** Hit or miss, the tile is consumed: each question is only ever asked once. */
-function memoryResolve(g: Game, correct: boolean, emit: Emit) {
+function memoryResolve(g: Game, correct: boolean, leechIds: string[], emit: Emit) {
   requirePhase(g, 'memory');
   const m = g.memory;
   if (!m.askingCoord) throw new GameError('Aucune case n’est posée.');
+  if (m.askStatus === 'leeching') throw new GameError('Attends la fin de la fenêtre de leech.');
   const tile = m.tiles.find((t) => t.coord === m.askingCoord)!;
   const q = question(g, tile.questionId);
+
+  const validLeechIds = [
+    ...new Set(leechIds.map((id) => String(id)).filter((id) => m.leeches[id] !== undefined && id !== m.turnPlayerId)),
+  ];
+
+  const payout = memoryActivePayout(q.difficulty, m.hintsUsed, validLeechIds.length, correct);
   if (correct) {
     if (!m.turnPlayerId) throw new GameError('Personne n’est au tour.');
-    addScore(g, m.turnPlayerId, POINTS[q.difficulty], emit, 'memory');
+    addScore(g, m.turnPlayerId, payout, emit, 'memory');
   }
+  for (const id of validLeechIds) addScore(g, id, 1, emit, 'memory_leech');
+
   tile.face = 'consumed';
   tile.result = correct ? 'hit' : 'miss';
-  m.askingCoord = null;
-  emit('memory.consumed', { coord: tile.coord, result: tile.result, playerId: m.turnPlayerId });
+  emit('memory.consumed', {
+    coord: tile.coord,
+    result: tile.result,
+    playerId: m.turnPlayerId,
+    points: payout,
+    hintsUsed: m.hintsUsed,
+    leechIds: validLeechIds,
+  });
+  clearAsk(m);
   if (m.tiles.every((t) => t.face === 'consumed')) m.status = 'finished';
   advanceTurn(g, emit);
 }
@@ -592,15 +752,17 @@ function advanceTurn(g: Game, emit: Emit) {
   emit('memory.turn', { playerId: next.id });
 }
 
-/** Called about once a second: flips the grid face-down when the preview is over. */
+/** Called about once a second: ends the leech window / climax typing timer. */
 export function tick(g: Game, emit: Emit): boolean {
   let changed = false;
   const m = g.memory;
-  if (m.status === 'preview' && m.previewUntil !== null && Date.now() >= m.previewUntil) {
-    for (const t of m.tiles) if (t.face === 'preview') t.face = 'hidden';
-    m.status = 'playing';
-    m.previewUntil = null;
-    emit('memory.hidden', {});
+  if (
+    g.phase === 'memory' &&
+    m.askStatus === 'leeching' &&
+    m.leechUntil !== null &&
+    Date.now() >= m.leechUntil
+  ) {
+    memoryEndLeech(g, emit);
     changed = true;
   }
   const c = g.climax;
@@ -803,16 +965,31 @@ function climaxSubmissions(g: Game): { playerId: string; name: string; text: str
 // Views: what each role is allowed to see
 // ---------------------------------------------------------------------------
 
-function questionView(q: QuestionRec, opts: { answer: boolean; notes: boolean; image?: boolean }): QuestionView {
+function questionView(
+  q: QuestionRec,
+  opts: {
+    answer: boolean;
+    notes: boolean;
+    image?: boolean;
+    /** Override bank points (memory uses MEMORY_POINTS / post-hint value). */
+    points?: number;
+    /** Override options (memory hints / 50-50). `null` hides options. */
+    options?: [string, string, string, string] | string[] | null;
+  },
+): QuestionView {
+  const options = opts.options !== undefined ? opts.options : q.options;
   return {
     id: q.id,
     theme: q.theme,
     ...(q.contributor ? { contributor: q.contributor } : {}),
     difficulty: q.difficulty,
-    points: POINTS[q.difficulty],
+    points: opts.points ?? POINTS[q.difficulty],
     prompt: q.prompt,
     ...(opts.image && q.image ? { image: mediaUrl(q.image) } : {}),
-    ...(q.options ? { options: q.options } : {}),
+    ...(options && options.length > 0
+      ? { options: options as [string, string, string, string] }
+      : {}),
+    ...(q.bank === 'memory' ? { isMcq: q.isMcq } : {}),
     ...(opts.answer ? { answer: q.answer } : {}),
     ...(opts.notes && q.notes ? { notes: q.notes } : {}),
   };
@@ -859,33 +1036,55 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
         : null,
   };
 
-  // Memory
+  // Memory — tiles stay face-up; phones never see the live prompt (TV / host only).
   const m = g.memory;
   const tiles: TileView[] = m.tiles.map((t) => {
-    if (t.face === 'hidden') return { coord: t.coord, face: t.face };
     const q = g.questions[t.questionId];
     return {
       coord: t.coord,
       face: t.face,
       theme: q.theme,
       difficulty: q.difficulty,
+      ...(q.contributor ? { contributor: q.contributor } : {}),
       ...(t.result ? { result: t.result } : {}),
     };
   });
   const askingTile = m.askingCoord ? m.tiles.find((t) => t.coord === m.askingCoord) : undefined;
+  const askingQ = askingTile ? g.questions[askingTile.questionId] : undefined;
+  const memoryPoints = askingQ ? memoryCurrentValue(askingQ.difficulty, m.hintsUsed) : 0;
   const memory: MemoryView = {
     status: m.status,
     cols: m.cols,
     rows: m.rows,
-    previewUntil: m.previewUntil,
     tiles,
     turnPlayerId: m.turnPlayerId,
     askingCoord: m.askingCoord,
     asking:
-      askingTile && !isPlay
-        ? questionView(g.questions[askingTile.questionId], { answer: isHost, notes: isHost, image: true })
+      askingQ && !isPlay
+        ? questionView(askingQ, {
+            answer: isHost,
+            notes: isHost,
+            image: true,
+            points: memoryPoints,
+            // Host keeps the full bank key; TV only sees what's been revealed / 50-50'd.
+            options: isHost ? askingQ.options : m.displayOptions,
+          })
         : null,
     remaining: m.tiles.filter((t) => t.face !== 'consumed').length,
+    askStatus: m.askStatus,
+    leechUntil: m.askStatus === 'leeching' ? m.leechUntil : null,
+    hintsUsed: m.hintsUsed,
+    maxHints: askingQ ? memoryMaxHints(askingQ.difficulty) : 0,
+    clue: askingQ && m.clueRevealed && askingQ.notes ? askingQ.notes : null,
+    myLeech: isPlay && playerId ? (m.leeches[playerId] ?? null) : null,
+    leeches:
+      isHost && (m.askStatus === 'leeching' || m.askStatus === 'answering')
+        ? Object.entries(m.leeches).map(([id, text]) => ({
+            playerId: id,
+            name: g.players.find((p) => p.id === id)?.name ?? '?',
+            text,
+          }))
+        : [],
   };
 
   // Climax

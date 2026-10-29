@@ -218,7 +218,14 @@ function CardBody({ q, behind, dx = 0, animate, handlers }: CardBodyProps) {
       <DifficultyChip difficulty={q.difficulty} />
       {q.image && <img className="q-photo" src={'/media/' + q.image.split('/').map(encodeURIComponent).join('/')} alt="" />}
       <div className="prompt">{q.prompt}</div>
-      {q.options && <OptionsList options={q.options} correct={q.answer} />}
+      {q.options && (
+        <>
+          <div className="muted" style={{ fontSize: '0.8rem' }}>
+            {q.isMcq ? 'QCM affiché dès l’ouverture' : 'Options réservées à l’indice format'}
+          </div>
+          <OptionsList options={q.options} correct={q.answer} />
+        </>
+      )}
       <div className="answer">
         <div className="muted" style={{ fontSize: '0.8rem' }}>
           Réponse

@@ -231,7 +231,8 @@ function PileBrowser() {
               <div>{q.prompt}</div>
               {q.options && (
                 <div className="muted">
-                  QCM : {q.options.map((o, i) => `${'ABCD'[i]}. ${o}`).join(' · ')}
+                  {q.isMcq ? 'QCM' : 'Options (indice)'} :{' '}
+                  {q.options.map((o, i) => `${'ABCD'[i]}. ${o}`).join(' · ')}
                 </div>
               )}
               <div className="muted">

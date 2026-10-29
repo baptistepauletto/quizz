@@ -30,9 +30,10 @@ export type HostCommand =
   | { t: 'sprint.pass' }
   | { t: 'sprint.skip' }
   // Phase 2
-  | { t: 'memory.hide' }
   | { t: 'memory.flip'; coord: string }
-  | { t: 'memory.resolve'; correct: boolean }
+  | { t: 'memory.endLeech' }
+  | { t: 'memory.hint' }
+  | { t: 'memory.resolve'; correct: boolean; leechIds?: string[] }
   | { t: 'memory.setTurn'; playerId: string }
   | { t: 'memory.skipTurn' }
   // Phase 3

@@ -1,9 +1,24 @@
+import type { CSSProperties } from 'react';
 import { parseCoord } from '../../shared/grid';
-import type { MemoryView, TileView } from '../../shared/types';
+import type { MemoryView, PlayerView, TileView } from '../../shared/types';
 import { DIFFICULTIES } from '../../shared/types';
 
-/** The big TV grid: coordinates face-down, themes face-up during the preview and once played. */
-export function TvGrid({ memory }: { memory: MemoryView }) {
+const DIFF_LABEL = { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' } as const;
+
+function nameKey(name: string): string {
+  return name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+/** Always-face-up TV grid: theme, difficulty, and optional contributor tint. */
+export function TvGrid({
+  memory,
+  players,
+  colors,
+}: {
+  memory: MemoryView;
+  players: PlayerView[];
+  colors: Map<string, string>;
+}) {
   const cells: Array<TileView | null> = Array.from({ length: memory.cols * memory.rows }, () => null);
   for (const t of memory.tiles) {
     const pos = parseCoord(t.coord);
@@ -19,29 +34,54 @@ export function TvGrid({ memory }: { memory: MemoryView }) {
       }}
     >
       {cells.map((t, i) =>
-        t ? <Tile key={t.coord} tile={t} /> : <div key={`empty-${i}`} className="tile empty" />,
+        t ? (
+          <Tile key={t.coord} tile={t} players={players} colors={colors} />
+        ) : (
+          <div key={`empty-${i}`} className="tile empty" />
+        ),
       )}
     </div>
   );
 }
 
-function Tile({ tile }: { tile: TileView }) {
-  const up = tile.face !== 'hidden';
+function Tile({
+  tile,
+  players,
+  colors,
+}: {
+  tile: TileView;
+  players: PlayerView[];
+  colors: Map<string, string>;
+}) {
   const level = tile.difficulty ? DIFFICULTIES.indexOf(tile.difficulty) + 1 : 0;
+  const owner = matchContributor(tile.contributor, players);
+  const tint = owner ? colors.get(owner.id) : undefined;
   return (
-    <div className={['tile', up ? 'up' : '', tile.face, tile.difficulty ?? '', tile.result ?? ''].join(' ')}>
+    <div
+      className={['tile', 'up', tile.face, tile.difficulty ?? '', tile.result ?? '', tint ? 'owned' : ''].join(' ')}
+      style={tint ? ({ '--owner': tint } as CSSProperties) : undefined}
+    >
       <div className="tile-inner">
-        <div className="tile-face tile-back">{tile.coord}</div>
         <div className="tile-face tile-front">
           <span className="t-coord">{tile.coord}</span>
           <span className="t-theme">{tile.theme}</span>
-          <span className="t-diff" aria-label={tile.difficulty}>
-            {Array.from({ length: level }, (_, i) => (
-              <i key={i} />
-            ))}
-          </span>
+          {tile.contributor && <span className="t-by">{tile.contributor}</span>}
+          {tile.difficulty && (
+            <span className="t-diff" aria-label={DIFF_LABEL[tile.difficulty]}>
+              <span className="t-diff-label">{DIFF_LABEL[tile.difficulty]}</span>
+              {Array.from({ length: level }, (_, i) => (
+                <i key={i} />
+              ))}
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+function matchContributor(contributor: string | undefined, players: PlayerView[]): PlayerView | undefined {
+  if (!contributor) return undefined;
+  const key = nameKey(contributor);
+  return players.find((p) => nameKey(p.name) === key);
 }

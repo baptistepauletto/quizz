@@ -206,11 +206,14 @@ export function sfxFor(event: GameEvent): SfxName | null {
       return 'wrong';
     case 'sprint.resolved':
       return p.correct ? 'correct' : 'reveal';
-    case 'memory.preview':
+    case 'memory.started':
       return 'reveal';
-    case 'memory.hidden':
     case 'memory.flipped':
       return 'flip';
+    case 'memory.leech_locked':
+      return 'lock';
+    case 'memory.hint':
+      return 'tick';
     case 'memory.consumed':
       return p.result === 'hit' ? 'correct' : 'wrong';
     case 'memory.turn':

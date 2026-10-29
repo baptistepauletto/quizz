@@ -20,7 +20,14 @@ export const DRAFTS_DIR = path.resolve(process.env.DRAFTS_DIR ?? 'drafts');
 
 const { questions } = schema;
 
+function resolveIsMcq(raw: number | null | undefined, options: [string, string, string, string] | null): boolean {
+  if (raw === 1) return true;
+  if (raw === 0) return false;
+  return options !== null;
+}
+
 function toDto(row: typeof questions.$inferSelect): QuestionDto {
+  const options = parseOptions(row.options);
   return {
     id: row.id,
     sourceId: row.sourceId,
@@ -33,7 +40,8 @@ function toDto(row: typeof questions.$inferSelect): QuestionDto {
     difficulty: row.difficulty,
     status: row.status,
     image: row.image,
-    options: parseOptions(row.options),
+    options,
+    isMcq: resolveIsMcq(row.isMcq, options),
   };
 }
 
@@ -64,6 +72,7 @@ export function approvedQuestions(): QuestionRec[] {
       notes: q.notes,
       image: q.image,
       options: q.options,
+      isMcq: q.isMcq,
     }));
 }
 
@@ -106,7 +115,8 @@ export function draftQuestions(): QuestionDto[] {
 
 function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 'unchanged' {
   const existing = db.select().from(questions).where(eq(questions.sourceId, q.id)).get();
-  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options);
+  const draftIsMcq = q.is_mcq ?? false;
+  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options, draftIsMcq);
   const fields = {
     bank,
     theme: q.theme,
@@ -117,6 +127,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     difficulty: q.difficulty,
     image: q.image ?? null,
     options: serializeOptions(q.options),
+    isMcq: q.options ? (draftIsMcq ? 1 : 0) : null,
   };
 
   if (!existing) {
@@ -131,8 +142,10 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     return 'added';
   }
 
+  const existingOptions = parseOptions(existing.options);
+  const existingIsMcq = resolveIsMcq(existing.isMcq, existingOptions);
   const same =
-    fingerprint(existing.prompt, existing.answer, existing.difficulty, parseOptions(existing.options)) === fp;
+    fingerprint(existing.prompt, existing.answer, existing.difficulty, existingOptions, existingIsMcq) === fp;
   // Re-adding a rejected id (even with the same text) puts it back in the inbox.
   if (same && existing.status !== 'rejected') {
     db.update(questions)
@@ -142,6 +155,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
         notes: fields.notes,
         image: fields.image,
         options: fields.options,
+        isMcq: fields.isMcq,
         bank: fields.bank,
       })
       .where(eq(questions.id, existing.id))

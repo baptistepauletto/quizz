@@ -43,9 +43,19 @@ const smokeMemory = [
     prompt: 'First on the Moon?',
     answer: 'Armstrong',
     difficulty: 'medium',
+    is_mcq: true,
     options: ['Aldrin', 'Armstrong', 'Collins', 'Glenn'],
   },
-  { id: 'm_003', theme: 'Cinema', contributor: 'Bob', prompt: 'Director of Jaws?', answer: 'Spielberg', difficulty: 'medium' },
+  {
+    id: 'm_003',
+    theme: 'Cinema',
+    contributor: 'Bob',
+    prompt: 'Director of Jaws?',
+    answer: 'Spielberg',
+    difficulty: 'medium',
+    is_mcq: false,
+    options: ['Spielberg', 'Lucas', 'Coppola', 'Scorsese'],
+  },
   { id: 'm_004', theme: 'Cinema', contributor: 'Bob', prompt: 'Best Picture 1994?', answer: 'Forrest Gump', difficulty: 'hard' },
   { id: 'm_005', theme: 'Food', contributor: 'Cy', prompt: 'Main ingredient of guacamole?', answer: 'Avocado', difficulty: 'easy' },
   { id: 'm_006', theme: 'Food', contributor: 'Cy', prompt: 'Country of origin of sushi?', answer: 'Japan', difficulty: 'easy' },
@@ -83,6 +93,7 @@ function sampleQuestion(
     notes: null,
     image: null,
     options: null,
+    isMcq: false,
   };
 }
 
@@ -389,20 +400,24 @@ try {
 
   console.log('\nPhase 2: Memory Grid');
   await host.cmd({ t: 'phase.set', phase: 'memory' });
-  check(host.state!.memory.status === 'preview' && host.state!.memory.tiles.length === 6, '6 tiles shuffled onto the grid, face-up preview');
-  check(host.state!.memory.tiles.every((t) => !!t.theme), 'themes visible during the preview');
-  await host.cmd({ t: 'memory.hide' });
-  check(host.state!.memory.status === 'playing' && host.state!.memory.tiles.every((t) => t.face === 'hidden' && !t.theme), 'tiles flipped face-down, no theme leaked');
+  check(host.state!.memory.status === 'playing' && host.state!.memory.tiles.length === 6, '6 tiles shuffled onto the always-face-up grid');
+  check(host.state!.memory.tiles.every((t) => t.face === 'open' && !!t.theme && !!t.difficulty), 'themes and difficulties visible on every open tile');
+  check(tv.state!.memory.tiles.every((t) => !!t.theme), 'TV also sees themes permanently');
   check(!JSON.stringify(tv.state).includes('Jupiter'), 'TV has no answers in its state');
   check(!JSON.stringify(tv.state!.memory.tiles).includes('Armstrong'), 'peek tiles never leak MCQ answers');
+
+  async function endLeech() {
+    if (host.state!.memory.askStatus === 'leeching') await host.cmd({ t: 'memory.endLeech' });
+  }
 
   let sawPhoto = false;
   let sawMcq = false;
   let scoredCoord: string | null = null;
   let turn1: string | null = null;
-  while ((!sawPhoto || !sawMcq) && host.state!.memory.tiles.some((x) => x.face === 'hidden')) {
-    const next = host.state!.memory.tiles.find((x) => x.face === 'hidden')!;
+  while ((!sawPhoto || !sawMcq) && host.state!.memory.tiles.some((x) => x.face === 'open')) {
+    const next = host.state!.memory.tiles.find((x) => x.face === 'open')!;
     await host.cmd({ t: 'memory.flip', coord: next.coord });
+    check(host.state!.memory.askStatus === 'leeching' && host.state!.memory.leechUntil !== null, 'opening a card starts the leech window');
     const asking = host.state!.memory.asking!;
     if (!sawPhoto && asking.image) {
       check(
@@ -415,35 +430,62 @@ try {
       );
       check(tv.state!.memory.askingCoord === next.coord && !!tv.state!.memory.asking?.prompt, 'TV shows the asked question in a modal');
       check(tv.state!.memory.asking?.answer === undefined && !!host.state!.memory.asking?.answer, 'answer stays on /host');
-      const otherHidden = host.state!.memory.tiles.find((x) => x.face === 'hidden');
-      if (otherHidden) {
-        await host.cmd({ t: 'memory.flip', coord: otherHidden.coord });
+      check(asking.points === 2 || asking.points === 4 || asking.points === 6, 'grid uses memory point values (2/4/6)');
+      const otherOpen = host.state!.memory.tiles.find((x) => x.face === 'open');
+      if (otherOpen) {
+        await host.cmd({ t: 'memory.flip', coord: otherOpen.coord });
         check(host.errors.length > 0, 'cannot flip a second tile while one is being asked');
       } else {
         await host.cmd({ t: 'memory.flip', coord: 'Z9' });
         check(host.errors.length > 0, 'cannot flip a second tile while one is being asked');
       }
+      await host.cmd({ t: 'memory.hint' });
+      check(host.errors.length > 0, 'hints are locked during the leech window');
       turn1 = host.state!.memory.turnPlayerId!;
+      const leecher = [players.ann, players.bob, players.cy].find((p) => p.playerId !== turn1)!;
+      await leecher.cmd({ t: 'answer', text: 'leech-ok' });
+      check(host.state!.memory.leeches.some((l) => l.playerId === leecher.playerId && l.text === 'leech-ok'), 'host sees live leech submissions');
+      await endLeech();
+      check(host.state!.memory.askStatus === 'answering', 'host can end the leech window early');
       const pts = host.state!.memory.asking!.points;
       const before = host.state!.players.find((p) => p.id === turn1)!.score;
-      await host.cmd({ t: 'memory.resolve', correct: true });
-      check(host.state!.players.find((p) => p.id === turn1)!.score === before + pts, `correct answer awards ${pts} points to the player on turn`);
+      const leecherBefore = host.state!.players.find((p) => p.id === leecher.playerId)!.score;
+      await host.cmd({ t: 'memory.resolve', correct: true, leechIds: [leecher.playerId!] });
+      const activeAfter = host.state!.players.find((p) => p.id === turn1)!.score;
+      const floor = pts === 2 ? 1 : 2;
+      const expectedActive = Math.max(floor, pts - 1);
+      check(activeAfter === before + expectedActive, `correct answer awards floored payout (${expectedActive}) after one leech`);
+      check(
+        host.state!.players.find((p) => p.id === leecher.playerId)!.score === leecherBefore + 1,
+        'correct leecher receives +1',
+      );
       check(host.state!.memory.tiles.find((t) => t.coord === next.coord)!.face === 'consumed', 'tile consumed after a hit');
       check(host.state!.memory.turnPlayerId !== turn1, 'turn moved to the next player (round-robin)');
       scoredCoord = next.coord;
       sawPhoto = true;
       continue;
     }
-    if (!sawMcq && asking.options?.length === 4) {
-      check(tv.state!.memory.asking?.options?.length === 4, 'TV shows four MCQ options on flip');
+    if (!sawMcq && asking.isMcq && asking.options?.length === 4) {
+      check(tv.state!.memory.asking?.options?.length === 4, 'TV shows four MCQ options on flip for native MCQ');
       check(
         tv.state!.memory.asking?.answer === undefined && host.state!.memory.asking?.answer === 'Armstrong',
         'MCQ answer stays on /host; options do not reveal it on TV',
       );
+      await endLeech();
       await host.cmd({ t: 'memory.resolve', correct: true });
       sawMcq = true;
       continue;
     }
+    if (asking.options?.length === 4 && !asking.isMcq && asking.difficulty === 'medium') {
+      check(tv.state!.memory.asking?.options === undefined, 'open-ended with options hides QCM until the format hint');
+      await endLeech();
+      await host.cmd({ t: 'memory.hint' });
+      check(tv.state!.memory.asking?.options?.length === 4, 'format hint reveals the four options on TV');
+      check(host.state!.memory.asking!.points === 2, 'medium format hint halves the card to 2 pts');
+      await host.cmd({ t: 'memory.resolve', correct: false });
+      continue;
+    }
+    await endLeech();
     await host.cmd({ t: 'memory.resolve', correct: false });
   }
   check(sawPhoto, 'found the memory photo card');
@@ -452,13 +494,14 @@ try {
   await host.cmd({ t: 'memory.flip', coord: scoredCoord! });
   check(host.errors.length > 0, 'a consumed tile cannot be asked again');
   // The search above may have used every tile, depending on the shuffle.
-  const coord2 = host.state!.memory.tiles.find((x) => x.face === 'hidden')?.coord;
+  const coord2 = host.state!.memory.tiles.find((x) => x.face === 'open')?.coord;
   if (coord2) {
     const turn2 = host.state!.memory.turnPlayerId!;
     const before2 = host.state!.players.find((p) => p.id === turn2)!.score;
     await host.cmd({ t: 'memory.flip', coord: coord2 });
+    await endLeech();
     await host.cmd({ t: 'memory.resolve', correct: false });
-    check(host.state!.players.find((p) => p.id === turn2)!.score === before2, 'a miss scores nothing');
+    check(host.state!.players.find((p) => p.id === turn2)!.score === before2, 'a miss scores nothing for the active player');
     const t2 = host.state!.memory.tiles.find((t) => t.coord === coord2)!;
     check(t2.face === 'consumed' && t2.result === 'miss', 'a missed tile is consumed too and never returns');
   }

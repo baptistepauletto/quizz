@@ -7,8 +7,8 @@ import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
 import { parseCoord } from '../../shared/grid';
 import type { HostCommand } from '../../shared/protocol';
-import { PREDICTION_BONUS, climaxWinDelta } from '../../shared/types';
-import type { GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
+import { MEMORY_FLOOR, PREDICTION_BONUS, climaxWinDelta, memoryHintCost } from '../../shared/types';
+import type { Difficulty, GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
 
 const PHASES: Phase[] = ['lobby', 'predictions', 'sprint', 'memory', 'climax', 'reveal', 'results'];
 
@@ -172,17 +172,31 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
 
 type Send = (cmd: HostCommand) => void;
 
-function QuestionCard({ q, label }: { q: QuestionView; label?: string }) {
+function QuestionCard({
+  q,
+  label,
+  clue,
+}: {
+  q: QuestionView;
+  label?: string;
+  /** Extra clue line already revealed on TV (Hard hint 1). */
+  clue?: string | null;
+}) {
   return (
     <div className="qcard">
       <div className="row wrap">
         {label && <span className="chip">{label}</span>}
         <span className="chip">{q.theme}</span>
-        <DifficultyChip difficulty={q.difficulty} />
+        <DifficultyChip difficulty={q.difficulty} points={q.points} />
       </div>
       {q.image && <img className="q-photo" src={q.image} alt="" />}
       <div className="prompt">{q.prompt}</div>
       {q.options && <OptionsList options={q.options} correct={q.answer} />}
+      {clue && (
+        <div className="chip" style={{ alignSelf: 'flex-start' }}>
+          Indice : {clue}
+        </div>
+      )}
       {q.answer && (
         <div className="answer">
           <div className="muted" style={{ fontSize: '0.8rem' }}>
@@ -355,7 +369,7 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
       )}
       {done && s.status === 'resolved' && (
         <button className="btn" onClick={() => send({ t: 'phase.set', phase: 'memory' })}>
-          Continuer vers la phase 2 : Grille mémoire
+          Continuer vers la phase 2 : La Grille
         </button>
       )}
     </div>
@@ -364,16 +378,43 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
 
 // --- Phase 2 -----------------------------------------------------------------
 
+function hintButtonLabel(
+  difficulty: Difficulty,
+  hintsUsed: number,
+  hasOptions: boolean,
+  hasNotes: boolean,
+  isMcq: boolean,
+): string {
+  const next = hintsUsed + 1;
+  const cost = memoryHintCost(difficulty, next);
+  // Native QCM → 50/50; open-ended with bank options → reveal the four choices.
+  const formatLabel = isMcq ? `50-50 (−${cost})` : `révéler QCM (−${cost})`;
+  if (difficulty === 'medium' && next === 1) {
+    return hasOptions ? `Indice · ${formatLabel}` : 'Indice indisponible (pas d’options)';
+  }
+  if (difficulty === 'hard' && next === 1) {
+    return hasNotes ? `Indice · contexte (−${cost})` : 'Indice indisponible (pas de notes)';
+  }
+  if (difficulty === 'hard' && next === 2) {
+    return hasOptions ? `Indice · ${formatLabel}` : 'Indice indisponible (pas d’options)';
+  }
+  return `Indice (−${cost})`;
+}
+
 function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
   const m = state.memory;
   const [selected, setSelected] = useState<string | null>(null);
-  const now = useNow(500);
-  const seconds = m.previewUntil ? Math.max(0, Math.ceil((m.previewUntil - now) / 1000)) : 0;
+  const [leechOk, setLeechOk] = useState<Record<string, boolean>>({});
+  const now = useNow(250);
+  const leechSeconds = m.leechUntil ? Math.max(0, Math.ceil((m.leechUntil - now) / 1000)) : 0;
 
-  // Drop the selection once that tile has been played.
   useEffect(() => {
-    if (selected && m.tiles.find((t) => t.coord === selected)?.face !== 'hidden') setSelected(null);
+    if (selected && m.tiles.find((t) => t.coord === selected)?.face !== 'open') setSelected(null);
   }, [m.tiles, selected]);
+
+  useEffect(() => {
+    setLeechOk({});
+  }, [m.askingCoord]);
 
   if (m.status === 'idle') {
     return (
@@ -386,19 +427,36 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
     );
   }
 
+  const asking = m.asking;
+  const hasBankOptions = !!(asking?.options && asking.options.length >= 4);
+  const hintLabel = asking
+    ? hintButtonLabel(
+        asking.difficulty,
+        m.hintsUsed,
+        hasBankOptions,
+        !!asking.notes?.trim(),
+        !!asking.isMcq,
+      )
+    : '';
+  const nextHint = asking ? m.hintsUsed + 1 : 0;
+  const hintDisabled =
+    !asking ||
+    m.askStatus !== 'answering' ||
+    asking.difficulty === 'easy' ||
+    m.hintsUsed >= m.maxHints ||
+    (asking.difficulty === 'hard' && nextHint === 1 && !asking.notes?.trim()) ||
+    ((asking.difficulty === 'medium' || (asking.difficulty === 'hard' && nextHint === 2)) && !hasBankOptions);
+
+  const checkedLeechIds = Object.entries(leechOk)
+    .filter(([, ok]) => ok)
+    .map(([id]) => id);
+  const floor = asking ? MEMORY_FLOOR[asking.difficulty] : 0;
+  const correctPayout = asking
+    ? Math.max(floor, asking.points - checkedLeechIds.length)
+    : 0;
+
   return (
     <div className="stack">
-      {m.status === 'preview' && (
-        <div className="card stack">
-          <p>
-            Les thèmes sont visibles sur la TV. Ils se retournent dans <b className="countdown">{seconds}s</b>.
-          </p>
-          <button className="btn primary" onClick={() => send({ t: 'memory.hide' })}>
-            Les retourner maintenant
-          </button>
-        </div>
-      )}
-
       {m.status === 'playing' && (
         <div className="card">
           <div className="row">
@@ -412,6 +470,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
               className="input"
               style={{ width: 'auto' }}
               value=""
+              disabled={!!m.askingCoord}
               onChange={(e) => e.target.value && send({ t: 'memory.setTurn', playerId: e.target.value })}
             >
               <option value="">Changer…</option>
@@ -421,37 +480,129 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
                 </option>
               ))}
             </select>
-            <button className="btn small" onClick={() => send({ t: 'memory.skipTurn' })}>
+            <button className="btn small" disabled={!!m.askingCoord} onClick={() => send({ t: 'memory.skipTurn' })}>
               Passer
             </button>
           </div>
         </div>
       )}
 
-      {m.asking && (
+      {asking && (
         <>
-          <QuestionCard q={m.asking} label={m.askingCoord ?? undefined} />
-          <div className="row">
-            <button className="btn ok big grow" onClick={() => send({ t: 'memory.resolve', correct: true })}>
-              Correct +{m.asking.points}
-            </button>
-            <button className="btn bad big grow" onClick={() => send({ t: 'memory.resolve', correct: false })}>
-              Raté
-            </button>
-          </div>
-          <p className="muted center" style={{ fontSize: '0.85rem' }}>
-            Bon ou mauvais, cette case est définitivement jouée.
-          </p>
+          <QuestionCard q={asking} label={m.askingCoord ?? undefined} clue={m.clue} />
+
+          {m.askStatus === 'leeching' && (
+            <div className="card stack">
+              <div className="row">
+                <b className="grow">Leech silencieux</b>
+                <b className="countdown">{leechSeconds}s</b>
+              </div>
+              <div className="leech-bar">
+                <div
+                  className="leech-bar-fill"
+                  style={{
+                    width: m.leechUntil
+                      ? `${Math.max(0, Math.min(100, ((m.leechUntil - now) / 15_000) * 100))}%`
+                      : '0%',
+                  }}
+                />
+              </div>
+              {m.leeches.length > 0 && (
+                <div className="stack" style={{ gap: 4 }}>
+                  <span className="muted" style={{ fontSize: '0.8rem' }}>
+                    Reçues ({m.leeches.length})
+                  </span>
+                  {m.leeches.map((l) => (
+                    <div key={l.playerId} className="row">
+                      <b>{l.name}</b>
+                      <span className="muted grow">· {l.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="btn" onClick={() => send({ t: 'memory.endLeech' })}>
+                Couper le timer / passer aux réponses
+              </button>
+              <p className="muted" style={{ fontSize: '0.85rem' }}>
+                Les indices restent bloqués jusqu’à la fin du leech.
+              </p>
+            </div>
+          )}
+
+          {m.askStatus === 'answering' && (
+            <>
+              <div className="card stack">
+                <div className="row wrap">
+                  <button className="btn" disabled={hintDisabled} onClick={() => send({ t: 'memory.hint' })}>
+                    {asking.difficulty === 'easy'
+                      ? 'Pas d’indice (facile)'
+                      : m.hintsUsed >= m.maxHints
+                        ? 'Indices épuisés'
+                        : hintLabel}
+                  </button>
+                  <span className="muted" style={{ fontSize: '0.85rem' }}>
+                    Valeur actuelle : {asking.points} pt{asking.points > 1 ? 's' : ''}
+                    {m.hintsUsed > 0 ? ` · ${m.hintsUsed} indice${m.hintsUsed > 1 ? 's' : ''}` : ''}
+                  </span>
+                </div>
+              </div>
+
+              {m.leeches.length > 0 ? (
+                <div className="card stack">
+                  <b>Réponses leech ({m.leeches.length})</b>
+                  {m.leeches.map((l) => (
+                    <label key={l.playerId} className="row leech-row">
+                      <input
+                        type="checkbox"
+                        checked={!!leechOk[l.playerId]}
+                        onChange={(e) => setLeechOk((prev) => ({ ...prev, [l.playerId]: e.target.checked }))}
+                      />
+                      <span className="grow">
+                        <b>{l.name}</b>
+                        <span className="muted"> · {l.text}</span>
+                      </span>
+                      <span className="chip">+1</span>
+                    </label>
+                  ))}
+                  <p className="muted" style={{ fontSize: '0.8rem' }}>
+                    Coche les bonnes réponses leech. Elles prennent 1 pt chacune (plancher actif{' '}
+                    {floor} pt).
+                  </p>
+                </div>
+              ) : (
+                <p className="muted center" style={{ fontSize: '0.85rem' }}>
+                  Aucun leech soumis.
+                </p>
+              )}
+
+              <div className="row">
+                <button
+                  className="btn ok big grow"
+                  onClick={() => send({ t: 'memory.resolve', correct: true, leechIds: checkedLeechIds })}
+                >
+                  Correct +{correctPayout}
+                  {checkedLeechIds.length > 0 ? ` · ${checkedLeechIds.length} leech` : ''}
+                </button>
+                <button
+                  className="btn bad big grow"
+                  onClick={() => send({ t: 'memory.resolve', correct: false, leechIds: checkedLeechIds })}
+                >
+                  Raté
+                  {checkedLeechIds.length > 0 ? ` · ${checkedLeechIds.length} leech` : ''}
+                </button>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {!m.asking && m.status === 'playing' && (
+      {!m.askingCoord && m.status === 'playing' && (
         <button
           className="btn primary big"
           disabled={!selected}
           onClick={() => selected && send({ t: 'memory.flip', coord: selected })}
         >
-          {selected ? `Retourner ${selected}` : 'Touche la case annoncée'}
+          {selected ? `Ouvrir ${selected}` : 'Touche la case annoncée'}
         </button>
       )}
 
@@ -473,18 +624,20 @@ function HostGrid({ state, selected, onSelect }: { state: GameView; selected: st
     const pos = parseCoord(t.coord);
     if (pos) cells[pos.row * m.cols + pos.col] = t;
   }
+  const diffShort: Record<string, string> = { easy: 'F', medium: 'M', hard: 'D' };
   return (
     <div className="host-grid" style={{ gridTemplateColumns: `repeat(${m.cols}, minmax(0, 1fr))` }}>
       {cells.map((t, i) =>
         t ? (
           <button
             key={t.coord}
-            className={['host-tile', t.face, t.result ?? '', selected === t.coord ? 'selected' : ''].join(' ')}
-            disabled={t.face !== 'hidden' || m.status !== 'playing' || !!m.asking}
+            className={['host-tile', t.face, t.difficulty ?? '', t.result ?? '', selected === t.coord ? 'selected' : ''].join(' ')}
+            disabled={t.face !== 'open' || m.status !== 'playing' || !!m.askingCoord}
             onClick={() => onSelect(t.coord)}
           >
-            {t.coord}
-            {t.face === 'consumed' && <div style={{ fontSize: '0.6rem' }}>{t.theme}</div>}
+            <span className="host-tile-coord">{t.coord}</span>
+            <span className="host-tile-theme">{t.theme}</span>
+            {t.difficulty && <span className={`host-tile-diff ${t.difficulty}`}>{diffShort[t.difficulty]}</span>}
           </button>
         ) : (
           <div key={`e${i}`} />

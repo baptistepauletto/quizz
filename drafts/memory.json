@@ -17,7 +17,13 @@
       "prompt": "Comment s’intitule le film documentaire/concert sorti au cinéma en 2013 et réalisé par Morgan Spurlock ?",
       "answer": "This Is Us",
       "difficulty": "easy",
-      "options": ["Up All Night: The Live Tour", "This Is Us", "Where We Are", "On the Road Again"]
+      "is_mcq": true,
+      "options": [
+        "Up All Night: The Live Tour",
+        "This Is Us",
+        "Where We Are",
+        "On the Road Again"
+      ]
     },
     {
       "id": "m_003",
@@ -27,7 +33,13 @@
       "prompt": "Comment s’appelle ce tout premier parfum lancé par le groupe en 2013 ?",
       "answer": "Our Moment",
       "difficulty": "medium",
-      "options": ["Our Moment", "Our Song", "Our Love", "Our Life"]
+      "is_mcq": true,
+      "options": [
+        "Our Moment",
+        "Our Song",
+        "Our Love",
+        "Our Life"
+      ]
     },
     {
       "id": "m_004",
@@ -36,7 +48,13 @@
       "prompt": "Quel est le premier single du groupe sorti en tant que quatuor après le départ de Zayn ?",
       "answer": "Drag Me Down",
       "difficulty": "medium",
-      "options": ["Drag Me Down", "Perfect", "Infinity", "History"]
+      "is_mcq": true,
+      "options": [
+        "Drag Me Down",
+        "Perfect",
+        "Infinity",
+        "History"
+      ]
     },
     {
       "id": "m_005",
@@ -54,7 +72,13 @@
       "prompt": "Quelle chanson de leur toute première performance ensemble à l'étape de la 'Judges' Houses' (chez Simon Cowell à Marbella) leur a permis de se qualifier pour les lives ?",
       "answer": "Torn",
       "difficulty": "hard",
-      "options": ["Viva la Vida", "Torn", "Kids in America", "Total Eclipse of the Heart"],
+      "is_mcq": true,
+      "options": [
+        "Viva la Vida",
+        "Torn",
+        "Kids in America",
+        "Total Eclipse of the Heart"
+      ],
       "notes": "Reprise de la version de Natalie Imbruglia."
     },
     {
@@ -83,7 +107,13 @@
       "prompt": "Sur l’île d’Otomaï, combien de donjons faut-il franchir dans l'ordre pour pouvoir réinitialiser ses caractéristiques ou accéder au Kralamoure Géant à l'ancienne ?",
       "answer": "5 donjons",
       "difficulty": "easy",
-      "options": ["3 donjons", "4 donjons", "5 donjons", "6 donjons"],
+      "is_mcq": true,
+      "options": [
+        "3 donjons",
+        "4 donjons",
+        "5 donjons",
+        "6 donjons"
+      ],
       "notes": "Grotte Hesque, Arche d'Otomaï, Goulet du Rasboul, Laboratoire du Tynril, Canopée du Kimbo."
     },
     {
@@ -128,7 +158,13 @@
       "prompt": "Avant la mise à jour 2.11 qui a limité le nombre de coups d'armes par tour, quel bâton de niveau 195 (frigost II) était spammé 3 fois par tour en zone par presque toutes les classes Feu ?",
       "answer": "Le Bâton Brageut",
       "difficulty": "hard",
-      "options": ["Le Bâton Brageut", "Sceptre du Roi Joueur", "Grésilosceptre", "Le Bâton Beau"]
+      "is_mcq": true,
+      "options": [
+        "Le Bâton Brageut",
+        "Sceptre du Roi Joueur",
+        "Grésilosceptre",
+        "Le Bâton Beau"
+      ]
     },
     {
       "id": "m_015",
@@ -146,7 +182,13 @@
       "prompt": "Quel est le nom de la seule sous-préfecture du département de la Lozère ?",
       "answer": "Florac",
       "difficulty": "easy",
-      "options": ["Marvejols", "Saint-Chély-d'Apcher", "Florac", "Langogne"]
+      "is_mcq": true,
+      "options": [
+        "Marvejols",
+        "Saint-Chély-d'Apcher",
+        "Florac",
+        "Langogne"
+      ]
     },
     {
       "id": "m_017",
@@ -184,7 +226,13 @@
       "prompt": "Le 19 juin 1767, quel chasseur local a officiellement abattu la Bête du Gévaudan au lieu-dit de la Sogne d'Auvers, avec des balles bénites ?",
       "answer": "Jean Chastel",
       "difficulty": "hard",
-      "options": ["François Antoine", "Jean Chastel", "Le comte de Morangiès", "Jean-Baptiste Duhamel"]
+      "is_mcq": true,
+      "options": [
+        "François Antoine",
+        "Jean Chastel",
+        "Le comte de Morangiès",
+        "Jean-Baptiste Duhamel"
+      ]
     },
     {
       "id": "m_021",
@@ -230,6 +278,7 @@
       "prompt": "Comment s’appelle la secte parodique de la Scientologie que Michael peut rejoindre en effectuant une longue série de missions secrètes (« Kifflom ! ») ?",
       "answer": "Le Programme Epsilon",
       "difficulty": "medium",
+      "is_mcq": true,
       "options": [
         "La secte des Altruistes",
         "Le Programme Epsilon",
@@ -252,6 +301,7 @@
       "prompt": "Lors du « Coup du siècle » (le braquage final de l'Union Depository), quelle est la somme exacte en lingots d'or (en dollars) dérobée par l'équipe avant répartition des parts ?",
       "answer": "200 millions de dollars",
       "difficulty": "hard",
+      "is_mcq": true,
       "options": [
         "50 millions de dollars",
         "100 millions de dollars",
@@ -276,7 +326,13 @@
       "prompt": "En règles FIBA, lorsque l'équipe qui attaque capte un rebond offensif après que le ballon a touché l'anneau, à combien de secondes l'horloge des tirs (shot clock) est-elle réinitialisée ?",
       "answer": "14 secondes",
       "difficulty": "easy",
-      "options": ["12 secondes", "14 secondes", "18 secondes", "24 secondes"],
+      "is_mcq": true,
+      "options": [
+        "12 secondes",
+        "14 secondes",
+        "18 secondes",
+        "24 secondes"
+      ],
       "notes": "24 secondes uniquement si le rebond est pris en zone arrière, 14 secondes en zone avant."
     },
     {
@@ -304,6 +360,7 @@
       "prompt": "Pour qu'un retour en zone (ballon retourné en zone arrière) soit sifflé contre un joueur qui dribble de la zone avant vers la zone arrière, quels éléments doivent avoir touché la zone arrière ?",
       "answer": "Les deux pieds ET le ballon",
       "difficulty": "medium",
+      "is_mcq": true,
       "options": [
         "Un seul pied ou le ballon",
         "Les deux pieds uniquement, peu importe où est le ballon",
@@ -338,7 +395,13 @@
       "prompt": "À quelle distance exacte du centre de l'anneau (au sol) est tracé l'arc du demi-cercle de non-charge sous le panier en règles FIBA ?",
       "answer": "1,25 mètre",
       "difficulty": "hard",
-      "options": ["1,12 mètre", "1,25 mètre", "1,30 mètre", "1,50 mètre"],
+      "is_mcq": true,
+      "options": [
+        "1,12 mètre",
+        "1,25 mètre",
+        "1,30 mètre",
+        "1,50 mètre"
+      ],
       "notes": "En NBA, il est à 4 pieds, soit 1,22 m."
     },
     {
@@ -375,6 +438,7 @@
       "prompt": "Quel événement cataclysmique déclenché par Nagash (qui a inversé le cours de son grand rituel pyramidal à Shyish) a marqué le lancement de la 2e édition d'Age of Sigmar (Guerre des Âmes) ?",
       "answer": "Le Nécroébranlement (Necroquake)",
       "difficulty": "medium",
+      "is_mcq": true,
       "options": [
         "Le Nécroébranlement (Necroquake)",
         "Le Rituel de la Vie d'Alarielle",
@@ -398,7 +462,13 @@
       "prompt": "Dans quelles landes désolées situées entre Hysh et Ulgu le dieu Slaanesh est-il retenu prisonnier par des chaînes paradoxales forgées par Tyrion, Teclis, Malerion et Morathi ?",
       "answer": "Uhl-Gysh",
       "difficulty": "hard",
-      "options": ["Le Huit-Points (Eightpoints)", "Uhl-Gysh", "Chamon", "LaSous-Empire (Blight City)"],
+      "is_mcq": true,
+      "options": [
+        "Le Huit-Points (Eightpoints)",
+        "Uhl-Gysh",
+        "Chamon",
+        "LaSous-Empire (Blight City)"
+      ],
       "notes": " Uhl-Gysh (la Pénombre / le Royaume Crépusculaire)"
     },
     {
@@ -426,7 +496,13 @@
       "prompt": "À quelle vitamine correspond la 'Niacinamide', cet actif ultra-polyvalent qui régule le sébum, resserre les pores et apaise les rougeurs ?",
       "answer": "Vitamine B3",
       "difficulty": "easy",
-      "options": ["Vitamine B3", "Vitamine B5", "Vitamine E", "Vitamine F"],
+      "is_mcq": true,
+      "options": [
+        "Vitamine B3",
+        "Vitamine B5",
+        "Vitamine E",
+        "Vitamine F"
+      ],
       "notes": "Accepter aussi vitamine PP.La vitamine B5 correspond au Panthénol, et la vitamine E au Tocophérol."
     },
     {
@@ -455,6 +531,7 @@
       "prompt": "Sous quel nom botanique (ou surnom asiatique) est connue cette plante cicatrisante star de la K-Beauty, dont on extrait le Madécassoside et l'Asiaticoside ?",
       "answer": "La Centella Asiatica (Herbe du Tigre)",
       "difficulty": "medium",
+      "is_mcq": true,
       "options": [
         "L'Houttuynia Cordata (Heartleaf)",
         "La Centella Asiatica (Herbe du Tigre)",
@@ -469,6 +546,7 @@
       "prompt": "Pour que l'acide L-ascorbique (Vitamine C pure) puisse traverser efficacement la barrière cutanée, en dessous de quel seuil de pH acide la formule cosmétique doit-elle obligatoirement être stabilisée ?",
       "answer": "pH inférieur à 3,5",
       "difficulty": "hard",
+      "is_mcq": true,
       "options": [
         "pH inférieur à 3,5",
         "pH neutre à 5,5 (pH physiologique de la peau)",

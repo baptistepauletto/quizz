@@ -14,7 +14,7 @@ sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
 /** Schema v2: flat questions with source_id. Wipe legacy pack/theme DBs. */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const ver = Number(sqlite.pragma('user_version', { simple: true }) ?? 0);
 if (ver < 2) {
   sqlite.exec(`
@@ -39,6 +39,7 @@ sqlite.exec(`
     status TEXT NOT NULL DEFAULT 'draft',
     image TEXT,
     options TEXT,
+    is_mcq INTEGER,
     created_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS game_sessions (
@@ -98,6 +99,14 @@ if (ver < 3) {
   const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
   if (cols.length > 0 && !cols.some((c) => c.name === 'options')) {
     sqlite.exec(`ALTER TABLE questions ADD COLUMN options TEXT`);
+  }
+}
+if (ver < 4) {
+  const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === 'is_mcq')) {
+    sqlite.exec(`ALTER TABLE questions ADD COLUMN is_mcq INTEGER`);
+    // Legacy rows with options were shown as QCM immediately.
+    sqlite.exec(`UPDATE questions SET is_mcq = 1 WHERE options IS NOT NULL AND is_mcq IS NULL`);
   }
   sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
 }
