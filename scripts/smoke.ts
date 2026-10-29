@@ -56,7 +56,16 @@ const smokeMemory = [
     is_mcq: false,
     options: ['Spielberg', 'Lucas', 'Coppola', 'Scorsese'],
   },
-  { id: 'm_004', theme: 'Cinema', contributor: 'Bob', prompt: 'Best Picture 1994?', answer: 'Forrest Gump', difficulty: 'hard' },
+  {
+    id: 'm_004',
+    theme: 'Cinema',
+    contributor: 'Bob',
+    prompt: 'Best Picture 1994?',
+    answer: 'Forrest Gump',
+    difficulty: 'hard',
+    notes: 'Host only — do not leak on TV',
+    context_hint: 'Tom Hanks plays the lead',
+  },
   { id: 'm_005', theme: 'Food', contributor: 'Cy', prompt: 'Main ingredient of guacamole?', answer: 'Avocado', difficulty: 'easy' },
   { id: 'm_006', theme: 'Food', contributor: 'Cy', prompt: 'Country of origin of sushi?', answer: 'Japan', difficulty: 'easy' },
 ];
@@ -91,6 +100,7 @@ function sampleQuestion(
     prompt: String(id),
     answer: 'a',
     notes: null,
+    contextHint: null,
     image: null,
     options: null,
     isMcq: false,
@@ -485,6 +495,17 @@ try {
       await host.cmd({ t: 'memory.resolve', correct: false });
       continue;
     }
+    if (asking.difficulty === 'hard' && asking.contextHint) {
+      check(tv.state!.memory.clue === null, 'context hint stays off the TV until the host triggers it');
+      check(host.state!.memory.asking?.notes === 'Host only — do not leak on TV', 'host notes stay host-only');
+      check(!JSON.stringify(tv.state).includes('Host only'), 'TV never receives host notes');
+      await endLeech();
+      await host.cmd({ t: 'memory.hint' });
+      check(tv.state!.memory.clue === 'Tom Hanks plays the lead', 'Hard hint 1 reveals context_hint on TV');
+      check(host.state!.memory.asking!.points === 5, 'Hard context hint costs 1 pt (6 → 5)');
+      await host.cmd({ t: 'memory.resolve', correct: false });
+      continue;
+    }
     await endLeech();
     await host.cmd({ t: 'memory.resolve', correct: false });
   }
@@ -592,7 +613,14 @@ try {
   server.kill();
   await new Promise((r) => server.once('exit', r));
   const server2 = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts'], {
-    env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, PICTURES_DIR: picturesDir, HOST_PIN: PIN },
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      DATA_DIR: dataDir,
+      PICTURES_DIR: picturesDir,
+      DRAFTS_DIR: draftsDir,
+      HOST_PIN: PIN,
+    },
     stdio: ['ignore', 'pipe', 'inherit'],
   });
   await new Promise<void>((resolve) => server2.stdout!.on('data', (d) => String(d).includes('Quizz In is running') && resolve()));
@@ -645,7 +673,37 @@ try {
     (statsDb.prepare("SELECT COUNT(*) AS n FROM plays WHERE round = 'sprint' AND correct = 0").get() as { n: number }).n >= 1,
     'wrong sprint buzzes are recorded',
   );
+  check(
+    (statsDb.prepare("SELECT COUNT(*) AS n FROM questions WHERE status = 'archived'").get() as { n: number }).n === 0,
+    'closing without archive leaves questions in the live pile',
+  );
   statsDb.close();
+
+  console.log('\nArchive');
+  await host2.cmd({ t: 'game.create' });
+  await host2.cmd({ t: 'phase.set', phase: 'sprint' });
+  await host2.cmd({ t: 'sprint.next' });
+  const askedId = host2.state?.sprint.question?.id;
+  check(typeof askedId === 'number', 'a sprint question is open before archiving');
+  await host2.cmd({ t: 'game.end', archive: true });
+  const archiveDir = path.join(draftsDir, 'archive');
+  const archiveFiles = fs.existsSync(archiveDir) ? fs.readdirSync(archiveDir).filter((f) => f.endsWith('.json')) : [];
+  check(archiveFiles.length === 1, 'archiving writes one evening file under drafts/archive/');
+  const archiveDb = new Database(path.join(dataDir, 'quizz-in.db'), { readonly: true });
+  const archived = archiveDb.prepare("SELECT id, status, archive_set FROM questions WHERE status = 'archived'").all() as {
+    id: number;
+    status: string;
+    archive_set: string | null;
+  }[];
+  check(archived.length >= 1 && archived.some((q) => q.id === askedId), 'asked questions are marked archived');
+  check(archived.every((q) => !!q.archive_set), 'archived rows keep an archive set label');
+  const pileAfter = await api('GET', '/api/pile', undefined, token2);
+  check(
+    pileAfter.json.archived >= archived.length &&
+      !(await api('GET', '/api/pile/questions', undefined, token2)).json.some((q: { id: number }) => q.id === askedId),
+    'archived questions leave the night pile',
+  );
+  archiveDb.close();
   server2.kill();
 } catch (err) {
   failures++;

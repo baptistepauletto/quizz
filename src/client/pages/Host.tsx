@@ -16,7 +16,7 @@ const PHASE_LABEL: Record<Phase, string> = {
   lobby: 'salon',
   predictions: 'pari',
   sprint: 'sprint',
-  memory: 'mémoire',
+  memory: 'grille',
   climax: 'finale',
   reveal: 'révélation',
   results: 'classement',
@@ -74,6 +74,7 @@ function NoGame({ game }: { game: UseGame }) {
         tonight: { sprint: 0, memory: 0, climax: 0 },
         draft: 0,
         rejected: 0,
+        archived: 0,
       }),
     );
   }, []);
@@ -136,12 +137,27 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
           </div>
           <b style={{ letterSpacing: '0.2em', fontSize: '1.3rem' }}>{state.joinCode}</b>
         </div>
-        <button
-          className="btn small ghost"
-          onClick={() => window.confirm('Terminer la partie pour tout le monde ?') && send({ t: 'game.end' })}
-        >
-          Fin de partie
-        </button>
+        <div className="row" style={{ gap: '0.4rem' }}>
+          <button
+            className="btn small ghost"
+            onClick={() =>
+              window.confirm('Fermer sans archiver ? Les questions restent dans le tas (test).') &&
+              send({ t: 'game.end' })
+            }
+          >
+            Fermer
+          </button>
+          <button
+            className="btn small"
+            onClick={() =>
+              window.confirm(
+                'Archiver la soirée ? Les questions posées quittent le tas et sont rangées dans drafts/archive/.',
+              ) && send({ t: 'game.end', archive: true })
+            }
+          >
+            Archiver
+          </button>
+        </div>
       </div>
 
       <div className="phase-tabs">
@@ -159,9 +175,30 @@ function GamePanel({ state, game }: { state: GameView; game: UseGame }) {
       {state.phase === 'climax' && <ClimaxPanel state={state} send={send} />}
       {state.phase === 'reveal' && <RevealPanel state={state} send={send} />}
       {state.phase === 'results' && (
-        <div className="card center">
+        <div className="card center stack">
           <h2>Partie terminée</h2>
           <p className="muted">Le podium est sur la TV.</p>
+          <div className="row wrap" style={{ justifyContent: 'center', gap: '0.5rem' }}>
+            <button
+              className="btn ghost"
+              onClick={() =>
+                window.confirm('Fermer sans archiver ? Les questions restent dans le tas (test).') &&
+                send({ t: 'game.end' })
+              }
+            >
+              Fermer (test)
+            </button>
+            <button
+              className="btn primary"
+              onClick={() =>
+                window.confirm(
+                  'Archiver la soirée ? Les questions posées quittent le tas et sont rangées dans drafts/archive/.',
+                ) && send({ t: 'game.end', archive: true })
+              }
+            >
+              Archiver la soirée
+            </button>
+          </div>
         </div>
       )}
 
@@ -194,7 +231,7 @@ function QuestionCard({
       {q.options && <OptionsList options={q.options} correct={q.answer} />}
       {clue && (
         <div className="chip" style={{ alignSelf: 'flex-start' }}>
-          Indice : {clue}
+          Indice TV : {clue}
         </div>
       )}
       {q.answer && (
@@ -205,7 +242,16 @@ function QuestionCard({
           <b>{q.answer}</b>
         </div>
       )}
-      {q.notes && <div className="muted">{q.notes}</div>}
+      {q.contextHint && !clue && (
+        <div className="muted" style={{ fontSize: '0.85rem' }}>
+          Indice TV (pas encore révélé) : {q.contextHint}
+        </div>
+      )}
+      {q.notes && (
+        <div className="muted" style={{ fontSize: '0.85rem' }}>
+          Notes hôte : {q.notes}
+        </div>
+      )}
     </div>
   );
 }
@@ -382,7 +428,7 @@ function hintButtonLabel(
   difficulty: Difficulty,
   hintsUsed: number,
   hasOptions: boolean,
-  hasNotes: boolean,
+  hasContextHint: boolean,
   isMcq: boolean,
 ): string {
   const next = hintsUsed + 1;
@@ -393,7 +439,7 @@ function hintButtonLabel(
     return hasOptions ? `Indice · ${formatLabel}` : 'Indice indisponible (pas d’options)';
   }
   if (difficulty === 'hard' && next === 1) {
-    return hasNotes ? `Indice · contexte (−${cost})` : 'Indice indisponible (pas de notes)';
+    return hasContextHint ? `Indice · contexte (−${cost})` : 'Indice indisponible (pas de context_hint)';
   }
   if (difficulty === 'hard' && next === 2) {
     return hasOptions ? `Indice · ${formatLabel}` : 'Indice indisponible (pas d’options)';
@@ -434,7 +480,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
         asking.difficulty,
         m.hintsUsed,
         hasBankOptions,
-        !!asking.notes?.trim(),
+        !!asking.contextHint?.trim(),
         !!asking.isMcq,
       )
     : '';
@@ -444,7 +490,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
     m.askStatus !== 'answering' ||
     asking.difficulty === 'easy' ||
     m.hintsUsed >= m.maxHints ||
-    (asking.difficulty === 'hard' && nextHint === 1 && !asking.notes?.trim()) ||
+    (asking.difficulty === 'hard' && nextHint === 1 && !asking.contextHint?.trim()) ||
     ((asking.difficulty === 'medium' || (asking.difficulty === 'hard' && nextHint === 2)) && !hasBankOptions);
 
   const checkedLeechIds = Object.entries(leechOk)

@@ -118,8 +118,13 @@ export interface QuestionView {
   isMcq?: boolean;
   /** Only sent to /host, or to /tv once the question is resolved. */
   answer?: string;
-  /** Host cheat-sheet, /host only. */
+  /** Host cheat-sheet, /host only — never shown on the TV. */
   notes?: string;
+  /**
+   * Memory Hard hint 1: short clue revealed on TV when the host triggers it.
+   * Host always sees it on the question card; TV only after the hint.
+   */
+  contextHint?: string;
 }
 
 export type SprintStatus = 'idle' | 'asking' | 'locked' | 'resolved';
@@ -174,7 +179,7 @@ export interface MemoryView {
   /** How many host hints have been applied on the open card. */
   hintsUsed: number;
   maxHints: number;
-  /** Context clue on TV once Hard hint 1 is used (host always has notes on `asking`). */
+  /** Context clue on TV once Hard hint 1 is used (`context_hint` from the bank). */
   clue: string | null;
   /** /play: your locked leech text (null if none / you are active). */
   myLeech: string | null;
@@ -327,7 +332,7 @@ export interface GameEvent {
 // /prep API shapes
 // ---------------------------------------------------------------------------
 
-export type QuestionStatus = 'draft' | 'approved' | 'rejected';
+export type QuestionStatus = 'draft' | 'approved' | 'rejected' | 'archived';
 
 export interface QuestionDto {
   id: number;
@@ -338,8 +343,12 @@ export interface QuestionDto {
   prompt: string;
   answer: string;
   notes: string | null;
+  /** Memory: TV clue for Hard hint 1 (host-only until revealed). */
+  contextHint: string | null;
   difficulty: Difficulty;
   status: QuestionStatus;
+  /** Set label when status is archived (e.g. 2026-10-29-ABCD). */
+  archiveSet: string | null;
   /** Path relative to the pictures folder. */
   image: string | null;
   /** Memory: JSON-serialized 4 strings in DB; parsed in DTOs. */
@@ -358,7 +367,13 @@ export interface BankDraftQuestion {
   prompt: string;
   answer: string;
   difficulty: Difficulty;
+  /** Host-only cheat sheet — never shown on the TV. */
   notes?: string;
+  /**
+   * Memory Hard hint 1. JSON field name is `context_hint`.
+   * Short clue the host can reveal on the TV (−1 pt).
+   */
+  context_hint?: string;
   image?: string;
   /**
    * Memory only: exactly four choices; `answer` must match one.
@@ -385,6 +400,8 @@ export interface PileSummary {
   /** Waiting for swipe (new or content-changed). */
   draft: number;
   rejected: number;
+  /** Asked on a real evening and shelved out of the live pool. */
+  archived: number;
 }
 
 /** The prepared night: approved question ids per round, in play order. */

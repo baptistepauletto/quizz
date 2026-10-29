@@ -18,7 +18,8 @@ export type PlayerMessage =
 /** Everything the host can do. Players can never send these. */
 export type HostCommand =
   | { t: 'game.create' }
-  | { t: 'game.end' }
+  /** `archive: true` shelves every question asked tonight into drafts/archive/. */
+  | { t: 'game.end'; archive?: boolean }
   | { t: 'phase.set'; phase: Phase }
   | { t: 'score.adjust'; playerId: string; delta: number }
   | { t: 'player.kick'; playerId: string }

@@ -15,6 +15,7 @@ import {
 import type { Emit, Game } from './game';
 import { isGuest, readGuests } from './guests';
 import { recordAsk } from './history';
+import { archiveEvening } from './archive';
 import { nightHand } from './night';
 import { deleteSnapshot, loadLatestSnapshot, saveSnapshot } from './snapshot';
 import { recordEvent, recordGameEnd } from './stats';
@@ -206,7 +207,7 @@ export class Room {
 
   private hostCommand(_conn: Conn, cmd: HostCommand): void {
     if (cmd.t === 'game.create') return this.createGame();
-    if (cmd.t === 'game.end') return this.endGame();
+    if (cmd.t === 'game.end') return this.endGame(cmd.archive === true);
     this.mutate((g, emit) => {
       applyCommand(g, cmd, emit);
     });
@@ -224,12 +225,20 @@ export class Room {
     this.broadcastState();
   }
 
-  private endGame(): void {
+  private endGame(archive: boolean): void {
     if (this.game) {
       try {
         recordGameEnd(this.game);
       } catch (err) {
         console.error('Could not record final scores:', err);
+      }
+      if (archive) {
+        try {
+          const result = archiveEvening(this.game);
+          console.log(`Archived evening ${result.label}: ${result.count} question(s) → ${result.file}`);
+        } catch (err) {
+          console.error('Could not archive evening:', err);
+        }
       }
       deleteSnapshot(this.game.joinCode);
     }

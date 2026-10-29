@@ -85,6 +85,7 @@ function PrepHub() {
             <p className="muted">
               {BANKS.map((b) => `${BANK_LABEL[b]} ${pile.approved[b]}`).join(' · ')}
               {pile.rejected > 0 ? ` · ${pile.rejected} rejetée${pile.rejected > 1 ? 's' : ''}` : ''}
+              {pile.archived > 0 ? ` · ${pile.archived} archivée${pile.archived > 1 ? 's' : ''}` : ''}
             </p>
             <div className="row wrap">
               {BANKS.map((b) => (
@@ -238,6 +239,8 @@ function PileBrowser() {
               <div className="muted">
                 Réponse : <b style={{ color: 'var(--text)' }}>{q.answer}</b>
               </div>
+              {q.contextHint && <div className="muted">Indice TV : {q.contextHint}</div>}
+              {q.notes && <div className="muted">Notes hôte : {q.notes}</div>}
               <div className="row">
                 <button className="btn small bad" onClick={() => setStatus(q, 'rejected')}>
                   Rejeter

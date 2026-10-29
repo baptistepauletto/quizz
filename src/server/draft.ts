@@ -68,7 +68,7 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
     let options: [string, string, string, string] | undefined;
     if (rec.options !== undefined) {
       if (bank !== 'memory') {
-        bad(`${where}: "options" n’est autorisé qu’en grille mémoire.`);
+        bad(`${where}: "options" n’est autorisé qu’en grille.`);
       } else if (!Array.isArray(rec.options) || rec.options.length !== 4) {
         bad(`${where}: "options" doit être un tableau de exactement 4 chaînes.`);
       } else {
@@ -92,7 +92,7 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
     let isMcq: boolean | undefined;
     if (rec.is_mcq !== undefined) {
       if (bank !== 'memory') {
-        bad(`${where}: "is_mcq" n’est autorisé qu’en grille mémoire.`);
+        bad(`${where}: "is_mcq" n’est autorisé qu’en grille.`);
       } else if (typeof rec.is_mcq !== 'boolean') {
         bad(`${where}: "is_mcq" doit être true ou false.`);
       } else {
@@ -107,6 +107,17 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
       bad(`${where}: "is_mcq": true exige un tableau "options" de 4 choix.`);
     }
 
+    let contextHint: string | undefined;
+    if (rec.context_hint !== undefined) {
+      if (bank !== 'memory') {
+        bad(`${where}: "context_hint" n’est autorisé qu’en grille.`);
+      } else {
+        const hint = str(rec.context_hint);
+        if (!hint) bad(`${where}: "context_hint" est vide.`);
+        else contextHint = hint;
+      }
+    }
+
     if (id && theme && prompt && answer && DIFFICULTIES.includes(difficulty) && (!imageRaw || image)) {
       const notes = str(rec.notes);
       const contributor = str(rec.contributor);
@@ -117,6 +128,7 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
         answer,
         difficulty,
         ...(notes ? { notes } : {}),
+        ...(contextHint ? { context_hint: contextHint } : {}),
         ...(image ? { image } : {}),
         ...(options ? { options } : {}),
         ...(isMcq !== undefined ? { is_mcq: isMcq } : {}),
@@ -135,10 +147,12 @@ export function fingerprint(
   difficulty: string,
   options?: string[] | null,
   isMcq?: boolean,
+  contextHint?: string | null,
 ): string {
   const opt = options && options.length ? `\n${JSON.stringify(options)}` : '';
   const mcq = options && options.length ? `\nis_mcq:${isMcq ? 1 : 0}` : '';
-  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}${mcq}`;
+  const hint = contextHint?.trim() ? `\ncontext_hint:${contextHint.trim()}` : '';
+  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}${mcq}${hint}`;
 }
 
 export function serializeOptions(options: [string, string, string, string] | null | undefined): string | null {

@@ -231,7 +231,16 @@ function CardBody({ q, behind, dx = 0, animate, handlers }: CardBodyProps) {
           Réponse
         </div>
         <b>{q.answer}</b>
-        {q.notes && <div className="muted" style={{ marginTop: 6, fontSize: '0.9rem' }}>{q.notes}</div>}
+        {q.contextHint && (
+          <div className="muted" style={{ marginTop: 6, fontSize: '0.9rem' }}>
+            Indice TV : {q.contextHint}
+          </div>
+        )}
+        {q.notes && (
+          <div className="muted" style={{ marginTop: 6, fontSize: '0.9rem' }}>
+            Notes hôte : {q.notes}
+          </div>
+        )}
       </div>
     </div>
   );

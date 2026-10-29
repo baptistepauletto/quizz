@@ -10,10 +10,14 @@ export const questions = sqliteTable('questions', {
   prompt: text('prompt').notNull(),
   answer: text('answer').notNull(),
   notes: text('notes'),
+  /** Memory Hard hint 1 — short clue for the TV. */
+  contextHint: text('context_hint'),
   difficulty: text('difficulty', { enum: ['easy', 'medium', 'hard'] }).notNull(),
-  status: text('status', { enum: ['draft', 'approved', 'rejected'] })
+  status: text('status', { enum: ['draft', 'approved', 'rejected', 'archived'] })
     .notNull()
     .default('draft'),
+  /** Evening set id when archived (e.g. 2026-10-29-ABCD). */
+  archiveSet: text('archive_set'),
   image: text('image'),
   /** JSON array of 4 strings for memory choices; null otherwise. */
   options: text('options'),

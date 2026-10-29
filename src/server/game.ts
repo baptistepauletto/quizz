@@ -56,6 +56,8 @@ export interface QuestionRec {
   prompt: string;
   answer: string;
   notes: string | null;
+  /** Memory Hard hint 1 — short clue for the TV (null = no context hint). */
+  contextHint: string | null;
   /** Relative path inside the pictures folder. */
   image: string | null;
   /** Memory: four choices; `answer` is the correct text. */
@@ -245,6 +247,7 @@ export function hydrateGame(g: Game): Game {
   if (!g.memory) g.memory = emptyMemory();
   for (const q of Object.values(g.questions)) {
     if (q.isMcq === undefined) q.isMcq = q.options !== null;
+    if (q.contextHint === undefined) q.contextHint = null;
   }
   const m = g.memory as Game['memory'] & { previewUntil?: number | null };
   if (m.askStatus === undefined) m.askStatus = m.askingCoord ? 'answering' : null;
@@ -669,7 +672,7 @@ function memoryHint(g: Game, emit: Emit) {
   if (next > memoryMaxHints(q.difficulty)) throw new GameError('Plus d’indice pour cette carte.');
 
   if (q.difficulty === 'hard' && next === 1) {
-    if (!q.notes?.trim()) throw new GameError('Pas d’indice contexte sur cette question.');
+    if (!q.contextHint?.trim()) throw new GameError('Pas d’indice contexte (`context_hint`) sur cette question.');
     m.clueRevealed = true;
   } else {
     applyFormatDrop(m, q);
@@ -992,6 +995,7 @@ function questionView(
     ...(q.bank === 'memory' ? { isMcq: q.isMcq } : {}),
     ...(opts.answer ? { answer: q.answer } : {}),
     ...(opts.notes && q.notes ? { notes: q.notes } : {}),
+    ...(opts.notes && q.contextHint ? { contextHint: q.contextHint } : {}),
   };
 }
 
@@ -1075,7 +1079,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     leechUntil: m.askStatus === 'leeching' ? m.leechUntil : null,
     hintsUsed: m.hintsUsed,
     maxHints: askingQ ? memoryMaxHints(askingQ.difficulty) : 0,
-    clue: askingQ && m.clueRevealed && askingQ.notes ? askingQ.notes : null,
+    clue: askingQ && m.clueRevealed && askingQ.contextHint ? askingQ.contextHint : null,
     myLeech: isPlay && playerId ? (m.leeches[playerId] ?? null) : null,
     leeches:
       isHost && (m.askStatus === 'leeching' || m.askStatus === 'answering')

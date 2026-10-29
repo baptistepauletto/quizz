@@ -37,8 +37,10 @@ function toDto(row: typeof questions.$inferSelect): QuestionDto {
     prompt: row.prompt,
     answer: row.answer,
     notes: row.notes,
+    contextHint: row.contextHint ?? null,
     difficulty: row.difficulty,
-    status: row.status,
+    status: row.status as QuestionDto['status'],
+    archiveSet: row.archiveSet ?? null,
     image: row.image,
     options,
     isMcq: resolveIsMcq(row.isMcq, options),
@@ -55,7 +57,12 @@ function allRows(): QuestionDto[] {
 }
 
 export function setQuestionStatus(id: number, status: QuestionStatus): boolean {
-  return db.update(questions).set({ status }).where(eq(questions.id, id)).run().changes > 0;
+  // Clearing archive_set when restoring to the live pool.
+  return db
+    .update(questions)
+    .set(status === 'archived' ? { status } : { status, archiveSet: null })
+    .where(eq(questions.id, id))
+    .run().changes > 0;
 }
 
 export function approvedQuestions(): QuestionRec[] {
@@ -70,6 +77,7 @@ export function approvedQuestions(): QuestionRec[] {
       prompt: q.prompt,
       answer: q.answer,
       notes: q.notes,
+      contextHint: q.contextHint,
       image: q.image,
       options: q.options,
       isMcq: q.isMcq,
@@ -80,15 +88,17 @@ export function pileSummary(): PileSummary {
   const approved = { sprint: 0, memory: 0, climax: 0 };
   let draft = 0;
   let rejected = 0;
+  let archived = 0;
   for (const q of allRows()) {
     if (q.status === 'approved') approved[q.bank] += 1;
     else if (q.status === 'draft') draft += 1;
     else if (q.status === 'rejected') rejected += 1;
+    else if (q.status === 'archived') archived += 1;
   }
   const prepared = preparedCounts();
   const tonight = { sprint: 0, memory: 0, climax: 0 };
   for (const bank of BANKS) tonight[bank] = prepared[bank] || Math.min(NIGHT_SIZE[bank], approved[bank]);
-  return { approved, prepared, tonight, draft, rejected };
+  return { approved, prepared, tonight, draft, rejected, archived };
 }
 
 /** Hand-picked questions per round that are still approved (see night.ts). */
@@ -116,7 +126,8 @@ export function draftQuestions(): QuestionDto[] {
 function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 'unchanged' {
   const existing = db.select().from(questions).where(eq(questions.sourceId, q.id)).get();
   const draftIsMcq = q.is_mcq ?? false;
-  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options, draftIsMcq);
+  const draftHint = q.context_hint ?? null;
+  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options, draftIsMcq, draftHint);
   const fields = {
     bank,
     theme: q.theme,
@@ -124,6 +135,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     prompt: q.prompt,
     answer: q.answer,
     notes: q.notes ?? null,
+    contextHint: draftHint,
     difficulty: q.difficulty,
     image: q.image ?? null,
     options: serializeOptions(q.options),
@@ -145,14 +157,23 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
   const existingOptions = parseOptions(existing.options);
   const existingIsMcq = resolveIsMcq(existing.isMcq, existingOptions);
   const same =
-    fingerprint(existing.prompt, existing.answer, existing.difficulty, existingOptions, existingIsMcq) === fp;
+    fingerprint(
+      existing.prompt,
+      existing.answer,
+      existing.difficulty,
+      existingOptions,
+      existingIsMcq,
+      existing.contextHint,
+    ) === fp;
   // Re-adding a rejected id (even with the same text) puts it back in the inbox.
+  // Archived questions stay shelved while their fingerprint is unchanged.
   if (same && existing.status !== 'rejected') {
     db.update(questions)
       .set({
         theme: fields.theme,
         contributor: fields.contributor,
         notes: fields.notes,
+        contextHint: fields.contextHint,
         image: fields.image,
         options: fields.options,
         isMcq: fields.isMcq,
@@ -167,6 +188,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     .set({
       ...fields,
       status: 'draft',
+      archiveSet: null,
     })
     .where(eq(questions.id, existing.id))
     .run();
@@ -222,9 +244,10 @@ export function syncDraftsFromDisk(): SyncResult {
   }
 
   // Approved/draft rows whose source_id vanished from JSON → rejected.
+  // Archived rows stay shelved even if they left the live bank files.
   for (const row of db.select().from(questions).all()) {
-    if (!seenIds.has(row.sourceId) && row.status !== 'rejected') {
-      db.update(questions).set({ status: 'rejected' }).where(eq(questions.id, row.id)).run();
+    if (!seenIds.has(row.sourceId) && row.status !== 'rejected' && row.status !== 'archived') {
+      db.update(questions).set({ status: 'rejected', archiveSet: null }).where(eq(questions.id, row.id)).run();
       result.rejected += 1;
     }
   }

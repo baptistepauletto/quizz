@@ -9,7 +9,7 @@ function nameKey(name: string): string {
   return name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
-/** Always-face-up TV grid: theme, difficulty, and optional contributor tint. */
+/** Always-face-up TV grid: theme, difficulty dots, and optional contributor tint. */
 export function TvGrid({
   memory,
   players,
@@ -65,15 +65,16 @@ function Tile({
         <div className="tile-face tile-front">
           <span className="t-coord">{tile.coord}</span>
           <span className="t-theme">{tile.theme}</span>
-          {tile.contributor && <span className="t-by">{tile.contributor}</span>}
-          {tile.difficulty && (
-            <span className="t-diff" aria-label={DIFF_LABEL[tile.difficulty]}>
-              <span className="t-diff-label">{DIFF_LABEL[tile.difficulty]}</span>
-              {Array.from({ length: level }, (_, i) => (
-                <i key={i} />
-              ))}
-            </span>
-          )}
+          <span className="t-foot">
+            {tile.contributor && <span className="t-by">{tile.contributor}</span>}
+            {tile.difficulty && (
+              <span className="t-diff" aria-label={DIFF_LABEL[tile.difficulty]}>
+                {Array.from({ length: level }, (_, i) => (
+                  <i key={i} />
+                ))}
+              </span>
+            )}
+          </span>
         </div>
       </div>
     </div>

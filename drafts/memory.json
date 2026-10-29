@@ -79,6 +79,7 @@
         "Kids in America",
         "Total Eclipse of the Heart"
       ],
+      "context_hint": "Natalie Imbruglia",
       "notes": "Reprise de la version de Natalie Imbruglia."
     },
     {
@@ -88,7 +89,15 @@
       "image": "people/harry-styles-marcel.webp",
       "prompt": "Dans le clip de 'Best Song Ever', les garçons jouent des employés de studio caricaturaux. Quel est le prénom du personnage de 'geek du marketing' incarné par Harry Styles ?",
       "answer": "Marcel",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "context_hint": "Tom Felton (Draco Malfoy)",
+      "is_mcq": false,
+      "options": [
+        "Marcel",
+        "Tom",
+        "Harry",
+        "Louis"
+      ]
     },
     {
       "id": "m_008",

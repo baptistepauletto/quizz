@@ -14,7 +14,7 @@ sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
 /** Schema v2: flat questions with source_id. Wipe legacy pack/theme DBs. */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 6;
 const ver = Number(sqlite.pragma('user_version', { simple: true }) ?? 0);
 if (ver < 2) {
   sqlite.exec(`
@@ -35,8 +35,10 @@ sqlite.exec(`
     prompt TEXT NOT NULL,
     answer TEXT NOT NULL,
     notes TEXT,
+    context_hint TEXT,
     difficulty TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
+    archive_set TEXT,
     image TEXT,
     options TEXT,
     is_mcq INTEGER,
@@ -107,6 +109,18 @@ if (ver < 4) {
     sqlite.exec(`ALTER TABLE questions ADD COLUMN is_mcq INTEGER`);
     // Legacy rows with options were shown as QCM immediately.
     sqlite.exec(`UPDATE questions SET is_mcq = 1 WHERE options IS NOT NULL AND is_mcq IS NULL`);
+  }
+}
+if (ver < 5) {
+  const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === 'context_hint')) {
+    sqlite.exec(`ALTER TABLE questions ADD COLUMN context_hint TEXT`);
+  }
+}
+if (ver < 6) {
+  const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === 'archive_set')) {
+    sqlite.exec(`ALTER TABLE questions ADD COLUMN archive_set TEXT`);
   }
   sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
 }
