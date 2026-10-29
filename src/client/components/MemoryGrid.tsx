@@ -63,10 +63,8 @@ function Tile({
     >
       <div className="tile-inner">
         <div className="tile-face tile-front">
-          <span className="t-coord">{tile.coord}</span>
-          <span className="t-theme">{tile.theme}</span>
-          <span className="t-foot">
-            {tile.contributor && <span className="t-by">{tile.contributor}</span>}
+          <span className="t-top">
+            <span className="t-coord">{tile.coord}</span>
             {tile.difficulty && (
               <span className="t-diff" aria-label={DIFF_LABEL[tile.difficulty]}>
                 {Array.from({ length: level }, (_, i) => (
@@ -74,6 +72,9 @@ function Tile({
                 ))}
               </span>
             )}
+          </span>
+          <span className="t-theme">
+            <span>{tile.theme}</span>
           </span>
         </div>
       </div>
