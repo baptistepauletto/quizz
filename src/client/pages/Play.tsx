@@ -273,7 +273,7 @@ function Body({ state, me, game }: { state: GameView; me: PlayerView; game: UseG
           <p className="muted">Résultat final</p>
           <div className="rank-big">#{rank}</div>
           <p>{me.score} points</p>
-          {rank <= 3 && <Confetti colors={[colors.get(me.id) ?? '#ffd27a', '#ffd27a', '#f4efe4']} count={70} duration={3.5} />}
+          {rank <= 3 && <Confetti colors={[colors.get(me.id) ?? '#e0a878', '#e0a878', '#ff2e88', '#f4efe4']} count={70} duration={3.5} />}
         </div>
       );
     }

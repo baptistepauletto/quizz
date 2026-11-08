@@ -5,7 +5,7 @@ import { Logo } from '../components/Logo';
 import { TvGrid } from '../components/MemoryGrid';
 import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
-import { ChipStack, Confetti, CountUp, CountdownRing, Marquee, Token, useFlash } from '../components/stage';
+import { ChipStack, Confetti, CountUp, CountdownRing, DecoCorners, Die, Marquee, Token, useFlash } from '../components/stage';
 import type { StackMode } from '../components/stage';
 import { ConnectionPill, DifficultyChip, OptionsList, nameOf } from '../components/ui';
 import { fetchInfo, lanOrigin } from '../lib/api';
@@ -85,6 +85,7 @@ export function Tv() {
       style={{ '--flood': flood } as CSSProperties}
     >
       <div className="stage-lights" aria-hidden="true" />
+      <DecoCorners />
       <header className="tv-head">
         <Logo />
         {state?.phase === 'memory' && <MemoryStatus state={state} colors={colors} />}
@@ -129,7 +130,7 @@ export function Tv() {
           {fx.kind === 'ok' && (
             <Confetti
               key={fx.key}
-              colors={[fx.playerId ? (colors.get(fx.playerId) ?? '#ffd27a') : '#ffd27a', '#ffd27a', '#f4efe4']}
+              colors={[fx.playerId ? (colors.get(fx.playerId) ?? '#e0a878') : '#ff2e88', '#e0a878', '#f4efe4']}
               count={70}
               duration={2.2}
             />
@@ -257,42 +258,63 @@ function Lobby({ state, joinUrl, colors }: { state: GameView; joinUrl: string; c
 
 // --- Phase 1 -----------------------------------------------------------------
 
+const DIFFICULTY_LABEL = { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' } as const;
+
+/** The sprint is a slot machine: the reels land on theme, points (a die) and difficulty for each question. */
 function Sprint({ state, colors }: { state: GameView; colors: Map<string, string> }) {
   const s = state.sprint;
   const q = s.question;
   return (
-    <div className="tv-center">
-      <div className="tv-sub">
-        Phase 1 · Le Sprint
-        {s.total > 0 && s.index >= 0 ? ` · question ${s.index + 1} sur ${s.total}` : ''}
-      </div>
-      {!q ? (
-        <div className="tv-title">Doigts sur les buzzers !</div>
-      ) : (
-        <div className={q.image ? 'tv-center has-photo' : 'tv-center'} style={{ flex: 1, width: '100%' }}>
-          <div className="tv-badges">
+    <div className={`tv-center sprint ${q?.image ? 'has-photo' : ''}`}>
+      <div className="slot">
+        <div className="slot-crown">
+          <span className="slot-name">Le Sprint</span>
+          {s.total > 0 && s.index >= 0 && (
+            <span className="slot-count">
+              question {s.index + 1} sur {s.total}
+            </span>
+          )}
+        </div>
+        <div className="slot-reels" key={q?.id ?? 'idle'}>
+          <div className="reel">
+            <small>Thème</small>
             {/* Photo rounds: hide the theme until resolved, or “Musique” / “Les potes” gives it away. */}
-            <span className="chip">{q.image && s.status !== 'resolved' ? 'Photo' : q.theme}</span>
-            <DifficultyChip difficulty={q.difficulty} />
+            <b>{!q ? '?' : q.image && s.status !== 'resolved' ? 'Photo' : q.theme}</b>
           </div>
-          {q.image && (
-            <PhotoReveal
-              src={q.image}
-              questionId={q.id}
-              phase={s.status === 'resolved' ? 'resolved' : s.status === 'locked' ? 'locked' : 'asking'}
-            />
+          <div className="reel">
+            <small>Points</small>
+            {q ? <Die value={q.points} /> : <b>?</b>}
+          </div>
+          <div className={`reel ${q?.difficulty ?? ''}`}>
+            <small>Niveau</small>
+            <b>{q ? DIFFICULTY_LABEL[q.difficulty] : '?'}</b>
+          </div>
+        </div>
+        <div className="slot-screen">
+          {!q ? (
+            <div className="tv-title">Doigts sur les buzzers !</div>
+          ) : (
+            <>
+              {q.image && (
+                <PhotoReveal
+                  src={q.image}
+                  questionId={q.id}
+                  phase={s.status === 'resolved' ? 'resolved' : s.status === 'locked' ? 'locked' : 'asking'}
+                />
+              )}
+              <div className="tv-prompt">{q.prompt}</div>
+            </>
           )}
-          <div className="tv-prompt">{q.prompt}</div>
-          {s.status === 'locked' && s.buzzPlayerId && (
-            <div className="buzz-banner" key={s.buzzPlayerId}>
-              <Token name={nameOf(state.players, s.buzzPlayerId)} color={colors.get(s.buzzPlayerId)} />
-              {nameOf(state.players, s.buzzPlayerId)} a buzzé !
-            </div>
-          )}
-          {s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
-          {s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
+        </div>
+      </div>
+      {q && s.status === 'locked' && s.buzzPlayerId && (
+        <div className="buzz-banner" key={s.buzzPlayerId}>
+          <Token name={nameOf(state.players, s.buzzPlayerId)} color={colors.get(s.buzzPlayerId)} />
+          {nameOf(state.players, s.buzzPlayerId)} a buzzé !
         </div>
       )}
+      {q && s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
+      {q && s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
     </div>
   );
 }
@@ -314,7 +336,9 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
   const q = m.asking;
   return (
     <>
-      <TvGrid memory={m} players={state.players} colors={colors} />
+      <div className="bj-table">
+        <TvGrid memory={m} players={state.players} colors={colors} />
+      </div>
       {q && m.askingCoord && (
         <div className="modal">
           <Marquee className="modal-marquee" key={m.askingCoord}>
@@ -620,7 +644,7 @@ function RevealBoard({ state, colors }: { state: GameView; colors: Map<string, s
 function Results({ state, colors }: { state: GameView; colors: Map<string, string> }) {
   const ranked = [...state.players].sort((a, b) => b.score - a.score);
   const podium = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
-  const confettiColors = ranked.length > 0 ? ranked.slice(0, 3).map((p) => colors.get(p.id)!).concat('#ffd27a') : PLAYER_COLORS;
+  const confettiColors = ranked.length > 0 ? ranked.slice(0, 3).map((p) => colors.get(p.id)!).concat('#e0a878', '#ff2e88') : PLAYER_COLORS;
   return (
     <div className="tv-body">
       <div className="tv-main">

@@ -9,7 +9,7 @@ function nameKey(name: string): string {
   return name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
-/** Always-face-up TV grid: theme, difficulty dots, and optional contributor tint. */
+/** TV grid of face-up cards (theme, difficulty pips, optional contributor tint); played cards turn face-down. */
 export function TvGrid({
   memory,
   players,
@@ -76,6 +76,10 @@ function Tile({
           <span className="t-theme">
             <span>{tile.theme}</span>
           </span>
+        </div>
+        <div className="tile-face tile-back">
+          <span className="t-coord">{tile.coord}</span>
+          {tile.result && <span className={`t-mark ${tile.result}`} aria-label={tile.result === 'hit' ? 'Trouvé' : 'Raté'} />}
         </div>
       </div>
     </div>
