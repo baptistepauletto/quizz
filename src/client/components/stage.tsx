@@ -130,6 +130,40 @@ export function Marquee({ children, className = '' }: { children: ReactNode; cla
   return <div className={`marquee ${className}`}>{children}</div>;
 }
 
+/** Copper Art Deco fans in the four corners of the parent (which must be positioned). */
+export function DecoCorners() {
+  return (
+    <div className="deco-corners" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
+}
+
+/** Pip slots on a 3×3 grid, read left to right, top to bottom. */
+const PIPS: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+/** An ivory die showing `value` (1 to 6) pips. */
+export function Die({ value, className = '' }: { value: number; className?: string }) {
+  const on = PIPS[Math.max(1, Math.min(6, Math.round(value)))];
+  return (
+    <span className={`die ${className}`} role="img" aria-label={String(value)}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <i key={i} className={on.includes(i) ? 'on' : ''} />
+      ))}
+    </span>
+  );
+}
+
 // --- casino chips -------------------------------------------------------------
 
 interface Denomination {
@@ -140,11 +174,11 @@ interface Denomination {
 }
 
 const DENOMINATIONS: Denomination[] = [
-  { value: 100, face: '#1d1530', stripe: '#e7a23a', ink: '#ffd27a' },
-  { value: 25, face: '#1f8a5b', stripe: '#f4efe4', ink: '#f4efe4' },
-  { value: 10, face: '#2f63d6', stripe: '#f4efe4', ink: '#f4efe4' },
-  { value: 5, face: '#d23553', stripe: '#f4efe4', ink: '#f4efe4' },
-  { value: 1, face: '#f4efe4', stripe: '#3a2868', ink: '#1a1230' },
+  { value: 100, face: '#0a1128', stripe: '#d08a4e', ink: '#ffcf8a' },
+  { value: 25, face: '#b87333', stripe: '#f4efe4', ink: '#0a1128' },
+  { value: 10, face: '#2346a8', stripe: '#f4efe4', ink: '#f4efe4' },
+  { value: 5, face: '#e0286f', stripe: '#f4efe4', ink: '#f4efe4' },
+  { value: 1, face: '#f4efe4', stripe: '#13204a', ink: '#0a1128' },
 ];
 
 const MAX_CHIPS = 12;
@@ -189,9 +223,9 @@ export function ChipStack({
 
   const chips: Denomination[] =
     mode === 'secret'
-      ? Array.from({ length: 3 }, () => ({ value: 0, face: color ?? '#3a2868', stripe: '#f4efe4', ink: '#1a1230' }))
+      ? Array.from({ length: 3 }, () => ({ value: 0, face: color ?? '#b87333', stripe: '#f4efe4', ink: '#0a1128' }))
       : chipsFor(amount);
-  if (chips.length === 0) chips.push({ value: 0, face: '#271c3c', stripe: '#5c4d78', ink: '#b3a7c9' });
+  if (chips.length === 0) chips.push({ value: 0, face: '#182754', stripe: '#3a4c80', ink: '#a9b3d1' });
   const label = mode === 'secret' ? initialOf(name) : String(amount);
 
   return (

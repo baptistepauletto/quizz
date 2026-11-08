@@ -191,7 +191,7 @@ function PixelReveal({ src, progress, running }: { src: string; progress: () => 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#1a1230';
+    ctx.fillStyle = '#0c1736';
     ctx.fillRect(0, 0, w, h);
 
     const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
