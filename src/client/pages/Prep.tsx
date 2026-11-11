@@ -219,7 +219,11 @@ function PileBrowser() {
           <div className="row wrap">
             <b className="grow">{g.theme}</b>
             <span className="chip">{BANK_LABEL[g.bank]}</span>
-            {g.contributor && <span className="muted">{g.contributor}</span>}
+            {g.contributor && (
+              <span className={g.contributor.trim().toLocaleLowerCase() === 'maison' ? 'chip' : 'muted'}>
+                {g.contributor}
+              </span>
+            )}
           </div>
           {g.items.map((q) => (
             <div key={q.id} className="stack" style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>

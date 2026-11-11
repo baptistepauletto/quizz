@@ -54,11 +54,14 @@ function Tile({
   colors: Map<string, string>;
 }) {
   const level = tile.difficulty ? DIFFICULTIES.indexOf(tile.difficulty) + 1 : 0;
-  const owner = matchContributor(tile.contributor, players);
+  const maison = isMaisonContributor(tile.contributor);
+  const owner = maison ? undefined : matchContributor(tile.contributor, players);
   const tint = owner ? colors.get(owner.id) : undefined;
   return (
     <div
-      className={['tile', 'up', tile.face, tile.difficulty ?? '', tile.result ?? '', tint ? 'owned' : ''].join(' ')}
+      className={['tile', 'up', tile.face, tile.difficulty ?? '', tile.result ?? '', tint ? 'owned' : '', maison ? 'maison' : '']
+        .filter(Boolean)
+        .join(' ')}
       style={tint ? ({ '--owner': tint } as CSSProperties) : undefined}
     >
       <div className="tile-inner">
@@ -74,6 +77,7 @@ function Tile({
             )}
           </span>
           <span className="t-theme">
+            {maison && <span className="t-maison">Maison</span>}
             <span>{tile.theme}</span>
           </span>
         </div>
@@ -86,8 +90,14 @@ function Tile({
   );
 }
 
+/** House pack: no contributor, or explicitly tagged "Maison". Never tint as a player. */
+function isMaisonContributor(contributor: string | undefined): boolean {
+  if (!contributor) return true;
+  return nameKey(contributor) === 'maison';
+}
+
 function matchContributor(contributor: string | undefined, players: PlayerView[]): PlayerView | undefined {
-  if (!contributor) return undefined;
+  if (!contributor || isMaisonContributor(contributor)) return undefined;
   const key = nameKey(contributor);
   return players.find((p) => nameKey(p.name) === key);
 }

@@ -283,7 +283,7 @@
       "id": "s_037",
       "theme": "Participants",
       "prompt": "Qui vit depuis le plus longtemps à Montréal ?",
-      "answer": "Nino",
+      "answer": "Thibault",
       "difficulty": "medium"
     },
     {
@@ -328,6 +328,180 @@
       "prompt": "Quel est le plus petit nombre premier supérieur à 50 ?",
       "answer": "53",
       "difficulty": "hard"
+    },
+    {
+      "id": "s_044",
+      "theme": "Québec",
+      "prompt": "Quel village du Saguenay–Lac-Saint-Jean, aujourd'hui un musée à ciel ouvert, a été enseveli sous les eaux lors de la construction d'un barrage en 1926 ?",
+      "answer": "Val-Jalbert",
+      "difficulty": "hard"
+    },
+    {
+      "id": "s_045",
+      "theme": "Sciences",
+      "prompt": "Quel gaz constitue environ 78 % de l'air que nous respirons sur Terre ?",
+      "answer": "L'azote",
+      "difficulty": "medium",
+      "notes": "Accepter « diazote » (N2)."
+    },
+    {
+      "id": "s_046",
+      "theme": "Cinéma",
+      "prompt": "Dans quel film de 1994 suit-on l'histoire d'un homme simple d'esprit assis sur un banc à Savannah, qui raconte sa vie en mangeant des chocolats ?",
+      "answer": "Forrest Gump",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_047",
+      "theme": "Cinéma",
+      "prompt": "Quel réalisateur québécois a dirigé les films « Incendies », « Sicario » et « Dune » ?",
+      "answer": "Denis Villeneuve",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_048",
+      "theme": "Cinéma",
+      "prompt": "Quel est le tout premier long-métrage d'animation de l'histoire à avoir été nommé pour l'Oscar du meilleur film (toutes catégories confondues) en 1992 ?",
+      "answer": "La Belle et la Bête",
+      "difficulty": "hard",
+      "notes": "Accepter « Beauty and the Beast »."
+    },
+    {
+      "id": "s_049",
+      "theme": "Gastronomie",
+      "prompt": "De quel pays est originaire la sauce piquante Sriracha originale, avant d'être popularisée aux États-Unis ?",
+      "answer": "La Thaïlande",
+      "difficulty": "medium",
+      "notes": "Elle tire son nom de la ville côtière de Si Racha."
+    },
+    {
+      "id": "s_050",
+      "theme": "Histoire & Dates",
+      "prompt": "En quelle année le mur de Berlin est-il tombé ?",
+      "answer": "1989",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_051",
+      "theme": "Géographie",
+      "prompt": "Sur quel continent se trouve la chaîne de montagnes de l'Atlas ?",
+      "answer": "L'Afrique",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_052",
+      "theme": "Animaux",
+      "prompt": "Quel animal marin possède trois cœurs, du sang bleu et neuf cerveaux ?",
+      "answer": "La pieuvre",
+      "difficulty": "medium",
+      "notes": "Accepter « le poulpe ».",
+      "image": "animal/pieuvre.jpg"
+    },
+    {
+      "id": "s_053",
+      "theme": "Québec",
+      "prompt": "Quel groupe de musique québécois a chanté les classiques « Les étoiles filantes » et « L'Amérique pleure » ?",
+      "answer": "Les Cowboys Fringants",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_054",
+      "theme": "Québec",
+      "prompt": "Quelle île située face à la ville de Québec est reliée à la rive nord par un pont suspendu et est réputée pour ses fraises et ses vergers ?",
+      "answer": "L'île d'Orléans",
+      "difficulty": "medium",
+      "image": "places/ile-orleans.jpg"
+    },
+    {
+      "id": "s_055",
+      "theme": "Cinéma",
+      "prompt": "Quel acteur incarne le personnage de Jack Sparrow dans la saga « Pirates des Caraïbes » ?",
+      "answer": "Johnny Depp",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_056",
+      "theme": "Sciences",
+      "prompt": "Quel organe du corps humain a pour fonction principale de filtrer le sang pour produire l'urine ?",
+      "answer": "Le rein",
+      "difficulty": "easy",
+      "notes": "Accepter « les reins »."
+    },
+    {
+      "id": "s_057",
+      "theme": "Sciences",
+      "prompt": "Quel métal est le seul à être à l'état liquide à température et pression ambiantes ?",
+      "answer": "Le mercure",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_058",
+      "theme": "Gastronomie",
+      "prompt": "Quel fromage italien à base de lait de vache, dont le nom signifie littéralement « recuit », est souvent utilisé dans les lasagnes ou les cannolis ?",
+      "answer": "La ricotta",
+      "difficulty": "medium"
+    },
+    {
+      "id": "s_059",
+      "theme": "Gastronomie",
+      "prompt": "Quel champignon souterrain très prisé en gastronomie est parfois surnommé le « diamant noir » du Périgord ?",
+      "answer": "La truffe",
+      "difficulty": "easy",
+      "notes": "Accepter « la truffe noire »."
+    },
+    {
+      "id": "s_060",
+      "theme": "Gastronomie",
+      "prompt": "Sur quelle échelle mesure-t-on la force piquante des piments ?",
+      "answer": "L'échelle de Scoville",
+      "difficulty": "medium",
+      "notes": "Accepter simplement « Scoville »."
+    },
+    {
+      "id": "s_061",
+      "theme": "Géographie",
+      "prompt": "Quelle est la capitale de la Nouvelle-Zélande ?",
+      "answer": "Wellington",
+      "difficulty": "medium",
+      "notes": "Attention au piège classique : Auckland est la plus grande ville, mais pas la capitale."
+    },
+    {
+      "id": "s_062",
+      "theme": "Géographie",
+      "prompt": "Quel est le plus long fleuve d'Europe, qui traverse la Russie avant de se jeter dans la mer Caspienne ?",
+      "answer": "La Volga",
+      "difficulty": "hard"
+    },
+    {
+      "id": "s_063",
+      "theme": "Histoire & Dates",
+      "prompt": "Quel célèbre paquebot transatlantique a fait naufrage dans la nuit du 14 au 15 avril 1912 après avoir heurté un iceberg ?",
+      "answer": "Le Titanic",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_064",
+      "theme": "À savoir",
+      "prompt": "Quelle est la seule lettre de l'alphabet français qui vaut 10 points au jeu de Scrabble sans avoir la moindre occurrence dans les chiffres écrits en lettres de zéro à cent ?",
+      "answer": "Le K",
+      "difficulty": "hard",
+      "notes": "Accepter « W » ou « Y » si le joueur buzz avant la fin sur le critère des 10 points + absence dans les nombres de 0 à 100 (Z est dans zéro/onze/douze, X est dans six/dix)."
+    },
+    {
+      "id": "s_065",
+      "theme": "Québec",
+      "prompt": "Combien de constats d'infraction de stationnement ont été émis à Montréal par l'Agence de mobilité durable au cours de l'année 2025 ?",
+      "answer": "1 111 337",
+      "difficulty": "hard",
+      "notes": "Accepter à 100 000 près (entre 1 million et 1,2 million). Source officielle : Rapport annuel 2025 de l'Agence de mobilité durable de Montréal (et 1 160 000 en 2024, dont 276 135 juste pour les balais mécaniques !)."
+    },
+    {
+      "id": "s_066",
+      "theme": "Montréal",
+      "prompt": "Combien de remorquages de véhicules ont été effectués par l'Agence de mobilité durable dans les rues de Montréal en une seule année (bilan 2024) ?",
+      "answer": "32 966",
+      "difficulty": "hard",
+      "notes": "Accepter à 3 000 près (entre 30 000 et 36 000). Source officielle : Rapport annuel 2024 de l'Agence de mobilité durable de Montréal (soit environ 90 remorquages par jour en moyenne)."
     }
   ]
 }

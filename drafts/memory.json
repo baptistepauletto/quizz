@@ -571,6 +571,198 @@
       "prompt": "Quel actif dicarboxylique (naturellement produit par un champignon à la surface de la peau et présent dans le blé ou l'orge) est prescrit à 15-20 % en dermatologie (ex: Finacea) pour traiter simultanément la rosacée, l'acné inflammatoire et l'hyperpigmentation ?",
       "answer": "L'acide azélaïque",
       "difficulty": "hard"
+    },
+    {
+      "id": "m_050",
+      "theme": "Histoire",
+      "prompt": "En quelle année Christophe Colomb a-t-il atteint les Amériques ?",
+      "answer": "1492",
+      "difficulty": "easy",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_051",
+      "theme": "Sciences",
+      "prompt": "Quel gaz les plantes absorbent-elles pour faire la photosynthèse ?",
+      "answer": "Le dioxyde de carbone (CO₂)",
+      "difficulty": "easy",
+      "notes": "Accepter CO2 / gaz carbonique.",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_052",
+      "theme": "Sciences",
+      "prompt": "Quelle particule porte une charge électrique négative dans l’atome ?",
+      "answer": "L’électron",
+      "difficulty": "medium",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_053",
+      "theme": "Sciences",
+      "prompt": "Quel est le numéro atomique du carbone ?",
+      "answer": "6",
+      "difficulty": "hard",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_054",
+      "theme": "Géographie",
+      "prompt": "Dans quel pays se trouve le désert d’Atacama ?",
+      "answer": "Au Chili",
+      "difficulty": "medium",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_055",
+      "theme": "Géographie",
+      "prompt": "Quelle est la capitale de la Kazakhie… pardon : du Kazakhstan ?",
+      "answer": "Astana",
+      "difficulty": "hard",
+      "notes": "A aussi porté le nom Noursoultan (2019–2022). Accepter Astana / Noursoultan.",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_056",
+      "theme": "Cinéma",
+      "prompt": "Qui a réalisé le film « Titanic » (1997) ?",
+      "answer": "James Cameron",
+      "difficulty": "easy",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_057",
+      "theme": "Musique",
+      "prompt": "Quel instrument a quatre cordes et se joue généralement avec un archet ?",
+      "answer": "Le violon",
+      "difficulty": "easy",
+      "notes": "Alto/violoncelle aussi à archet",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_058",
+      "theme": "Musique",
+      "prompt": "Quel compositeur sourd a écrit la 9e symphonie « Ode à la joie » ?",
+      "answer": "Ludwig van Beethoven",
+      "difficulty": "medium",
+      "notes": "Accepter Beethoven.",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_059",
+      "theme": "Musique",
+      "prompt": "Quel compositeur français a écrit le boléro resté célèbre pour son ostinato répété ?",
+      "answer": "Maurice Ravel",
+      "difficulty": "hard",
+      "notes": "Accepter Ravel.",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_060",
+      "theme": "Cuisine",
+      "prompt": "Quelle épice donne sa couleur jaune au curry et au riz au lait iranien ?",
+      "answer": "Le curcuma",
+      "difficulty": "medium",
+      "notes": "Pas le safran (plus cher, autre profil).",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_061",
+      "theme": "Sport",
+      "prompt": "Combien de joueurs une équipe de soccer aligne-t-elle sur le terrain (dont le gardien) ?",
+      "answer": "Onze",
+      "difficulty": "easy",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_062",
+      "theme": "Sport",
+      "prompt": "Quel nageur a remporté 8 médailles d’or aux JO de Pékin en 2008 ?",
+      "answer": "Michael Phelps",
+      "difficulty": "medium",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_063",
+      "theme": "Sciences",
+      "prompt": "Quelle est approximativement la vitesse de la lumière dans le vide (km/s) ?",
+      "answer": "300 000 km/s",
+      "difficulty": "medium",
+      "notes": "Accepter ~299 792 km/s ou « 3×10⁸ m/s ».",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_064",
+      "theme": "Nature",
+      "prompt": "Quel monotrème australien possède un bec de canard ?",
+      "answer": "L’ornithorynque",
+      "difficulty": "medium",
+      "notes": "Un monotrème est un mammifère qui pond des œufs.",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_065",
+      "theme": "Mythologie",
+      "prompt": "Qui est le roi des dieux dans la mythologie grecque ?",
+      "answer": "Zeus",
+      "difficulty": "easy",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_066",
+      "theme": "Tech",
+      "prompt": "Que signifient les lettres « URL » ?",
+      "answer": "Uniform Resource Locator",
+      "difficulty": "easy",
+      "notes": "Accepter la traduction « localisateur uniforme de ressource ».",
+      "contributor": "Maison"
+    },
+    {
+      "id": "m_067",
+      "contributor": "Maison",
+      "theme": "Histoire",
+      "prompt": "Qui était le premier empereur de Rome ?",
+      "answer": "Auguste",
+      "difficulty": "medium",
+      "is_mcq": true,
+      "options": [
+        "Jules César",
+        "Auguste",
+        "Néron",
+        "Caligula"
+      ],
+      "notes": "Auguste (Octave) ; César n’a jamais porté le titre d’empereur."
+    },
+    {
+      "id": "m_068",
+      "contributor": "Maison",
+      "theme": "Histoire",
+      "prompt": "Quel traité a mis fin à la Première Guerre mondiale en 1919 ?",
+      "answer": "Le traité de Versailles",
+      "difficulty": "medium"
+    },
+    {
+      "id": "m_069",
+      "contributor": "Maison",
+      "theme": "Nature",
+      "prompt": "Combien de pattes a une araignée ?",
+      "answer": "Huit",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_070",
+      "contributor": "Maison",
+      "theme": "Mythologie",
+      "prompt": "Quel héros grec a tué le Minotaure ?",
+      "answer": "Thésée",
+      "difficulty": "medium",
+      "is_mcq": true,
+      "options": [
+        "Héraclès",
+        "Thésée",
+        "Persée",
+        "Ulysse"
+      ]
     }
   ]
 }

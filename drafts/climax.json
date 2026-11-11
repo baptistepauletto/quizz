@@ -154,6 +154,29 @@
       "prompt": "Quel est l'os le plus long, le plus lourd et le plus solide du squelette humain ?",
       "answer": "Le fémur (l'os de la cuisse)",
       "notes": "Accepter « fémur »."
+    },
+    {
+      "id": "c_022",
+      "theme": "Montréal",
+      "prompt": "Combien de kilomètres de trottoirs la Ville de Montréal doit-elle déblayer lors de chaque opération de déneigement ?",
+      "answer": "6 550 km",
+      "difficulty": "hard",
+      "notes": "Accepter à 500 km près (entre 6 000 et 7 000 km). Source officielle : Ville de Montréal - Tout savoir sur le déneigement (et 4 100 km de chaussées pour un hiver moyen de 190 cm de neige)."},
+    {  
+      "id": "c_023",
+      "theme": "Québec",
+      "prompt": "Combien de déplacements en vélopartage BIXI ont été enregistrés au cours de la seule année 2025 ?",
+      "answer": "14,5 millions",
+      "difficulty": "hard",
+      "notes": "Accepter entre 13 et 16 millions. Source officielle : Bilan BIXI Montréal fin 2025 (le réseau a aussi franchi le cap historique des 100 millions de déplacements cumulés depuis 2009 le 10 novembre 2025)."
+    },
+     {
+      "id": "c_024",
+      "theme": "Montréal",
+      "prompt": "Combien de meurtres ont été enregistrés sur le territoire de l'île de Montréal en 2024 (exactement le même nombre qu'en 2023), selon le rapport annuel du SPVM ?",
+      "answer": "31",
+      "difficulty": "hard",
+      "notes": "Accepter à 4 près (entre 27 et 35). Source officielle : Rapport annuel 2024 du SPVM présenté par Fady Dagher (taux de résolution de 81 %)."
     }
   ]
 }

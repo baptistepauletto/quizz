@@ -375,10 +375,12 @@ function NightPlanner() {
             {groups.map((g) => {
               const n = g.items.filter((q) => pickedSet.has(q.id)).length;
               const allIn = n === g.items.length;
+              const maison = g.items.every((q) => !q.contributor || q.contributor.trim().toLocaleLowerCase() === 'maison');
               return (
                 <div key={g.theme} className="card stack">
                   <div className="row">
                     <b className="grow">{g.theme}</b>
+                    {maison && <span className="chip">Maison</span>}
                     <span className="muted">
                       {n} / {g.items.length}
                     </span>

@@ -78,8 +78,8 @@ export const PREDICTION_BONUS = 5;
 export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 export const BANKS: Bank[] = ['sprint', 'memory', 'climax'];
 
-/** Questions per round in one night. Memory 49 fills a 7×7 grid. */
-export const NIGHT_SIZE: Record<Bank, number> = { sprint: 25, memory: 49, climax: 10 };
+/** Questions per round in one night. Memory 70 fills a 10×7 TV grid. */
+export const NIGHT_SIZE: Record<Bank, number> = { sprint: 25, memory: 70, climax: 10 };
 
 // ---------------------------------------------------------------------------
 // Views (what clients receive)
