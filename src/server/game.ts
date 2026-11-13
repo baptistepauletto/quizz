@@ -3,14 +3,19 @@ import { computeGrid, coordsFor } from '../shared/grid';
 import { mediaUrl } from './pictures';
 import type { HostCommand, PlayerMessage } from '../shared/protocol';
 import {
+  ESTIMATE_CLOSEST_BONUS,
   MEMORY_LEECH_MS,
   MEMORY_POINTS,
   POINTS,
   PREDICTION_BONUS,
+  SPRINT_ANSWER_MS,
   climaxWinDelta,
+  estimateDistance,
+  estimateInRange,
   memoryActivePayout,
   memoryCurrentValue,
   memoryMaxHints,
+  snapEstimate,
 } from '../shared/types';
 import type {
   Bank,
@@ -19,6 +24,7 @@ import type {
   ClimaxStatus,
   ClimaxView,
   Difficulty,
+  EstimateSpec,
   GameEventType,
   GameView,
   MemoryAskStatus,
@@ -39,6 +45,10 @@ import type {
 
 /** How long climax bettors have to type after the question is revealed. */
 export const CLIMAX_ANSWER_MS = Number(process.env.CLIMAX_ANSWER_MS ?? 30_000);
+/** How long the buzzed sprint player has to answer out loud (host may still judge early). */
+export const SPRINT_ANSWER_WINDOW_MS = Number(process.env.SPRINT_ANSWER_MS ?? SPRINT_ANSWER_MS);
+/** Pause between each farthest→closest estimate reveal on TV. */
+export const CLIMAX_ESTIMATE_REVEAL_MS = Number(process.env.CLIMAX_ESTIMATE_REVEAL_MS ?? 1_500);
 export const MAX_PLAYERS = 16;
 const MAX_NAME_LENGTH = 20;
 const MAX_ANSWER_LENGTH = 200;
@@ -64,6 +74,8 @@ export interface QuestionRec {
   options: [string, string, string, string] | null;
   /** When true, options are shown on open; when false they wait for a format-drop hint. */
   isMcq: boolean;
+  /** Climax numeric estimate config; null for normal questions. */
+  estimate: EstimateSpec | null;
 }
 
 export interface PlayerRec {
@@ -98,6 +110,8 @@ export interface Game {
     /** Server arrival time of the winning buzz (hrtime, nanoseconds, as a string). */
     buzzNs: string | null;
     lockedOut: string[];
+    /** Wall-clock deadline for the buzzed player to answer; null when not timing. */
+    answerUntil: number | null;
   };
   memory: {
     status: MemoryStatus;
@@ -126,6 +140,13 @@ export interface Game {
     answers: Record<string, string>;
     answerUntil: number | null;
     results: ClimaxResult[];
+    /** Estimate reveal order (farthest → closest). */
+    revealOrder: string[];
+    revealIndex: number;
+    /** Wall-clock when the next estimate seat should be revealed. */
+    revealNextAt: number | null;
+    /** Player ids tied for closest on the current estimate round. */
+    estimateClosest: string[];
   };
   predictions: {
     status: PredictionStatus;
@@ -186,6 +207,7 @@ export function createGame(packId: number, packTitle: string, questions: Questio
       buzzPlayerId: null,
       buzzNs: null,
       lockedOut: [],
+      answerUntil: null,
     },
     memory: emptyMemory(),
     climax: {
@@ -198,6 +220,10 @@ export function createGame(packId: number, packTitle: string, questions: Questio
       answers: {},
       answerUntil: null,
       results: [],
+      revealOrder: [],
+      revealIndex: -1,
+      revealNextAt: null,
+      estimateClosest: [],
     },
     predictions: emptyPredictions(),
   };
@@ -262,6 +288,14 @@ export function hydrateGame(g: Game): Game {
     const face = t.face as string;
     if (face === 'preview' || face === 'hidden') t.face = 'open';
   }
+  if (g.sprint.answerUntil === undefined) g.sprint.answerUntil = null;
+  for (const q of Object.values(g.questions)) {
+    if (q.estimate === undefined) q.estimate = null;
+  }
+  if (!g.climax.revealOrder) g.climax.revealOrder = [];
+  if (g.climax.revealIndex === undefined) g.climax.revealIndex = -1;
+  if (g.climax.revealNextAt === undefined) g.climax.revealNextAt = null;
+  if (!g.climax.estimateClosest) g.climax.estimateClosest = [];
   return g;
 }
 
@@ -345,6 +379,7 @@ function removePlayer(g: Game, playerId: string, emit: Emit) {
   if (g.sprint.buzzPlayerId === playerId) {
     g.sprint.buzzPlayerId = null;
     g.sprint.buzzNs = null;
+    g.sprint.answerUntil = null;
     if (g.sprint.status === 'locked') g.sprint.status = 'asking';
   }
   g.climax.eligible = g.climax.eligible.filter((id) => id !== playerId);
@@ -376,6 +411,7 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
     s.status = 'locked';
     s.buzzPlayerId = playerId;
     s.buzzNs = ns.toString();
+    s.answerUntil = Date.now() + SPRINT_ANSWER_WINDOW_MS;
     emit('sprint.buzz_won', { playerId });
     return true;
   }
@@ -393,7 +429,7 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
   }
 
   if (msg.t === 'answer') {
-    const text = String(msg.text ?? '')
+    let text = String(msg.text ?? '')
       .normalize('NFKC')
       .replace(/\s+/g, ' ')
       .trim()
@@ -405,6 +441,12 @@ export function playerAction(g: Game, playerId: string, msg: PlayerMessage, emit
     if (g.phase !== 'climax' || c.status !== 'answering') throw new GameError('Ce n’est pas le moment de répondre.');
     if (!c.eligible.includes(playerId)) throw new GameError('Tu passes ce tour.');
     if ((c.bets[playerId] ?? 0) <= 0) throw new GameError('Tu n’as pas misé.');
+    const estimate = c.questionId !== null ? question(g, c.questionId).estimate : null;
+    if (estimate) {
+      const parsed = parseEstimateGuess(text);
+      if (parsed === null) throw new GameError('Choisis une valeur sur le curseur.');
+      text = String(snapEstimate(parsed, estimate));
+    }
     c.answers[playerId] = text;
     emit('climax.answer', { playerId });
     return true;
@@ -479,6 +521,8 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
       return climaxLockAnswers(g, emit);
     case 'climax.judge':
       return climaxJudge(g, cmd.playerId, cmd.correct, emit);
+    case 'climax.revealAll':
+      return climaxRevealAll(g, emit);
     case 'climax.reset':
       return climaxReset(g);
 
@@ -535,6 +579,7 @@ function sprintNext(g: Game, emit: Emit) {
   s.status = 'asking';
   s.buzzPlayerId = null;
   s.buzzNs = null;
+  s.answerUntil = null;
   s.lockedOut = [];
   const q = question(g, s.order[s.index]);
   emit('sprint.question', { index: s.index, difficulty: q.difficulty, points: POINTS[q.difficulty] });
@@ -550,6 +595,7 @@ function sprintAward(g: Game, emit: Emit) {
   if (s.status !== 'locked' || !s.buzzPlayerId) throw new GameError('Personne n’a buzzé.');
   const q = currentSprintQuestion(g);
   addScore(g, s.buzzPlayerId, POINTS[q.difficulty], emit, 'sprint');
+  s.answerUntil = null;
   s.status = 'resolved';
   emit('sprint.resolved', { correct: true, playerId: s.buzzPlayerId });
 }
@@ -563,6 +609,7 @@ function sprintPass(g: Game, emit: Emit) {
   emit('sprint.pass', { playerId: s.buzzPlayerId });
   s.buzzPlayerId = null;
   s.buzzNs = null;
+  s.answerUntil = null;
   s.status = 'asking';
 }
 
@@ -570,6 +617,7 @@ function sprintSkip(g: Game, emit: Emit) {
   requirePhase(g, 'sprint');
   const s = g.sprint;
   if (s.status !== 'asking' && s.status !== 'locked') throw new GameError('Aucune question à passer.');
+  s.answerUntil = null;
   s.status = 'resolved';
   emit('sprint.resolved', { correct: false, playerId: null });
 }
@@ -755,7 +803,7 @@ function advanceTurn(g: Game, emit: Emit) {
   emit('memory.turn', { playerId: next.id });
 }
 
-/** Called about once a second: ends the leech window / climax typing timer. */
+/** Called about once a second: ends the leech window / climax typing timer / sprint answer window. */
 export function tick(g: Game, emit: Emit): boolean {
   let changed = false;
   const m = g.memory;
@@ -773,6 +821,27 @@ export function tick(g: Game, emit: Emit): boolean {
     climaxLockAnswers(g, emit);
     changed = true;
   }
+  if (
+    g.phase === 'climax' &&
+    c.status === 'revealing' &&
+    c.revealNextAt !== null &&
+    Date.now() >= c.revealNextAt
+  ) {
+    climaxEstimateAdvance(g, emit);
+    changed = true;
+  }
+  const s = g.sprint;
+  if (
+    g.phase === 'sprint' &&
+    s.status === 'locked' &&
+    s.answerUntil !== null &&
+    Date.now() >= s.answerUntil
+  ) {
+    // Time's up: clear the deadline but keep them locked until the host Correct / Faux.
+    s.answerUntil = null;
+    emit('sprint.answer_timeout', { playerId: s.buzzPlayerId });
+    changed = true;
+  }
   return changed;
 }
 
@@ -781,7 +850,7 @@ export function tick(g: Game, emit: Emit): boolean {
 function climaxPick(g: Game, questionId: number, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
-  if (c.status === 'betting' || c.status === 'answering' || c.status === 'asking') {
+  if (c.status === 'betting' || c.status === 'answering' || c.status === 'asking' || c.status === 'revealing') {
     throw new GameError('Une manche est déjà en cours.');
   }
   if (!c.candidates.includes(questionId) || c.used.includes(questionId)) {
@@ -795,6 +864,10 @@ function climaxPick(g: Game, questionId: number, emit: Emit) {
   c.answers = {};
   c.answerUntil = null;
   c.results = [];
+  c.revealOrder = [];
+  c.revealIndex = -1;
+  c.revealNextAt = null;
+  c.estimateClosest = [];
   emit('climax.announce', { theme: q.theme, difficulty: q.difficulty });
 }
 
@@ -825,14 +898,21 @@ function climaxLockBets(g: Game, emit: Emit) {
   emit('climax.revealed', { questionId: c.questionId, answerUntil: c.answerUntil });
 }
 
-/** End the typing window: empty answers auto-lose the wager; host judges the rest. */
+/** End the typing window: empty answers auto-lose; estimate rounds auto-reveal, else host judges. */
 function climaxLockAnswers(g: Game, emit: Emit) {
   requirePhase(g, 'climax');
   const c = g.climax;
   if (c.status !== 'answering') throw new GameError('Les réponses ne sont pas ouvertes.');
   c.answerUntil = null;
-  c.status = 'asking';
   emit('climax.answers_locked', {});
+
+  const estimate = c.questionId !== null ? question(g, c.questionId).estimate : null;
+  if (estimate) {
+    beginEstimateReveal(g, estimate, emit);
+    return;
+  }
+
+  c.status = 'asking';
   for (const id of c.eligible) {
     const wager = c.bets[id] ?? 0;
     if (wager <= 0) continue;
@@ -846,8 +926,120 @@ function climaxLockAnswers(g: Game, emit: Emit) {
   maybeResolveClimax(g, emit);
 }
 
+function parseEstimateGuess(text: string): number | null {
+  const cleaned = text.trim().replace(/\s/g, '').replace(',', '.');
+  if (!cleaned) return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function beginEstimateReveal(g: Game, estimate: EstimateSpec, emit: Emit) {
+  const c = g.climax;
+
+  // Empty / missing guesses lose the wager immediately and skip the closest race.
+  for (const id of c.eligible) {
+    const wager = c.bets[id] ?? 0;
+    if (wager <= 0) continue;
+    const guess = parseEstimateGuess(c.answers[id] ?? '');
+    if (guess === null) {
+      addScore(g, id, -wager, emit, 'climax');
+      c.results.push({ playerId: id, wager, correct: false, closest: false });
+      emit('climax.judged', { playerId: id, wager, correct: false, reason: 'empty', closest: false });
+    } else {
+      // Normalize stored answer to the snapped grid value.
+      c.answers[id] = String(snapEstimate(guess, estimate));
+    }
+  }
+
+  type Seat = { playerId: string; guess: number; distance: number; name: string };
+  const seats: Seat[] = [];
+  for (const id of c.eligible) {
+    if ((c.bets[id] ?? 0) <= 0) continue;
+    if (c.results.some((r) => r.playerId === id)) continue;
+    const guess = parseEstimateGuess(c.answers[id] ?? '');
+    if (guess === null) continue;
+    const p = g.players.find((x) => x.id === id);
+    seats.push({
+      playerId: id,
+      guess,
+      distance: estimateDistance(guess, estimate),
+      name: p?.name ?? id,
+    });
+  }
+
+  const best = seats.length ? Math.min(...seats.map((s) => s.distance)) : null;
+  const closestIds = new Set(best === null ? [] : seats.filter((s) => s.distance === best).map((s) => s.playerId));
+
+  // Farthest first; equal distance → alphabetical for a stable show order.
+  seats.sort((a, b) => b.distance - a.distance || a.name.localeCompare(b.name, 'fr'));
+  c.revealOrder = seats.map((s) => s.playerId);
+  c.revealIndex = -1;
+  c.estimateClosest = [...closestIds];
+  c.status = 'revealing';
+
+  if (c.revealOrder.length === 0) {
+    c.revealNextAt = null;
+    finishClimaxRound(g, emit);
+    return;
+  }
+  c.revealNextAt = Date.now() + Math.min(800, CLIMAX_ESTIMATE_REVEAL_MS);
+}
+
+function climaxEstimateAdvance(g: Game, emit: Emit) {
+  const c = g.climax;
+  if (c.status !== 'revealing') return;
+  const next = c.revealIndex + 1;
+  if (next >= c.revealOrder.length) {
+    c.revealNextAt = null;
+    finishClimaxRound(g, emit);
+    return;
+  }
+
+  const estimate = c.questionId !== null ? question(g, c.questionId).estimate : null;
+  if (!estimate) {
+    c.revealNextAt = null;
+    finishClimaxRound(g, emit);
+    return;
+  }
+
+  c.revealIndex = next;
+  const playerId = c.revealOrder[next]!;
+  const wager = c.bets[playerId] ?? 0;
+  const guess = parseEstimateGuess(c.answers[playerId] ?? '') ?? estimate.value;
+  const correct = estimateInRange(guess, estimate);
+  const closest = c.estimateClosest.includes(playerId);
+  const difficulty = c.questionId !== null ? question(g, c.questionId).difficulty : 'hard';
+
+  let delta = correct ? climaxWinDelta(wager, difficulty) : -wager;
+  addScore(g, playerId, delta, emit, 'climax');
+  if (closest) {
+    addScore(g, playerId, ESTIMATE_CLOSEST_BONUS, emit, 'climax-closest');
+    delta += ESTIMATE_CLOSEST_BONUS;
+  }
+  c.results.push({ playerId, wager, correct, closest });
+  emit('climax.estimate_revealed', {
+    playerId,
+    index: c.revealIndex,
+    distance: estimateDistance(guess, estimate),
+    inRange: correct,
+    closest,
+  });
+  emit('climax.judged', { playerId, wager, correct, delta, difficulty, closest, estimate: true });
+  c.revealNextAt = Date.now() + CLIMAX_ESTIMATE_REVEAL_MS;
+}
+
+function climaxRevealAll(g: Game, emit: Emit) {
+  requirePhase(g, 'climax');
+  const c = g.climax;
+  if (c.status !== 'revealing') throw new GameError('Aucune révélation d’estimations en cours.');
+  while (c.status === 'revealing') {
+    climaxEstimateAdvance(g, emit);
+  }
+}
+
 function pendingJudge(g: Game): string[] {
   const c = g.climax;
+  if (c.status !== 'asking') return [];
   return c.eligible.filter(
     (id) => (c.bets[id] ?? 0) > 0 && (c.answers[id] ?? '').trim() !== '' && !c.results.some((r) => r.playerId === id),
   );
@@ -933,7 +1125,13 @@ function maybeResolveClimax(g: Game, emit: Emit) {
   const c = g.climax;
   if (c.status !== 'asking') return;
   if (pendingJudge(g).length > 0) return;
+  finishClimaxRound(g, emit);
+}
+
+function finishClimaxRound(g: Game, emit: Emit) {
+  const c = g.climax;
   c.status = 'resolved';
+  c.revealNextAt = null;
   if (c.questionId !== null && !c.used.includes(c.questionId)) c.used.push(c.questionId);
   emit('climax.resolved', { questionId: c.questionId });
 }
@@ -947,21 +1145,59 @@ function climaxReset(g: Game) {
   c.answers = {};
   c.answerUntil = null;
   c.results = [];
+  c.revealOrder = [];
+  c.revealIndex = -1;
+  c.revealNextAt = null;
+  c.estimateClosest = [];
 }
 
-function climaxSubmissions(g: Game): { playerId: string; name: string; text: string; wager: number }[] {
+function climaxSubmissions(g: Game): {
+  playerId: string;
+  name: string;
+  text: string;
+  wager: number;
+  distance?: number;
+  inRange?: boolean;
+  closest?: boolean;
+}[] {
   const c = g.climax;
-  return c.eligible
+  const estimate = c.questionId !== null ? g.questions[c.questionId]?.estimate ?? null : null;
+  const rows = c.eligible
     .filter((id) => (c.bets[id] ?? 0) > 0)
     .map((id) => {
       const p = g.players.find((x) => x.id === id);
-      return {
+      const text = (c.answers[id] ?? '').trim();
+      const row: {
+        playerId: string;
+        name: string;
+        text: string;
+        wager: number;
+        distance?: number;
+        inRange?: boolean;
+        closest?: boolean;
+      } = {
         playerId: id,
         name: p?.name ?? '?',
-        text: (c.answers[id] ?? '').trim(),
+        text,
         wager: c.bets[id] ?? 0,
       };
+      if (estimate) {
+        const guess = parseEstimateGuess(text);
+        if (guess !== null) {
+          row.distance = estimateDistance(guess, estimate);
+          row.inRange = estimateInRange(guess, estimate);
+          row.closest = c.estimateClosest.includes(id);
+        }
+      }
+      return row;
     });
+
+  if (c.status === 'revealing') {
+    const shown = new Set(c.revealOrder.slice(0, Math.max(0, c.revealIndex + 1)));
+    // Empty auto-losses are already in results — show them throughout the reveal.
+    return rows.filter((r) => shown.has(r.playerId) || c.results.some((x) => x.playerId === r.playerId));
+  }
+  return rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -978,9 +1214,17 @@ function questionView(
     points?: number;
     /** Override options (memory hints / 50-50). `null` hides options. */
     options?: [string, string, string, string] | string[] | null;
+    /** How much of an estimate config to expose. */
+    estimate?: 'none' | 'slider' | 'full';
   },
 ): QuestionView {
   const options = opts.options !== undefined ? opts.options : q.options;
+  const estimateMode = opts.estimate ?? 'none';
+  let estimate: QuestionView['estimate'];
+  if (q.estimate && estimateMode === 'full') estimate = q.estimate;
+  else if (q.estimate && estimateMode === 'slider') {
+    estimate = { min: q.estimate.min, max: q.estimate.max, step: q.estimate.step };
+  }
   return {
     id: q.id,
     theme: q.theme,
@@ -996,6 +1240,7 @@ function questionView(
     ...(opts.answer ? { answer: q.answer } : {}),
     ...(opts.notes && q.notes ? { notes: q.notes } : {}),
     ...(opts.notes && q.contextHint ? { contextHint: q.contextHint } : {}),
+    ...(estimate ? { estimate } : {}),
   };
 }
 
@@ -1034,6 +1279,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     status: s.status,
     buzzPlayerId: s.buzzPlayerId,
     lockedOut: s.lockedOut,
+    answerUntil: s.status === 'locked' ? s.answerUntil : null,
     question:
       sprintQ && !isPlay
         ? questionView(sprintQ, { answer: isHost || s.status === 'resolved', notes: isHost, image: true })
@@ -1093,14 +1339,29 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
 
   // Climax
   const cq = c.questionId !== null ? g.questions[c.questionId] : undefined;
-  const questionLive = c.status === 'answering' || c.status === 'asking' || c.status === 'resolved';
+  const questionLive =
+    c.status === 'answering' || c.status === 'asking' || c.status === 'revealing' || c.status === 'resolved';
   const candidates: ClimaxCandidate[] = isHost
     ? c.candidates
         .filter((id) => !c.used.includes(id))
         .map((id) => g.questions[id])
-        .map((q) => ({ id: q.id, theme: q.theme, difficulty: q.difficulty, prompt: q.prompt, answer: q.answer }))
+        .map((q) => ({
+          id: q.id,
+          theme: q.theme,
+          difficulty: q.difficulty,
+          prompt: q.prompt,
+          answer: q.answer,
+          ...(q.estimate ? { estimate: true } : {}),
+        }))
     : [];
   const showOfficialAnswer = isHost || c.status === 'resolved';
+  const estimateMode = !cq?.estimate
+    ? 'none'
+    : isHost || c.status === 'resolved'
+      ? 'full'
+      : c.status === 'answering' || c.status === 'revealing'
+        ? 'slider'
+        : 'none';
   const climax: ClimaxView = {
     status: c.status,
     theme: cq && c.status !== 'idle' ? cq.theme : null,
@@ -1111,6 +1372,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
             answer: showOfficialAnswer,
             notes: isHost,
             image: true,
+            estimate: estimateMode,
           })
         : null,
     candidates,
@@ -1119,8 +1381,11 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
     myBet: isPlay && playerId ? (c.bets[playerId] ?? null) : null,
     myAnswer: isPlay && playerId ? (c.answers[playerId] ?? null) : null,
     answerUntil: c.status === 'answering' ? c.answerUntil : null,
-    submissions: c.status === 'asking' || c.status === 'resolved' ? climaxSubmissions(g) : [],
+    submissions:
+      c.status === 'asking' || c.status === 'revealing' || c.status === 'resolved' ? climaxSubmissions(g) : [],
     results: c.results,
+    revealOrder: c.status === 'revealing' || c.status === 'resolved' ? c.revealOrder : [],
+    revealIndex: c.status === 'revealing' || c.status === 'resolved' ? c.revealIndex : -1,
   };
 
   const predictions = predictionsView(g, role, playerId);

@@ -43,6 +43,7 @@ export type HostCommand =
   | { t: 'climax.lockBets' }
   | { t: 'climax.lockAnswers' }
   | { t: 'climax.judge'; playerId: string; correct: boolean }
+  | { t: 'climax.revealAll' }
   | { t: 'climax.reset' }
   // Post-climax prediction reveal
   | { t: 'reveal.next' }

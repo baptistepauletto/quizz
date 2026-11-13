@@ -344,6 +344,30 @@ textarea.input {
   height: 7rem;
   align-self: center;
 }
+/* Timer floats above the chip so the chip stays centered when it appears. */
+.buzzer-stage {
+  position: relative;
+  align-self: center;
+  flex: none;
+}
+.buzzer-timer {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  height: 7rem;
+  margin-bottom: 12px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.buzzer-timeout {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  color: var(--bad);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
 
 .confetti {
   position: fixed;

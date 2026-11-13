@@ -72,6 +72,14 @@ const smokeMemory = [
 const smokeClimax = [
   { id: 'c_001', theme: 'Space', prompt: 'How many moons does Mars have?', answer: 'Two', difficulty: 'hard' },
   { id: 'c_002', theme: 'Cinema', prompt: 'Who directed Psycho?', answer: 'Hitchcock', difficulty: 'medium', image: 'smoke.png' },
+  {
+    id: 'c_003',
+    theme: 'Montréal',
+    prompt: 'Combien de kilomètres de trottoirs ?',
+    answer: '6 550 km',
+    difficulty: 'easy',
+    estimate: { min: 0, max: 15000, step: 50, value: 6550, tolerance: 500 },
+  },
 ];
 writeBankFiles(smokeSprint, smokeMemory, smokeClimax);
 
@@ -97,6 +105,7 @@ function sampleQuestion(
     theme,
     contributor: null,
     difficulty,
+    estimate: null,
     prompt: String(id),
     answer: 'a',
     notes: null,
@@ -203,6 +212,8 @@ const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/se
     DRAFTS_DIR: draftsDir,
     HOST_PIN: PIN,
     CLIMAX_ANSWER_MS: '60000',
+    SPRINT_ANSWER_MS: '1000',
+    CLIMAX_ESTIMATE_REVEAL_MS: '200',
   },
   stdio: ['ignore', 'pipe', 'inherit'],
 });
@@ -223,10 +234,10 @@ try {
   check((await fetch(BASE + '/media/..%2Fpackage.json')).status === 404, 'picture paths cannot leave the folder');
 
   const synced = await api('POST', '/api/sync', {}, token);
-  check(synced.status === 200 && synced.json.added === 10, 'sync imports all draft questions as new');
-  check(synced.json.reviewCount === 10, 'sync leaves everything in the review inbox');
+  check(synced.status === 200 && synced.json.added === 11, 'sync imports all draft questions as new');
+  check(synced.json.reviewCount === 11, 'sync leaves everything in the review inbox');
   const inbox = await api('GET', '/api/inbox', undefined, token);
-  check(inbox.json.length === 10, 'inbox lists every draft question');
+  check(inbox.json.length === 11, 'inbox lists every draft question');
 
   writeBankFiles(
     [{ ...smokeSprint[0], image: 'missing.png' }, smokeSprint[1]],
@@ -239,10 +250,10 @@ try {
 
   for (const q of inbox.json) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
   const afterApprove = await api('POST', '/api/sync', {}, token);
-  check(afterApprove.json.unchanged === 10 && afterApprove.json.reviewCount === 0, 'unchanged approved questions stay out of the inbox');
+  check(afterApprove.json.unchanged === 11 && afterApprove.json.reviewCount === 0, 'unchanged approved questions stay out of the inbox');
 
   const pileQs = await api('GET', '/api/pile/questions', undefined, token);
-  check(pileQs.json.length === 10, 'pile questions lists every approved question');
+  check(pileQs.json.length === 11, 'pile questions lists every approved question');
   const sprintPile = await api('GET', '/api/pile/questions?bank=sprint', undefined, token);
   check(sprintPile.json.length === 2 && sprintPile.json.every((q: any) => q.bank === 'sprint'), 'pile questions can filter by bank');
 
@@ -258,11 +269,11 @@ try {
   // Missing from JSON → rejected.
   writeBankFiles([smokeSprint[0], smokeSprint[1]], smokeMemory, [smokeClimax[0]]);
   const removed = await api('POST', '/api/sync', {}, token);
-  check(removed.json.rejected === 1, 'questions removed from JSON are rejected');
+  check(removed.json.rejected === 2, 'questions removed from JSON are rejected');
   // Restore full climax for the game night.
   writeBankFiles([{ ...smokeSprint[0], prompt: 'Capitale de la France ?' }, smokeSprint[1]], smokeMemory, smokeClimax);
   const restored = await api('POST', '/api/sync', {}, token);
-  check(restored.json.added === 1 || restored.json.updated >= 1, 'restored climax question returns for review');
+  check(restored.json.added === 2 || restored.json.updated >= 1, 'restored climax question returns for review');
   const restoreInbox = await api('GET', '/api/inbox', undefined, token);
   for (const q of restoreInbox.json) await api('PATCH', `/api/questions/${q.id}`, { status: 'approved' }, token);
 
@@ -304,7 +315,7 @@ try {
   clients.push(tv, host);
   check(tv.state === null, 'TV sees no game yet');
   const pile = await api('GET', '/api/pile', undefined, token);
-  check(pile.json.tonight.sprint === 2 && pile.json.tonight.memory === 6 && pile.json.tonight.climax === 2, 'a night draws from the whole approved pile');
+  check(pile.json.tonight.sprint === 2 && pile.json.tonight.memory === 6 && pile.json.tonight.climax === 3, 'a night draws from the whole approved pile');
   await host.cmd({ t: 'game.create' });
   const code = host.state?.joinCode ?? '';
   check(/^[A-Z]{4}$/.test(code) && tv.state?.joinCode === code, `game created with code ${code}, visible on TV`);
@@ -389,14 +400,24 @@ try {
   const winner = host.state!.sprint.buzzPlayerId!;
   check(host.state!.sprint.status === 'locked' && !!winner, 'exactly one buzz wins and locks the others out');
   check(host.events.filter((e) => e.type === 'sprint.buzz_won').length === 1, 'only one buzz_won event');
+  check(typeof host.state!.sprint.answerUntil === 'number', 'buzz starts the answer timer');
+  await sleep(2200);
+  check(
+    host.state!.sprint.status === 'locked' && host.state!.sprint.answerUntil === null && host.state!.sprint.buzzPlayerId === winner,
+    'answer timeout clears the deadline but stays locked for the host',
+  );
+  check(host.events.some((e) => e.type === 'sprint.answer_timeout'), 'answer_timeout event fires');
   await host.cmd({ t: 'sprint.pass' });
   check(host.state!.sprint.status === 'asking' && host.state!.sprint.lockedOut.includes(winner), 'pass reopens the buzzer, winner locked out');
+  check(host.state!.sprint.answerUntil === null, 'reopened buzzers have no answer timer');
   const loserClient = [players.ann, players.bob, players.cy].find((c) => c.playerId === winner)!;
   await loserClient.cmd({ t: 'buzz' });
   check(host.state!.sprint.status === 'asking', 'locked-out player cannot buzz again');
   const second = [players.ann, players.bob, players.cy].find((c) => c.playerId !== winner)!;
   await second.cmd({ t: 'buzz' });
+  check(typeof host.state!.sprint.answerUntil === 'number', 'second buzz also starts the answer timer');
   await host.cmd({ t: 'sprint.award' });
+  check(host.state!.sprint.answerUntil === null, 'award clears the answer timer');
   const secondScore = host.state!.players.find((p) => p.id === second.playerId)!.score;
   check(secondScore === host.state!.sprint.question!.points, 'award matches the question points');
   await host.cmd({ t: 'sprint.next' });
@@ -587,17 +608,48 @@ try {
   await host.cmd({ t: 'climax.judge', playerId: players.ann.playerId!, correct: true });
   check(scoreOf('ann') === 22 + 5, 'medium correct pays +1× wager (22 -> 27)');
 
+  // Estimate round: Ann closest+in-range, Bob out of range; auto reveal farthest→closest.
+  const estimateQ = host.state!.climax.candidates.find((c) => c.estimate)!;
+  check(!!estimateQ, 'estimate candidate is available');
+  // Bob is at 0 — give him points so both can bet.
+  await host.cmd({ t: 'score.adjust', playerId: players.bob.playerId!, delta: 5 });
+  await host.cmd({ t: 'climax.pick', questionId: estimateQ.id });
+  await host.cmd({ t: 'climax.openBetting' });
+  await players.ann.cmd({ t: 'bet', amount: 2 });
+  await players.bob.cmd({ t: 'bet', amount: 2 });
+  await host.cmd({ t: 'climax.lockBets' });
+  check(!!players.ann.state!.climax.question?.estimate, 'phones get the estimate slider bounds');
+  check(
+    players.ann.state!.climax.question?.estimate && !('value' in players.ann.state!.climax.question.estimate),
+    'phones never receive the estimate target',
+  );
+  await players.ann.cmd({ t: 'answer', text: '6500' }); // distance 50, in range
+  await players.bob.cmd({ t: 'answer', text: '1000' }); // distance 5550, out of range
+  await host.cmd({ t: 'climax.lockAnswers' });
+  check(host.state!.climax.status === 'revealing', 'estimate lock starts auto-reveal');
+  check(host.state!.climax.revealOrder[0] === players.bob.playerId, 'farthest guess is revealed first');
+  check(host.state!.climax.revealOrder[1] === players.ann.playerId, 'closest guess is revealed last');
+  await host.cmd({ t: 'climax.revealAll' });
+  check(host.state!.climax.status === 'resolved', 'revealAll finishes the estimate round');
+  const annEst = host.state!.climax.results.find((r) => r.playerId === players.ann.playerId);
+  const bobEst = host.state!.climax.results.find((r) => r.playerId === players.bob.playerId);
+  check(!!annEst?.correct && annEst.closest === true, 'closest in-range guess wins the wager and +1');
+  check(bobEst?.correct === false && bobEst.closest !== true, 'far out-of-range guess loses the wager');
+  // Ann was 27; + climaxWinDelta(2, easy)=1 + closest 1 → 29. Bob was 5; -2 → 3.
+  check(scoreOf('ann') === 29, 'estimate scoring: Ann 27 → 29');
+  check(scoreOf('bob') === 3, 'estimate scoring: Bob 5 → 3');
+
   console.log('\nReveal predictions');
-  // Ann leads with 27; she picked herself earlier → +5. Bob picked himself (wrong). Cy picked Ann (correct).
+  // Ann leads with 29; she picked herself earlier → +5. Bob picked himself (wrong). Cy picked Ann (correct).
   await host.cmd({ t: 'phase.set', phase: 'reveal' });
   check(host.state!.predictions.winnerIds.includes(players.ann.playerId!), 'Ann is frozen as #1 for the bet');
   check(tv.state!.predictions.picks.length === 0 && tv.state!.predictions.revealIndex === -1, 'TV starts on the teaser');
   await host.cmd({ t: 'reveal.all' });
   check(tv.state!.predictions.picks.length === 3, 'TV shows every pick after reveal.all');
   await host.cmd({ t: 'reveal.award' });
-  check(scoreOf('ann') === 27 + 5, 'correct prediction awards +5 to Ann');
+  check(scoreOf('ann') === 29 + 5, 'correct prediction awards +5 to Ann');
   check(scoreOf('cy') === 5, 'correct prediction awards +5 to Cy');
-  check(scoreOf('bob') === 0, 'wrong prediction awards nothing');
+  check(scoreOf('bob') === 3, 'wrong prediction awards nothing');
   check(host.state!.predictions.awarded === true, 'bonus flagged as awarded');
 
   const askedDb = new Database(path.join(dataDir, 'quizz-in.db'));
@@ -628,7 +680,7 @@ try {
   await tv2.connect({ t: 'hello', role: 'tv' });
   clients.push(tv2);
   check(tv2.state?.joinCode === joinCode && tv2.state.seq === seq && tv2.state.phase === 'results', 'game resumed from the snapshot after a restart');
-  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 32, 'scores survived the restart');
+  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 34, 'scores survived the restart');
   const ann3 = new Client('Ann3');
   await ann3.connect({ t: 'hello', role: 'play', code: joinCode, name: 'ann' });
   clients.push(ann3);
@@ -648,7 +700,7 @@ try {
     score: number;
     rank: number;
   }[];
-  check(finals[0]?.name === 'Ann' && finals[0].score === 32 && finals[0].rank === 1 && finals.length === 3, 'final scores and ranks are kept');
+  check(finals[0]?.name === 'Ann' && finals[0].score === 34 && finals[0].rank === 1 && finals.length === 3, 'final scores and ranks are kept');
   const sums = new Map(
     (statsDb.prepare('SELECT player, SUM(points) AS pts FROM plays WHERE player IS NOT NULL GROUP BY player').all() as {
       player: string;

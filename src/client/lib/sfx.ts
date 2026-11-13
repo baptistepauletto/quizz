@@ -202,6 +202,8 @@ export function sfxFor(event: GameEvent): SfxName | null {
       return 'question';
     case 'sprint.buzz_won':
       return 'buzz';
+    case 'sprint.answer_timeout':
+      return 'tick';
     case 'sprint.pass':
       return 'wrong';
     case 'sprint.resolved':
@@ -228,6 +230,8 @@ export function sfxFor(event: GameEvent): SfxName | null {
       return 'lock';
     case 'climax.answers_locked':
       return 'drumroll';
+    case 'climax.estimate_revealed':
+      return p.closest ? 'correct' : 'reveal';
     case 'climax.judged':
       return p.correct ? 'correct' : 'wrong';
     case 'reveal.next':

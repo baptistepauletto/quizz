@@ -13,7 +13,7 @@ import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
 import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
-import { climaxStackAmount, climaxWinDelta } from '../../shared/types';
+import { ESTIMATE_CLOSEST_BONUS, climaxStackAmount, climaxWinDelta } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
 
 const HELLO = { t: 'hello', role: 'tv' } as const;
@@ -36,6 +36,8 @@ function fxFor(event: GameEvent): Omit<Fx, 'key'> | null {
       return { kind: p.result === 'hit' ? 'ok' : 'bad', playerId };
     case 'climax.judged':
       return { kind: p.correct ? 'ok' : 'bad', playerId };
+    case 'climax.estimate_revealed':
+      return { kind: p.closest ? 'ok' : p.inRange ? 'ok' : 'bad', playerId };
     default:
       return null;
   }
@@ -311,8 +313,10 @@ function Sprint({ state, colors }: { state: GameView; colors: Map<string, string
         <div className="buzz-banner" key={s.buzzPlayerId}>
           <Token name={nameOf(state.players, s.buzzPlayerId)} color={colors.get(s.buzzPlayerId)} />
           {nameOf(state.players, s.buzzPlayerId)} a buzzé !
+          {s.answerUntil !== null && <CountdownRing until={s.answerUntil} className="inline" />}
         </div>
       )}
+      {q && s.status === 'locked' && s.answerUntil === null && <div className="tv-sub">Temps écoulé</div>}
       {q && s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
       {q && s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
     </div>
@@ -436,7 +440,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
     );
   }
 
-  const compact = c.status === 'asking' || c.status === 'resolved';
+  const compact = c.status === 'asking' || c.status === 'revealing' || c.status === 'resolved';
   return (
     <div className={`tv-center climax ${compact ? 'compact' : ''}`}>
       {!compact && <div className="climax-title">Quitte ou double</div>}
@@ -471,15 +475,22 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
           {c.question.image && <img className="tv-photo" src={c.question.image} alt="" />}
           <div className="tv-prompt">{c.question.prompt}</div>
           <CountdownRing until={c.answerUntil} className="big" />
-          <div className="tv-sub">Répondez sur votre téléphone</div>
+          <div className="tv-sub">
+            {c.question.estimate ? 'Estimez sur votre téléphone' : 'Répondez sur votre téléphone'}
+          </div>
         </>
       )}
 
-      {(c.status === 'asking' || c.status === 'resolved') && c.question && (
+      {(c.status === 'asking' || c.status === 'revealing' || c.status === 'resolved') && c.question && (
         <>
           {c.question.image && <img className="tv-photo" src={c.question.image} alt="" />}
           <div className="tv-prompt small">{c.question.prompt}</div>
           {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
+          {c.status === 'revealing' && (
+            <div className="tv-sub">
+              Du plus loin au plus proche · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
+            </div>
+          )}
           <Table
             players={state.players.filter((p) => c.submissions.some((s) => s.playerId === p.id))}
             colors={colors}
@@ -499,9 +510,14 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
               const r = c.results.find((x) => x.playerId === p.id);
               if (!r) return null;
               const diff = c.difficulty ?? 'hard';
-              return r.correct ? `+${climaxWinDelta(r.wager, diff)}` : `-${r.wager}`;
+              const base = r.correct ? `+${climaxWinDelta(r.wager, diff)}` : `-${r.wager}`;
+              return r.closest ? `${base} · +${ESTIMATE_CLOSEST_BONUS}` : base;
             }}
-            answer={(p) => c.submissions.find((x) => x.playerId === p.id)?.text || '—'}
+            answer={(p) => {
+              const s = c.submissions.find((x) => x.playerId === p.id);
+              if (!s) return '—';
+              return s.closest ? `${s.text || '—'} ★` : s.text || '—';
+            }}
           />
         </>
       )}

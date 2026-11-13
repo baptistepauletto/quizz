@@ -14,7 +14,7 @@ sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
 /** Schema v2: flat questions with source_id. Wipe legacy pack/theme DBs. */
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const ver = Number(sqlite.pragma('user_version', { simple: true }) ?? 0);
 if (ver < 2) {
   sqlite.exec(`
@@ -121,6 +121,12 @@ if (ver < 6) {
   const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
   if (cols.length > 0 && !cols.some((c) => c.name === 'archive_set')) {
     sqlite.exec(`ALTER TABLE questions ADD COLUMN archive_set TEXT`);
+  }
+}
+if (ver < 7) {
+  const cols = sqlite.prepare(`PRAGMA table_info(questions)`).all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === 'estimate')) {
+    sqlite.exec(`ALTER TABLE questions ADD COLUMN estimate TEXT`);
   }
   sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
 }

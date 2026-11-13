@@ -11,7 +11,15 @@ import type {
   SyncResult,
 } from '../shared/types';
 import { BANKS } from '../shared/types';
-import { DraftError, fingerprint, parseBankDraft, parseOptions, serializeOptions } from './draft';
+import {
+  DraftError,
+  fingerprint,
+  parseBankDraft,
+  parseEstimate,
+  parseOptions,
+  serializeEstimate,
+  serializeOptions,
+} from './draft';
 import { NIGHT_SIZE } from './draw';
 import type { QuestionRec } from './game';
 
@@ -44,6 +52,7 @@ function toDto(row: typeof questions.$inferSelect): QuestionDto {
     image: row.image,
     options,
     isMcq: resolveIsMcq(row.isMcq, options),
+    estimate: parseEstimate(row.estimate),
   };
 }
 
@@ -81,6 +90,7 @@ export function approvedQuestions(): QuestionRec[] {
       image: q.image,
       options: q.options,
       isMcq: q.isMcq,
+      estimate: q.estimate,
     }));
 }
 
@@ -127,7 +137,8 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
   const existing = db.select().from(questions).where(eq(questions.sourceId, q.id)).get();
   const draftIsMcq = q.is_mcq ?? false;
   const draftHint = q.context_hint ?? null;
-  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options, draftIsMcq, draftHint);
+  const draftEstimate = q.estimate ?? null;
+  const fp = fingerprint(q.prompt, q.answer, q.difficulty, q.options, draftIsMcq, draftHint, draftEstimate);
   const fields = {
     bank,
     theme: q.theme,
@@ -140,6 +151,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
     image: q.image ?? null,
     options: serializeOptions(q.options),
     isMcq: q.options ? (draftIsMcq ? 1 : 0) : null,
+    estimate: serializeEstimate(draftEstimate),
   };
 
   if (!existing) {
@@ -156,6 +168,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
 
   const existingOptions = parseOptions(existing.options);
   const existingIsMcq = resolveIsMcq(existing.isMcq, existingOptions);
+  const existingEstimate = parseEstimate(existing.estimate);
   const same =
     fingerprint(
       existing.prompt,
@@ -164,6 +177,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
       existingOptions,
       existingIsMcq,
       existing.contextHint,
+      existingEstimate,
     ) === fp;
   // Re-adding a rejected id (even with the same text) puts it back in the inbox.
   // Archived questions stay shelved while their fingerprint is unchanged.
@@ -177,6 +191,7 @@ function applyDraftRow(bank: Bank, q: BankDraftQuestion): 'added' | 'updated' | 
         image: fields.image,
         options: fields.options,
         isMcq: fields.isMcq,
+        estimate: fields.estimate,
         bank: fields.bank,
       })
       .where(eq(questions.id, existing.id))

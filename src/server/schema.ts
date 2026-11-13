@@ -23,6 +23,8 @@ export const questions = sqliteTable('questions', {
   options: text('options'),
   /** 1 = show options on open; 0 = reserve for format-drop hint; null = legacy. */
   isMcq: integer('is_mcq'),
+  /** JSON climax estimate slider config; null otherwise. */
+  estimate: text('estimate'),
   createdAt: integer('created_at').notNull(),
 });
 

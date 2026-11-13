@@ -1,5 +1,5 @@
 import { DIFFICULTIES } from '../shared/types';
-import type { Bank, BankDraftFile, BankDraftQuestion, Difficulty } from '../shared/types';
+import type { Bank, BankDraftFile, BankDraftQuestion, Difficulty, EstimateSpec } from '../shared/types';
 import { imageFileExists, normalizeImagePath } from './pictures';
 
 export class DraftError extends Error {
@@ -118,6 +118,16 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
       }
     }
 
+    let estimate: EstimateSpec | undefined;
+    if (rec.estimate !== undefined) {
+      if (bank !== 'climax') {
+        bad(`${where}: "estimate" n’est autorisé qu’en finale.`);
+      } else {
+        const parsed = parseEstimateObject(rec.estimate, where, bad);
+        if (parsed) estimate = parsed;
+      }
+    }
+
     if (id && theme && prompt && answer && DIFFICULTIES.includes(difficulty) && (!imageRaw || image)) {
       const notes = str(rec.notes);
       const contributor = str(rec.contributor);
@@ -132,6 +142,7 @@ export function parseBankDraft(bank: Bank, raw: unknown): BankDraftFile {
         ...(image ? { image } : {}),
         ...(options ? { options } : {}),
         ...(isMcq !== undefined ? { is_mcq: isMcq } : {}),
+        ...(estimate ? { estimate } : {}),
         ...(contributor ? { contributor } : {}),
       });
     }
@@ -148,11 +159,13 @@ export function fingerprint(
   options?: string[] | null,
   isMcq?: boolean,
   contextHint?: string | null,
+  estimate?: EstimateSpec | null,
 ): string {
   const opt = options && options.length ? `\n${JSON.stringify(options)}` : '';
   const mcq = options && options.length ? `\nis_mcq:${isMcq ? 1 : 0}` : '';
   const hint = contextHint?.trim() ? `\ncontext_hint:${contextHint.trim()}` : '';
-  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}${mcq}${hint}`;
+  const est = estimate ? `\nestimate:${JSON.stringify(estimate)}` : '';
+  return `${prompt.trim()}\n${answer.trim()}\n${difficulty.trim().toLowerCase()}${opt}${mcq}${hint}${est}`;
 }
 
 export function serializeOptions(options: [string, string, string, string] | null | undefined): string | null {
@@ -168,6 +181,77 @@ export function parseOptions(raw: string | null | undefined): [string, string, s
   } catch {
     return null;
   }
+}
+
+export function serializeEstimate(estimate: EstimateSpec | null | undefined): string | null {
+  return estimate ? JSON.stringify(estimate) : null;
+}
+
+export function parseEstimate(raw: string | null | undefined): EstimateSpec | null {
+  if (!raw) return null;
+  try {
+    return normalizeEstimate(JSON.parse(raw) as unknown);
+  } catch {
+    return null;
+  }
+}
+
+function num(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Number(v);
+  return null;
+}
+
+function normalizeEstimate(raw: unknown): EstimateSpec | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const min = num(o.min);
+  const max = num(o.max);
+  const step = num(o.step);
+  const value = num(o.value);
+  if (min === null || max === null || step === null || value === null) return null;
+  if (!(min < max) || !(step > 0) || value < min || value > max) return null;
+  const out: EstimateSpec = { min, max, step, value };
+  if (o.tolerance !== undefined) {
+    const tolerance = num(o.tolerance);
+    if (tolerance === null || tolerance < 0) return null;
+    out.tolerance = tolerance;
+  }
+  return out;
+}
+
+function parseEstimateObject(
+  raw: unknown,
+  where: string,
+  bad: (msg: string) => void,
+): EstimateSpec | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    bad(`${where}: "estimate" doit être un objet.`);
+    return undefined;
+  }
+  const o = raw as Record<string, unknown>;
+  const min = num(o.min);
+  const max = num(o.max);
+  const step = num(o.step);
+  const value = num(o.value);
+  if (min === null) bad(`${where}: estimate.min invalide.`);
+  if (max === null) bad(`${where}: estimate.max invalide.`);
+  if (step === null || step <= 0) bad(`${where}: estimate.step doit être > 0.`);
+  if (value === null) bad(`${where}: estimate.value invalide.`);
+  if (min !== null && max !== null && !(min < max)) bad(`${where}: estimate.min doit être < max.`);
+  if (min !== null && max !== null && value !== null && (value < min || value > max)) {
+    bad(`${where}: estimate.value doit être entre min et max.`);
+  }
+  let tolerance: number | undefined;
+  if (o.tolerance !== undefined) {
+    const t = num(o.tolerance);
+    if (t === null || t < 0) bad(`${where}: estimate.tolerance invalide.`);
+    else tolerance = t;
+  }
+  if (min === null || max === null || step === null || step <= 0 || value === null || !(min < max) || value < min || value > max) {
+    return undefined;
+  }
+  return tolerance !== undefined ? { min, max, step, value, tolerance } : { min, max, step, value };
 }
 
 export function optionLabel(index: number): string {

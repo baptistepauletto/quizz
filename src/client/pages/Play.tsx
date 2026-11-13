@@ -7,7 +7,7 @@ import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
-import { climaxStackAmount, climaxWinDelta } from '../../shared/types';
+import { ESTIMATE_CLOSEST_BONUS, climaxStackAmount, climaxWinDelta, snapEstimate } from '../../shared/types';
 import type { GameView, JoinOptionsDto, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
@@ -333,6 +333,7 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
   const lockedOut = s.lockedOut.includes(me.id);
   const iWon = s.status === 'locked' && s.buzzPlayerId === me.id;
   const canBuzz = s.status === 'asking' && !lockedOut;
+  const timedOut = iWon && s.answerUntil === null;
   const [pressed, setPressed] = useState(false);
 
   let label = 'BUZZ';
@@ -357,16 +358,27 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
 
   return (
     <div className="play-body">
-      <button
-        className={`buzzer ${iWon ? 'won' : ''} ${pressed && canBuzz ? 'pressed' : ''}`}
-        disabled={!canBuzz && !iWon}
-        onPointerDown={buzz}
-        onPointerUp={() => setPressed(false)}
-        onPointerLeave={() => setPressed(false)}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        {label}
-      </button>
+      <div className="buzzer-stage">
+        {iWon && (
+          <div className="buzzer-timer">
+            {s.answerUntil !== null ? (
+              <CountdownRing until={s.answerUntil} className="phone-ring" />
+            ) : (
+              <span className="buzzer-timeout">Temps écoulé</span>
+            )}
+          </div>
+        )}
+        <button
+          className={`buzzer ${iWon ? 'won' : ''} ${pressed && canBuzz ? 'pressed' : ''}`}
+          disabled={!canBuzz && !iWon}
+          onPointerDown={buzz}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {label}
+        </button>
+      </div>
       <p className="muted">{hint}</p>
     </div>
   );
@@ -646,6 +658,23 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     );
   }
 
+  if (c.status === 'revealing') {
+    return (
+      <div className="play-body">
+        {header}
+        <p className="muted">Révélation sur la TV · du plus loin au plus proche</p>
+        {c.question?.prompt && <div className="prompt">{c.question.prompt}</div>}
+        {wager > 0 ? (
+          <p>
+            Ta réponse : <b>{(c.myAnswer ?? '').trim() || '(vide — mise perdue)'}</b>
+          </p>
+        ) : (
+          <p className="muted">Tu n’as pas misé.</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="play-body">
       {header}
@@ -674,10 +703,13 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             </div>
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct
-                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard')}`
-                : `-${result.wager}`}
+                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard')}${result.closest ? ` · +${ESTIMATE_CLOSEST_BONUS} proche` : ''}`
+                : `-${result.wager}${result.closest ? ` · +${ESTIMATE_CLOSEST_BONUS} proche` : ''}`}
             </div>
-            <p>{result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}</p>
+            <p>
+              {result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}
+              {result.closest ? ' Plus proche !' : ''}
+            </p>
           </>
         ) : (
           <p className="muted">Tu n’as pas misé ce tour.</p>
@@ -701,11 +733,26 @@ function ClimaxAnswering({
   myAnswer: string | null;
   game: UseGame;
 }) {
-  const [text, setText] = useState(myAnswer ?? '');
+  const estimate = question?.estimate;
+  const mid = estimate ? snapEstimate((estimate.min + estimate.max) / 2, estimate) : 0;
+  const initial = estimate
+    ? myAnswer && Number.isFinite(Number(myAnswer.replace(',', '.')))
+      ? snapEstimate(Number(myAnswer.replace(',', '.')), estimate)
+      : mid
+    : myAnswer ?? '';
+  const [text, setText] = useState(String(initial));
 
   useEffect(() => {
-    setText(myAnswer ?? '');
-  }, [myAnswer, question?.id]);
+    if (estimate) {
+      const next =
+        myAnswer && Number.isFinite(Number(myAnswer.replace(',', '.')))
+          ? snapEstimate(Number(myAnswer.replace(',', '.')), estimate)
+          : mid;
+      setText(String(next));
+    } else {
+      setText(myAnswer ?? '');
+    }
+  }, [myAnswer, question?.id, estimate, mid]);
 
   useEffect(() => {
     if (wager <= 0) return;
@@ -724,6 +771,24 @@ function ClimaxAnswering({
       <div className="muted">Mise en jeu : {wager}</div>
       {wager <= 0 ? (
         <p className="muted">Tu n’as pas misé — tu regardes seulement.</p>
+      ) : estimate ? (
+        <>
+          <div className="bet-amount">{formatEstimate(Number(text))}</div>
+          <input
+            type="range"
+            min={estimate.min}
+            max={estimate.max}
+            step={estimate.step}
+            value={Number(text)}
+            onChange={(e) => setText(String(snapEstimate(Number(e.target.value), estimate)))}
+            aria-label="Estimation"
+          />
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <span className="muted">{formatEstimate(estimate.min)}</span>
+            <span className="muted">{formatEstimate(estimate.max)}</span>
+          </div>
+          <p className="muted">Glisse jusqu’à ta estimation. Tu peux encore bouger jusqu’à 0.</p>
+        </>
       ) : (
         <>
           <textarea
@@ -740,4 +805,9 @@ function ClimaxAnswering({
       )}
     </div>
   );
+}
+
+function formatEstimate(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  return Number.isInteger(n) ? String(n) : String(n).replace('.', ',');
 }

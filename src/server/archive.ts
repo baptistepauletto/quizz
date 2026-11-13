@@ -4,8 +4,8 @@ import { inArray } from 'drizzle-orm';
 import { DRAFTS_DIR } from './packs';
 import { db, schema, sqlite } from './db';
 import type { Game } from './game';
-import { parseOptions } from './draft';
-import type { Bank, Difficulty } from '../shared/types';
+import { parseEstimate, parseOptions } from './draft';
+import type { Bank, Difficulty, EstimateSpec } from '../shared/types';
 
 const { questions } = schema;
 
@@ -22,6 +22,7 @@ export interface ArchiveQuestion {
   image: string | null;
   options: [string, string, string, string] | null;
   isMcq: boolean;
+  estimate: EstimateSpec | null;
 }
 
 export interface EveningArchive {
@@ -93,6 +94,7 @@ export function archiveEvening(g: Game): { label: string; count: number; file: s
         image: row.image,
         options,
         isMcq: row.isMcq === 1 || (row.isMcq == null && options !== null),
+        estimate: parseEstimate(row.estimate),
       };
     }),
   };

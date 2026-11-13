@@ -19,6 +19,9 @@ export const MEMORY_FLOOR: Record<Difficulty, number> = { easy: 1, medium: 2, ha
 /** Silent phone window for spectators to lock a leech answer. */
 export const MEMORY_LEECH_MS = 15_000;
 
+/** How long the buzzed player has to answer out loud in the Sprint. */
+export const SPRINT_ANSWER_MS = 5_000;
+
 export function memoryMaxHints(difficulty: Difficulty): number {
   if (difficulty === 'easy') return 0;
   if (difficulty === 'medium') return 1;
@@ -70,6 +73,48 @@ export function climaxWinDelta(wager: number, difficulty: Difficulty): number {
 export function climaxStackAmount(wager: number, correct: boolean, difficulty: Difficulty): number {
   const w = Math.max(0, Math.floor(wager));
   return correct ? w + climaxWinDelta(w, difficulty) : w;
+}
+
+/** Bonus for the closest estimate guess (ties share). */
+export const ESTIMATE_CLOSEST_BONUS = 1;
+
+/** Climax numeric estimate (slider) — target stays server/host-side until resolve. */
+export interface EstimateSpec {
+  min: number;
+  max: number;
+  step: number;
+  /** Exact numeric target used for scoring. */
+  value: number;
+  /** Absolute tolerance around value; omit for ±10% of value. */
+  tolerance?: number;
+}
+
+/** What phones need to render the slider (never includes the target). */
+export type EstimateSlider = Pick<EstimateSpec, 'min' | 'max' | 'step'>;
+
+export function estimateBand(e: EstimateSpec): { lo: number; hi: number } {
+  const pad = e.tolerance !== undefined ? e.tolerance : Math.abs(e.value) * 0.1;
+  return { lo: e.value - pad, hi: e.value + pad };
+}
+
+export function estimateInRange(guess: number, e: EstimateSpec): boolean {
+  const { lo, hi } = estimateBand(e);
+  return guess >= lo && guess <= hi;
+}
+
+export function estimateDistance(guess: number, e: EstimateSpec): number {
+  return Math.abs(guess - e.value);
+}
+
+/** Snap a raw slider/typed value onto the estimate grid. */
+export function snapEstimate(raw: number, e: Pick<EstimateSpec, 'min' | 'max' | 'step'>): number {
+  if (!Number.isFinite(raw)) return e.min;
+  const steps = Math.round((raw - e.min) / e.step);
+  const snapped = e.min + steps * e.step;
+  const clamped = Math.min(e.max, Math.max(e.min, snapped));
+  // Avoid 1.0000000002 style float noise for typical step sizes.
+  const decimals = String(e.step).includes('.') ? (String(e.step).split('.')[1]?.length ?? 0) : 0;
+  return decimals > 0 ? Number(clamped.toFixed(decimals)) : clamped;
 }
 
 /** Bonus for correctly predicting the night's winner (after climax, before podium). */
@@ -125,6 +170,11 @@ export interface QuestionView {
    * Host always sees it on the question card; TV only after the hint.
    */
   contextHint?: string;
+  /**
+   * Climax estimate: phones get min/max/step only while answering;
+   * host always gets the full spec; TV gets value after resolve.
+   */
+  estimate?: EstimateSpec | EstimateSlider;
 }
 
 export type SprintStatus = 'idle' | 'asking' | 'locked' | 'resolved';
@@ -136,6 +186,8 @@ export interface SprintView {
   question: QuestionView | null;
   buzzPlayerId: string | null;
   lockedOut: string[];
+  /** Wall-clock deadline while the buzzed player must answer; null after timeout or when not locked. */
+  answerUntil: number | null;
 }
 
 /** `open` = available on the always-face-up grid; `asking` = live question; `consumed` = done. */
@@ -187,7 +239,7 @@ export interface MemoryView {
   leeches: MemoryLeechSubmission[];
 }
 
-export type ClimaxStatus = 'idle' | 'announce' | 'betting' | 'answering' | 'asking' | 'resolved';
+export type ClimaxStatus = 'idle' | 'announce' | 'betting' | 'answering' | 'asking' | 'revealing' | 'resolved';
 
 export interface ClimaxCandidate {
   id: number;
@@ -195,12 +247,16 @@ export interface ClimaxCandidate {
   difficulty: Difficulty;
   prompt: string;
   answer: string;
+  /** True when this candidate is a numeric estimate / slider question. */
+  estimate?: boolean;
 }
 
 export interface ClimaxResult {
   playerId: string;
   wager: number;
   correct: boolean;
+  /** Awarded the closest-guess bonus. */
+  closest?: boolean;
 }
 
 /** Locked player submissions shown on TV/host after the answer timer. */
@@ -210,6 +266,12 @@ export interface ClimaxSubmission {
   text: string;
   /** Points wagered — safe to show after lock (not during betting). */
   wager: number;
+  /** Estimate rounds: absolute distance to the target (host/TV after lock). */
+  distance?: number;
+  /** Estimate rounds: guess fell inside the tolerance band. */
+  inRange?: boolean;
+  /** Estimate rounds: tied for closest numeric guess. */
+  closest?: boolean;
 }
 
 export interface ClimaxView {
@@ -237,6 +299,10 @@ export interface ClimaxView {
   /** TV + host after lock: every bettor's name + answer + wager. */
   submissions: ClimaxSubmission[];
   results: ClimaxResult[];
+  /** Estimate reveal: player ids farthest → closest. */
+  revealOrder: string[];
+  /** Estimate reveal cursor: -1 = none yet, then 0..n-1. */
+  revealIndex: number;
 }
 
 export type PredictionStatus = 'idle' | 'open' | 'locked';
@@ -295,6 +361,7 @@ export type GameEventType =
   | 'phase.changed'
   | 'sprint.question'
   | 'sprint.buzz_won'
+  | 'sprint.answer_timeout'
   | 'sprint.pass'
   | 'sprint.resolved'
   | 'memory.started'
@@ -312,6 +379,7 @@ export type GameEventType =
   | 'climax.revealed'
   | 'climax.answer'
   | 'climax.answers_locked'
+  | 'climax.estimate_revealed'
   | 'climax.judged'
   | 'climax.resolved'
   | 'predictions.open'
@@ -358,6 +426,8 @@ export interface QuestionDto {
    * When false, options (if any) are reserved for a format-drop hint.
    */
   isMcq: boolean;
+  /** Climax estimate slider config; null for normal questions. */
+  estimate: EstimateSpec | null;
 }
 
 /** One question in drafts/{bank}.json */
@@ -385,6 +455,8 @@ export interface BankDraftQuestion {
    * Defaults to true when `options` are present and the flag is omitted (legacy drafts).
    */
   is_mcq?: boolean;
+  /** Climax only: numeric slider estimate. */
+  estimate?: EstimateSpec;
   contributor?: string;
 }
 

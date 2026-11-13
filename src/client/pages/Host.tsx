@@ -7,7 +7,15 @@ import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
 import { parseCoord } from '../../shared/grid';
 import type { HostCommand } from '../../shared/protocol';
-import { MEMORY_FLOOR, PREDICTION_BONUS, climaxWinDelta, memoryHintCost } from '../../shared/types';
+import {
+  ESTIMATE_CLOSEST_BONUS,
+  MEMORY_FLOOR,
+  PREDICTION_BONUS,
+  climaxWinDelta,
+  estimateBand,
+  memoryHintCost,
+} from '../../shared/types';
+import type { EstimateSpec } from '../../shared/types';
 import type { Difficulty, GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
 
 const PHASES: Phase[] = ['lobby', 'predictions', 'sprint', 'memory', 'climax', 'reveal', 'results'];
@@ -247,6 +255,15 @@ function QuestionCard({
           Indice TV (pas encore révélé) : {q.contextHint}
         </div>
       )}
+      {q.estimate && 'value' in q.estimate && (
+        <div className="muted" style={{ fontSize: '0.85rem' }}>
+          Estimation {q.estimate.min}–{q.estimate.max} (pas {q.estimate.step}) · cible {q.estimate.value}
+          {(() => {
+            const band = estimateBand(q.estimate);
+            return ` · gagnant ${band.lo}→${band.hi}`;
+          })()}
+        </div>
+      )}
       {q.notes && (
         <div className="muted" style={{ fontSize: '0.85rem' }}>
           Notes hôte : {q.notes}
@@ -378,6 +395,9 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
   const q = s.question;
   const buzzer = nameOf(state.players, s.buzzPlayerId);
   const done = s.index + 1 >= s.total;
+  const now = useNow(250);
+  const timedOut = s.status === 'locked' && s.answerUntil === null;
+  const secondsLeft = s.answerUntil ? Math.max(0, Math.ceil((s.answerUntil - now) / 1000)) : 0;
 
   return (
     <div className="stack">
@@ -392,6 +412,8 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
           <div className="card center">
             <div className="muted">Premier à buzzer</div>
             <h2 style={{ fontSize: '2rem' }}>{buzzer}</h2>
+            {s.answerUntil !== null && <div className="bet-amount">{secondsLeft}s</div>}
+            {timedOut && <div className="muted" style={{ marginTop: 4 }}>Temps écoulé — Correct / Faux</div>}
           </div>
           <div className="row">
             <button className="btn ok big grow" onClick={() => send({ t: 'sprint.award' })}>
@@ -709,6 +731,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                 <b className="grow">{nameOf(state.players, r.playerId)}</b>
                 <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
                   {r.correct ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard')}` : `-${r.wager}`}
+                  {r.closest ? ` · +${ESTIMATE_CLOSEST_BONUS}` : ''}
                 </span>
               </div>
             ))}
@@ -720,6 +743,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             <div className="row wrap">
               <span className="chip">{q.theme}</span>
               <DifficultyChip difficulty={q.difficulty} withPoints={false} />
+              {q.estimate && <span className="chip">estimation</span>}
             </div>
             <div>{q.prompt}</div>
             <div className="muted">
@@ -825,6 +849,56 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
           })}
         </>
       )}
+
+      {c.status === 'revealing' && (
+        <>
+          {c.question?.estimate && 'value' in c.question.estimate && (
+            <EstimateHostBand estimate={c.question.estimate} />
+          )}
+          <div className="card stack">
+            <b>
+              Révélation {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
+            </b>
+            <p className="muted">Du plus loin au plus proche · dans la fourchette = mise gagnée · +{ESTIMATE_CLOSEST_BONUS} au plus proche</p>
+            {c.submissions.map((s) => {
+              const r = c.results.find((x) => x.playerId === s.playerId);
+              return (
+                <div key={s.playerId} className="row">
+                  <span className="grow">
+                    <b>{s.name}</b>
+                    <span className="muted"> · {s.text || '(vide)'}</span>
+                    {s.closest && <span className="chip ok">proche</span>}
+                  </span>
+                  {r ? (
+                    <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
+                      {r.correct ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard')}` : `-${r.wager}`}
+                      {r.closest ? ` · +${ESTIMATE_CLOSEST_BONUS}` : ''}
+                    </span>
+                  ) : (
+                    <span className="chip">…</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button className="btn primary big" onClick={() => send({ t: 'climax.revealAll' })}>
+            Révéler tout
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EstimateHostBand({ estimate }: { estimate: EstimateSpec }) {
+  const band = estimateBand(estimate);
+  return (
+    <div className="card">
+      <div className="muted">Cible {estimate.value}</div>
+      <div>
+        Fourchette gagnante : <b>{band.lo}</b> → <b>{band.hi}</b>
+        {estimate.tolerance !== undefined ? ` (±${estimate.tolerance})` : ' (±10 %)'}
+      </div>
     </div>
   );
 }
