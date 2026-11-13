@@ -502,6 +502,104 @@
       "answer": "32 966",
       "difficulty": "hard",
       "notes": "Accepter à 3 000 près (entre 30 000 et 36 000). Source officielle : Rapport annuel 2024 de l'Agence de mobilité durable de Montréal (soit environ 90 remorquages par jour en moyenne)."
+    },
+    {
+      "id": "s_067",
+      "theme": "Lieux (photos)",
+      "prompt": "Quel site français normand emblématique voit-on sur cette photo ?",
+      "answer": "Le Mont-Saint-Michel",
+      "difficulty": "easy",
+      "notes": "Et non, ce n'est pas breton.",
+      "image": "places/mont-saint-michel.jpg"
+    },
+    {
+      "id": "s_068",
+      "theme": "Montréal (photos)",
+      "prompt": "Quel édifice montréalais voit-on ici ?",
+      "answer": "L'Oratoire Saint-Joseph",
+      "difficulty": "easy",
+      "notes": "Accepter « Oratoire Saint-Joseph du Mont-Royal ».",
+      "image": "quebec/oratoire-saint-joseph.jpg"
+    },
+    {
+      "id": "s_069",
+      "theme": "Canada (photos)",
+      "prompt": "Quel site naturel canado-américain est sur cette photo ? (+2 pts pour le nom de la chute canadienne)",
+      "answer": "Les chutes du Niagara",
+      "difficulty": "easy",
+      "notes": "Accepter « Horseshoe Falls » / « chutes Horseshoe ».",
+      "image": "canada/niagara-falls.jpg"
+    },
+    {
+      "id": "s_070",
+      "theme": "Art (photos)",
+      "prompt": "Quel tableau célèbre est-ce (+1 pt pour le nom du peintre, +1 pt pour la nationalité) ?",
+      "answer": "La Joconde",
+      "difficulty": "easy",
+      "notes": "Accepter « Mona Lisa ». Léonard de Vinci. Nationalité italienne.",
+      "image": "art/joconde.jpg"
+    },
+    {
+      "id": "s_071",
+      "theme": "Art (photos)",
+      "prompt": "Quel tableau est-ce (+1 pt pour le nom du peintre, +1 pt pour la nationalité)  ?",
+      "answer": "La Nuit étoilée",
+      "difficulty": "easy",
+      "notes": "Vincent van Gogh. Nationalité néerlandaise",
+      "image": "art/nuit-etoilee.jpg"
+    },
+    {
+      "id": "s_072",
+      "theme": "Sport (photos)",
+      "prompt": "Quel trophée sportif international est-ce ?",
+      "answer": "La Coupe du monde de la FIFA",
+      "difficulty": "easy",
+      "notes": "Accepter « trophée de la Coupe du monde » / « FIFA World Cup Trophy ». Photo Wikimedia : FIFA_World_Cup_Trophy_photo_by_Djuradj_Vujcic.jpg.",
+      "image": "sports/coupe-monde-fifa.jpg"
+    },
+    {
+      "id": "s_073",
+      "theme": "Montréal (photos)",
+      "prompt": "Quel pavillon de l'Expo 67, toujours visible à Montréal, est sur cette photo ?",
+      "answer": "La Biosphère",
+      "difficulty": "medium",
+      "notes": "Dôme géodésique de Buckminster Fuller, île Sainte-Hélène.",
+      "image": "quebec/biosphere.jpg"
+    },
+    {
+      "id": "s_074",
+      "theme": "Animaux (photos)",
+      "prompt": "Quel animal emblématique du Canada voit-on ici ?",
+      "answer": "Un castor",
+      "difficulty": "easy",
+      "image": "animal/castor.jpg"
+    },
+    {
+      "id": "s_075",
+      "theme": "Canada (photos)",
+      "prompt": "Quel bâtiment indien emblématique domine cette photo ?",
+      "answer": "La Tour CN",
+      "difficulty": "easy",
+      "notes": "Accepter « CN Tower ».",
+      "image": "canada/cn-tower.jpg"
+    },
+    {
+      "id": "s_076",
+      "theme": "Lieux (photos)",
+      "prompt": "Quel monument antique de Rome est-ce ?",
+      "answer": "Le Colisée",
+      "difficulty": "easy",
+      "notes": "Accepter « Colosseo » / « Amphithéâtre flavien ». Photo Wikimedia : Colosseo_2020.jpg.",
+      "image": "places/colisee.jpg"
+    },
+    {
+      "id": "s_077",
+      "theme": "Maison",
+      "prompt": "Quelle est la dimension de cette télévision ?",
+      "answer": "65 pouces",
+      "difficulty": "easy",
+      "notes": "Accepter « 65 pouces ».",
+      "image": "random/pouce.jpg"
     }
   ]
 }
