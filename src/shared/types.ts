@@ -136,7 +136,7 @@ export const MEMORY_HOUSE_SIZE = 30;
 export const MEMORY_TURNS = 7;
 
 /** Questions per round in one night. Memory 70 = 8 contributors × 5 cards + 30 Maison. */
-export const NIGHT_SIZE: Record<Bank, number> = { sprint: 25, memory: 70, climax: 10 };
+export const NIGHT_SIZE: Record<Bank, number> = { sprint: 35, memory: 70, climax: 10 };
 
 /** Same folding as player names: case, accents, and extra spaces do not make a new person. */
 export function nameKey(name: string): string {

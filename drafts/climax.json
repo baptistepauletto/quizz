@@ -162,7 +162,7 @@
       "answer": "6 550 km",
       "difficulty": "hard",
       "notes": "Source officielle : Ville de Montréal - Tout savoir sur le déneigement (et 4 100 km de chaussées pour un hiver moyen de 190 cm de neige).",
-      "estimate": { "min": 0, "max": 15000, "step": 50, "value": 6550, "tolerance": 550 }
+      "estimate": { "min": 0, "max": 15000, "step": 50, "value": 6550, "tolerance": 1250 }
     },
     {
       "id": "c_023",
@@ -171,7 +171,7 @@
       "answer": "14,5 millions",
       "difficulty": "hard",
       "notes": "Source officielle : Bilan BIXI Montréal fin 2025 (le réseau a aussi franchi le cap historique des 100 millions de déplacements cumulés depuis 2009 le 10 novembre 2025).",
-      "estimate": { "min": 0, "max": 30, "step": 0.5, "value": 14.5, "tolerance": 1.5 }
+      "estimate": { "min": 0, "max": 30, "step": 0.5, "value": 14.5, "tolerance": 3 }
     },
     {
       "id": "c_024",
@@ -180,7 +180,7 @@
       "answer": "31",
       "difficulty": "hard",
       "notes": "Source officielle : Rapport annuel 2024 du SPVM présenté par Fady Dagher (taux de résolution de 81 %).",
-      "estimate": { "min": 0, "max": 80, "step": 1, "value": 31, "tolerance": 4 }
+      "estimate": { "min": 0, "max": 80, "step": 1, "value": 31, "tolerance": 6 }
     },
     {
       "id": "c_025",
@@ -204,7 +204,7 @@
       "answer": "11384.31 $",
       "difficulty": "hard",
       "notes": "Source officielle : Air Canada.",
-      "estimate": { "min": 0, "max": 20000, "step": 100, "value": 11384, "tolerance": 500 }
+      "estimate": { "min": 0, "max": 20000, "step": 100, "value": 11384, "tolerance": 2000 }
     },
     {
       "id": "c_028",
@@ -213,7 +213,15 @@
       "answer": "2594.90 $",
       "difficulty": "hard",
       "notes": "Source officielle : Air Canada, taxes incluses. le vol dure 1h01 lol",
-      "estimate": { "min": 0, "max": 10000, "step": 100, "value": 2594, "tolerance": 250 }
+      "estimate": { "min": 0, "max": 10000, "step": 50, "value": 2594, "tolerance": 500 }
+    },
+    {
+      "id": "c_029",
+      "theme": "Musique Pop",
+      "prompt": "Comment s'appelle le dernier single de Tate McRae ?",
+      "answer": "Housewife",
+      "difficulty": "medium",
+      "notes": "Sorti mi-octobre 2026"
     }
   ]
 }
