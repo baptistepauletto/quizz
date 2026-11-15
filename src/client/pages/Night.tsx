@@ -4,8 +4,17 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { PinGate } from '../components/PinGate';
 import { DifficultyChip } from '../components/ui';
 import { api } from '../lib/api';
-import { BANKS, DIFFICULTIES, NIGHT_SIZE } from '../../shared/types';
-import type { Bank, GuestsDto, NightPlanDto, QuestionDto } from '../../shared/types';
+import {
+  BANKS,
+  DIFFICULTIES,
+  MEMORY_CONTRIBUTOR_QUOTA,
+  MEMORY_CONTRIBUTOR_SLOTS,
+  MEMORY_HOUSE_SIZE,
+  NIGHT_SIZE,
+  isMaisonContributor,
+  nameKey,
+} from '../../shared/types';
+import type { Bank, Difficulty, GuestsDto, NightPlanDto, QuestionDto } from '../../shared/types';
 
 const BANK_LABEL: Record<Bank, string> = {
   sprint: 'Sprint',
@@ -194,6 +203,35 @@ function NightPlanner() {
     return counts;
   }, [picked, byId]);
 
+  const memoryQuota = useMemo(() => {
+    if (bank !== 'memory') return null;
+    const rows = new Map<string, { name: string; theme: string; picked: Record<Difficulty, number> }>();
+    for (const q of inBank) {
+      if (isMaisonContributor(q.contributor)) continue;
+      const key = nameKey(q.contributor!);
+      if (!rows.has(key)) {
+        rows.set(key, { name: q.contributor!, theme: q.theme, picked: { easy: 0, medium: 0, hard: 0 } });
+      }
+    }
+    let maison = 0;
+    for (const id of picked) {
+      const q = byId.get(id);
+      if (!q || q.bank !== 'memory') continue;
+      if (isMaisonContributor(q.contributor)) {
+        maison += 1;
+        continue;
+      }
+      const row = rows.get(nameKey(q.contributor!));
+      if (row) row.picked[q.difficulty] += 1;
+    }
+    return {
+      maison,
+      rows: [...rows.entries()]
+        .map(([key, row]) => ({ key, ...row }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'fr')),
+    };
+  }, [bank, inBank, picked, byId]);
+
   function update(nextIds: number[]) {
     if (!selection) return;
     const next = { ...selection, [bank]: nextIds };
@@ -291,7 +329,9 @@ function NightPlanner() {
             </div>
             <p className="muted" style={{ margin: 0 }}>
               {picked.length === 0
-                ? `Rien de choisi : ${Math.min(target, available)} questions seront tirées au hasard au lancement.`
+                ? bank === 'memory'
+                  ? `Rien de choisi : le tirage prend 1 facile, 2 moyennes et 2 difficiles par personne (jusqu’à ${MEMORY_CONTRIBUTOR_SLOTS}), puis ${MEMORY_HOUSE_SIZE} Maison.`
+                  : `Rien de choisi : ${Math.min(target, available)} questions seront tirées au hasard au lancement.`
                 : picked.length < target
                   ? `La manche se jouera avec ces ${picked.length} questions. Il en faut ${target} pour une manche complète.`
                   : 'Manche complète.'}
@@ -304,6 +344,34 @@ function NightPlanner() {
                     {mix[d]} {DIFFICULTY_LABEL[d]}
                   </span>
                 ))}
+              </div>
+            )}
+            {memoryQuota && (
+              <div className="stack" style={{ gap: 6 }}>
+                <p className="muted" style={{ margin: 0 }}>
+                  Tirage automatique : 1 facile, 2 moyennes, 2 difficiles par personne, puis {MEMORY_HOUSE_SIZE}{' '}
+                  Maison. Choisir à la main peut dépasser.
+                </p>
+                {memoryQuota.rows.map((row) => (
+                  <div key={row.key} className="row wrap">
+                    <b>{row.name}</b>
+                    <span className="muted grow">{row.theme}</span>
+                    {DIFFICULTIES.map((d) => (
+                      <span
+                        key={d}
+                        className={`chip ${d}${row.picked[d] > MEMORY_CONTRIBUTOR_QUOTA[d] ? ' bad' : ''}`}
+                      >
+                        {row.picked[d]}/{MEMORY_CONTRIBUTOR_QUOTA[d]}
+                      </span>
+                    ))}
+                  </div>
+                ))}
+                <div className="row wrap">
+                  <b className="grow">Maison</b>
+                  <span className={`chip${memoryQuota.maison > MEMORY_HOUSE_SIZE ? ' bad' : ''}`}>
+                    {memoryQuota.maison}/{MEMORY_HOUSE_SIZE}
+                  </span>
+                </div>
               </div>
             )}
             <div className="row wrap">

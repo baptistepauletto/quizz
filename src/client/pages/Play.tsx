@@ -7,7 +7,7 @@ import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
-import { ESTIMATE_CLOSEST_BONUS, climaxStackAmount, climaxWinDelta, snapEstimate } from '../../shared/types';
+import { ESTIMATE_CLOSEST_BONUS, MEMORY_TURNS, climaxStackAmount, climaxWinDelta, snapEstimate } from '../../shared/types';
 import type { GameView, JoinOptionsDto, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
@@ -420,7 +420,6 @@ function MemoryInfo({
     if (myTurn) {
       return (
         <div className="play-body">
-          <p className="muted">Case {asking.coord}</p>
           <h2>{asking.theme}</h2>
           {asking.difficulty && (
             <div>
@@ -439,7 +438,7 @@ function MemoryInfo({
     const locked = m.myLeech !== null;
     return (
       <div className="play-body">
-        <p className="muted">Leech · case {asking.coord}</p>
+        <p className="muted">Leech</p>
         <h2>{asking.theme}</h2>
         {asking.difficulty && (
           <div>
@@ -491,7 +490,6 @@ function MemoryInfo({
   if (asking && m.askStatus === 'answering') {
     return (
       <div className="play-body">
-        <p className="muted">Case {asking.coord}</p>
         <h2>{asking.theme}</h2>
         {asking.difficulty && (
           <div>
@@ -527,7 +525,10 @@ function MemoryInfo({
         <>
           <Token name={me.name} color={colors.get(me.id)} className="hero pulse" />
           <h2>À toi !</h2>
-          <p>Annonce une case à voix haute, par exemple B3.</p>
+          <p>Choisis une carte sur la TV : un thème, ou une carte Maison.</p>
+          <p className="muted">
+            Tour {(m.turnsTaken[me.id] ?? 0) + 1}/{MEMORY_TURNS}
+          </p>
         </>
       ) : (
         <>

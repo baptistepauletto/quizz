@@ -7,10 +7,10 @@ import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import WebSocket from 'ws';
-import { NIGHT_SIZE, drawNight } from '../src/server/draw';
-import type { QuestionRec } from '../src/server/game';
+import { NIGHT_SIZE, drawBank, drawMemory, drawNight } from '../src/server/draw';
+import { applyCommand, createGame, joinPlayer, type QuestionRec } from '../src/server/game';
 import type { ClientMessage, ServerMessage } from '../src/shared/protocol';
-import { BANKS } from '../src/shared/types';
+import { BANKS, MEMORY_HOUSE_SIZE, MEMORY_TURNS } from '../src/shared/types';
 import type { GameEvent, GameView } from '../src/shared/types';
 
 const PORT = 3999;
@@ -98,12 +98,13 @@ function sampleQuestion(
   bank: QuestionRec['bank'],
   theme: string,
   difficulty: QuestionRec['difficulty'],
+  contributor: string | null = null,
 ): QuestionRec {
   return {
     id,
     bank,
     theme,
-    contributor: null,
+    contributor,
     difficulty,
     estimate: null,
     prompt: String(id),
@@ -140,17 +141,87 @@ console.log('\nNight draw');
   const ids = new Set(oldest.map((q) => q.id));
   check(ids.has(1) && ids.has(2) && ids.has(3) && !ids.has(n + 2), 'when the fresh pile runs out, the oldest asked questions return first');
 
-  const perTheme = 20;
-  const memory = ['Space', 'Cinema', 'Food'].flatMap((theme, ti) =>
-    Array.from({ length: perTheme }, (_, i) => sampleQuestion(200 + ti * 100 + i, 'memory', theme, 'easy')),
+  const full = (['easy', 'medium', 'medium', 'hard', 'hard', 'easy', 'medium'] as const).map((difficulty, i) =>
+    sampleQuestion(300 + i, 'memory', 'One Direction', difficulty, 'Laulo'),
   );
-  const grid = drawNight(memory, new Map());
-  const tally: Record<string, number> = {};
-  for (const q of grid) tally[q.theme] = (tally[q.theme] ?? 0) + 1;
-  const fair = Math.floor(NIGHT_SIZE.memory / 3);
+  const dealt = drawBank('memory', full, new Map(), NIGHT_SIZE.memory);
+  const dealtMix = { easy: 0, medium: 0, hard: 0 };
+  for (const q of dealt) dealtMix[q.difficulty] += 1;
   check(
-    grid.length === NIGHT_SIZE.memory && tally.Space >= fair && tally.Cinema >= fair && tally.Food >= fair,
-    'memory hand spreads across themes',
+    dealt.length === 5 && dealtMix.easy === 1 && dealtMix.medium === 2 && dealtMix.hard === 2,
+    'a contributor deals 1 easy, 2 medium, 2 hard and leaves the extras in the pile',
+  );
+
+  const short = [1, 2, 3, 4].map((i) => sampleQuestion(i, 'memory', 'Dofus', 'easy', 'Corentin'));
+  const gap = drawBank('memory', short, new Map(), NIGHT_SIZE.memory);
+  check(gap.length === 1 && gap[0].difficulty === 'easy', 'a short difficulty stays short and is not filled with another');
+
+  const noSteal = [
+    ...[1, 2, 3, 4, 5].map((i) => sampleQuestion(i, 'memory', 'A', 'easy', 'Ann')),
+    ...[6, 7, 8, 9, 10].map((i) => sampleQuestion(i, 'memory', 'B', 'hard', 'Bob')),
+  ];
+  const split = drawBank('memory', noSteal, new Map(), NIGHT_SIZE.memory);
+  check(
+    split.filter((q) => q.contributor === 'Ann').length === 1 && split.filter((q) => q.contributor === 'Bob').length === 2,
+    'one contributor does not fill another’s missing difficulty',
+  );
+
+  const crowd = Array.from({ length: 9 }, (_, i) => sampleQuestion(i + 1, 'memory', `T${i}`, 'easy', `P${i}`));
+  const seated = drawBank('memory', crowd, new Map(), NIGHT_SIZE.memory);
+  check(seated.length === 8 && !seated.some((q) => q.id === 9), 'only the eight freshest contributors are seated');
+
+  const held = sampleQuestion(1, 'memory', 'One Direction', 'easy', 'Laulo');
+  const rest = [
+    sampleQuestion(2, 'memory', 'One Direction', 'easy', 'Laulo'),
+    sampleQuestion(3, 'memory', 'One Direction', 'medium', 'Laulo'),
+    sampleQuestion(4, 'memory', 'One Direction', 'medium', 'Laulo'),
+  ];
+  const topped = drawMemory(rest, new Map(), NIGHT_SIZE.memory, [held]);
+  check(
+    topped.length === 2 && topped.every((q) => q.difficulty === 'medium'),
+    'topping up does not deal a second easy to someone who already picked theirs',
+  );
+
+  const maison = ['Space', 'Cinema', 'Food', 'Histoire'].flatMap((theme, ti) =>
+    Array.from({ length: 10 }, (_, i) => sampleQuestion(400 + ti * 10 + i, 'memory', theme, 'easy', 'Maison')),
+  );
+  const shelf = drawBank('memory', maison, new Map(), NIGHT_SIZE.memory);
+  const shelfTally: Record<string, number> = {};
+  for (const q of shelf) shelfTally[q.theme] = (shelfTally[q.theme] ?? 0) + 1;
+  const fair = Math.floor(MEMORY_HOUSE_SIZE / 4);
+  check(
+    shelf.length === MEMORY_HOUSE_SIZE &&
+      ['Space', 'Cinema', 'Food', 'Histoire'].every((theme) => shelfTally[theme] >= fair),
+    'the house shelf is 30 cards spread across its themes',
+  );
+
+  const capGame = createGame(
+    1,
+    'cap',
+    Array.from({ length: 20 }, (_, i) => sampleQuestion(i + 1, 'memory', 'Maison', 'easy', 'Maison')),
+  );
+  const noop = () => {};
+  joinPlayer(capGame, 'Ann', undefined, () => false, noop);
+  joinPlayer(capGame, 'Bob', undefined, () => false, noop);
+  applyCommand(capGame, { t: 'phase.set', phase: 'memory' }, noop);
+  const annId = capGame.players[0].id;
+  const beforeSkip = { ...capGame.memory.turnsTaken };
+  applyCommand(capGame, { t: 'memory.skipTurn' }, noop);
+  check(
+    capGame.memory.turnPlayerId !== annId && JSON.stringify(capGame.memory.turnsTaken) === JSON.stringify(beforeSkip),
+    'skipping a turn does not count',
+  );
+  for (let i = 0; i < MEMORY_TURNS * 2; i++) {
+    const open = capGame.memory.tiles.find((t) => t.face === 'open')!;
+    applyCommand(capGame, { t: 'memory.flip', coord: open.coord }, noop);
+    applyCommand(capGame, { t: 'memory.endLeech' }, noop);
+    applyCommand(capGame, { t: 'memory.resolve', correct: false, leechIds: [] }, noop);
+  }
+  check(
+    capGame.memory.status === 'finished' &&
+      capGame.memory.tiles.some((t) => t.face === 'open') &&
+      capGame.players.every((p) => capGame.memory.turnsTaken[p.id] === MEMORY_TURNS),
+    'the board ends after 7 turns each and leaves cards face-up',
   );
 }
 
@@ -293,8 +364,8 @@ try {
   check(preparedPile.json.prepared.sprint === 2 && preparedPile.json.prepared.memory === 0, 'the pile summary counts prepared questions');
   const filled = await api('POST', '/api/night/fill', { bank: 'memory' }, token);
   check(
-    filled.json.selected.memory.length === idsOf('memory').length && filled.json.selected.sprint.length === 2,
-    'filling a round tops it up from the pile without touching the others',
+    filled.json.selected.memory.length === 5 && filled.json.selected.sprint.length === 2,
+    'filling memory keeps 1/2/2 per person and leaves the extra easy out',
   );
   const cleared = await api('PUT', '/api/night', { selected: { sprint: [], memory: [], climax: [] } }, token);
   check(BANKS.every((b) => cleared.json.selected[b].length === 0), 'a prepared night can be cleared');
@@ -431,7 +502,7 @@ try {
 
   console.log('\nPhase 2: Memory Grid');
   await host.cmd({ t: 'phase.set', phase: 'memory' });
-  check(host.state!.memory.status === 'playing' && host.state!.memory.tiles.length === 6, '6 tiles shuffled onto the always-face-up grid');
+  check(host.state!.memory.status === 'playing' && host.state!.memory.tiles.length === 5, 'quota leaves 5 face-up cards (Cy’s extra easy stays in the pile)');
   check(host.state!.memory.tiles.every((t) => t.face === 'open' && !!t.theme && !!t.difficulty), 'themes and difficulties visible on every open tile');
   check(tv.state!.memory.tiles.every((t) => !!t.theme), 'TV also sees themes permanently');
   check(!JSON.stringify(tv.state).includes('Jupiter'), 'TV has no answers in its state');
@@ -492,6 +563,7 @@ try {
       );
       check(host.state!.memory.tiles.find((t) => t.coord === next.coord)!.face === 'consumed', 'tile consumed after a hit');
       check(host.state!.memory.turnPlayerId !== turn1, 'turn moved to the next player (round-robin)');
+      check(host.state!.memory.turnsTaken[turn1!] === 1, 'a resolve counts as that player’s turn');
       scoredCoord = next.coord;
       sawPhoto = true;
       continue;

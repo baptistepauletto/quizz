@@ -123,8 +123,31 @@ export const PREDICTION_BONUS = 5;
 export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 export const BANKS: Bank[] = ['sprint', 'memory', 'climax'];
 
-/** Questions per round in one night. Memory 70 fills a 10×7 TV grid. */
+/** Per contributor on the open board. Short buckets stay short — nothing is stolen from another person. */
+export const MEMORY_CONTRIBUTOR_QUOTA: Record<Difficulty, number> = { easy: 1, medium: 2, hard: 2 };
+
+/** Contributor columns the automatic deal seats. Hand-picking may include more. */
+export const MEMORY_CONTRIBUTOR_SLOTS = 8;
+
+/** House questions on the shelf. */
+export const MEMORY_HOUSE_SIZE = 30;
+
+/** Resolves each player gets. Skip does not count. 8 × 7 leaves cards on a full board of 70. */
+export const MEMORY_TURNS = 7;
+
+/** Questions per round in one night. Memory 70 = 8 contributors × 5 cards + 30 Maison. */
 export const NIGHT_SIZE: Record<Bank, number> = { sprint: 25, memory: 70, climax: 10 };
+
+/** Same folding as player names: case, accents, and extra spaces do not make a new person. */
+export function nameKey(name: string): string {
+  return name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+/** House pack: no contributor, or explicitly tagged "Maison". */
+export function isMaisonContributor(contributor: string | null | undefined): boolean {
+  if (!contributor || !contributor.trim()) return true;
+  return nameKey(contributor) === 'maison';
+}
 
 // ---------------------------------------------------------------------------
 // Views (what clients receive)
@@ -224,6 +247,8 @@ export interface MemoryView {
   askingCoord: string | null;
   asking: QuestionView | null;
   remaining: number;
+  /** Resolves taken by player id. Skip does not count. */
+  turnsTaken: Record<string, number>;
   /** null when no card is open. */
   askStatus: MemoryAskStatus | null;
   /** Wall-clock end of the silent leech window (leeching only). */

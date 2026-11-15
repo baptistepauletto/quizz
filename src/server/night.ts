@@ -1,5 +1,5 @@
 import { sqlite } from './db';
-import { drawBank } from './draw';
+import { drawBank, drawMemory } from './draw';
 import { shuffle } from './game';
 import type { QuestionRec } from './game';
 import { lastAsked } from './history';
@@ -71,10 +71,20 @@ export function fillNightPlan(banks: readonly Bank[]): NightPlanDto {
   const approved = approvedQuestions();
   const asked = lastAsked();
   const selection = clean(readSelection(), approved);
+  const byId = new Map(approved.map((q) => [q.id, q]));
   for (const bank of banks) {
     const taken = new Set(selection[bank]);
     const pool = approved.filter((q) => q.bank === bank && !taken.has(q.id));
-    const extra = drawBank(bank, pool, asked, NIGHT_SIZE[bank] - selection[bank].length);
+    const room = NIGHT_SIZE[bank] - selection[bank].length;
+    const extra =
+      bank === 'memory'
+        ? drawMemory(
+            pool,
+            asked,
+            room,
+            selection.memory.map((id) => byId.get(id)!).filter((q) => q !== undefined),
+          )
+        : drawBank(bank, pool, asked, room);
     selection[bank].push(...extra.map((q) => q.id));
   }
   write(selection);

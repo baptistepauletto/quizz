@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Logo } from '../components/Logo';
-import { TvGrid } from '../components/MemoryGrid';
+import { TvBoard } from '../components/MemoryGrid';
 import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
 import { ChipStack, Confetti, CountUp, CountdownRing, DecoCorners, Die, Marquee, Token, useFlash } from '../components/stage';
@@ -13,7 +13,7 @@ import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
 import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
-import { ESTIMATE_CLOSEST_BONUS, climaxStackAmount, climaxWinDelta } from '../../shared/types';
+import { ESTIMATE_CLOSEST_BONUS, MEMORY_TURNS, climaxStackAmount, climaxWinDelta } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
 
 const HELLO = { t: 'hello', role: 'tv' } as const;
@@ -187,7 +187,7 @@ const PHASE_CARDS: Partial<Record<Phase, { kicker: string; title: string; sub: s
     sub: 'Qui va gagner ? Voyez juste pour gagner des points !',
   },
   sprint: { kicker: 'Phase 1', title: 'Le Sprint', sub: 'Le plus rapide au buzzer répond' },
-  memory: { kicker: 'Phase 2', title: 'La Grille', sub: 'Choisissez une case · les autres peuvent leech' },
+  memory: { kicker: 'Phase 2', title: 'La Grille', sub: '7 tours · choisissez une carte ouverte' },
   climax: { kicker: 'Phase 3', title: 'La Finale', sub: 'Misez selon la difficulté · 1,5× / 2× / 3×' },
   reveal: { kicker: 'Avant le podium', title: 'Révélation', sub: 'Qui avait parié sur qui ?' },
   results: { kicker: 'Fin de partie', title: 'Le Classement', sub: 'Qui monte sur le podium ?' },
@@ -341,14 +341,13 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
   return (
     <>
       <div className="bj-table">
-        <TvGrid memory={m} players={state.players} colors={colors} />
+        <TvBoard memory={m} players={state.players} colors={colors} />
       </div>
       {q && m.askingCoord && (
         <div className="modal">
           <Marquee className="modal-marquee" key={m.askingCoord}>
             <div className="modal-card">
               <div className="modal-head">
-                <div className="modal-coord">{m.askingCoord}</div>
                 <div className="modal-tags">
                   <span className="chip">{q.theme}</span>
                   {q.contributor && <span className="modal-by">par {q.contributor}</span>}
@@ -389,10 +388,13 @@ function MemoryStatus({ state, colors }: { state: GameView; colors: Map<string, 
   if (m.status === 'finished') return <div className="mem-status">Grille terminée !</div>;
   if (m.status !== 'playing') return null;
   const turnName = nameOf(state.players, m.turnPlayerId);
+  const tour = m.turnPlayerId ? (m.turnsTaken[m.turnPlayerId] ?? 0) + 1 : 0;
+  const tourLabel = tour > 0 ? `Tour ${tour}/${MEMORY_TURNS}` : '';
   if (m.askStatus === 'leeching') {
     return (
       <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
         {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+        <span className="muted">{tourLabel}</span>
         <span>
           Leech · <b>{turnName}</b> réfléchit
         </span>
@@ -404,6 +406,7 @@ function MemoryStatus({ state, colors }: { state: GameView; colors: Map<string, 
     return (
       <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
         {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+        <span className="muted">{tourLabel}</span>
         <span>
           <b>{turnName}</b> répond à voix haute
         </span>
@@ -413,8 +416,9 @@ function MemoryStatus({ state, colors }: { state: GameView; colors: Map<string, 
   return (
     <div className="mem-status" style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties}>
       {m.turnPlayerId && <Token name={turnName} color={colors.get(m.turnPlayerId)} />}
+      <span className="muted">{tourLabel}</span>
       <span>
-        <b>{turnName}</b> annonce une case
+        <b>{turnName}</b> choisit une carte
       </span>
       <span className="muted">· {m.remaining} restante{m.remaining > 1 ? 's' : ''}</span>
     </div>

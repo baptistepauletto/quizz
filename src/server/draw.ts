@@ -1,5 +1,13 @@
 import type { Bank, Difficulty } from '../shared/types';
-import { DIFFICULTIES, NIGHT_SIZE } from '../shared/types';
+import {
+  DIFFICULTIES,
+  MEMORY_CONTRIBUTOR_QUOTA,
+  MEMORY_CONTRIBUTOR_SLOTS,
+  MEMORY_HOUSE_SIZE,
+  NIGHT_SIZE,
+  isMaisonContributor,
+  nameKey,
+} from '../shared/types';
 import type { QuestionRec } from './game';
 import { shuffle } from './game';
 
@@ -13,8 +21,9 @@ export { NIGHT_SIZE };
  * still near the top next time. When the fresh cards run out, the oldest
  * asked ones come back.
  *
- * Sprint keeps a mix of easy / medium / hard. Memory spreads across themes
- * so the grid is not twelve tiles of the same subject.
+ * Sprint keeps a mix of easy / medium / hard. Memory seats up to eight
+ * contributors at 1 easy / 2 medium / 2 hard, then up to 30 Maison spread
+ * across house themes. A short difficulty stays short.
  */
 export function drawNight(questions: QuestionRec[], lastAsked: ReadonlyMap<number, number>): QuestionRec[] {
   return (['sprint', 'memory', 'climax'] as const).flatMap((bank) =>
@@ -36,7 +45,7 @@ export function drawBank(
 ): QuestionRec[] {
   if (count <= 0) return [];
   if (bank === 'sprint') return drawSprint(items, lastAsked, count);
-  if (bank === 'memory') return drawSpread(items, lastAsked, count);
+  if (bank === 'memory') return drawMemory(items, lastAsked, count);
   return drawFresh(items, lastAsked, count, true);
 }
 
@@ -90,7 +99,98 @@ function drawSprint(items: QuestionRec[], lastAsked: ReadonlyMap<number, number>
   return shuffle(picked);
 }
 
-/** Round-robin across themes, freshest question of each theme first. Then shuffled onto the grid. */
+/**
+ * Contributor quota, then the house shelf.
+ * `already` is what the night plan already holds, so a top-up does not deal a second easy
+ * to someone who picked theirs by hand. Contributors already seated are kept even past
+ * the slot cap; new ones are added, freshest first, only while a slot remains.
+ */
+export function drawMemory(
+  pool: QuestionRec[],
+  lastAsked: ReadonlyMap<number, number>,
+  count: number,
+  already: QuestionRec[] = [],
+): QuestionRec[] {
+  if (count <= 0) return [];
+  const picked: QuestionRec[] = [];
+  const poolGroups = groupContributors(pool);
+  const alreadyGroups = groupContributors(already);
+  const seated = seatedContributors(already, poolGroups, lastAsked);
+
+  for (const key of seated) {
+    const have = tally(alreadyGroups.get(key) ?? []);
+    const available = poolGroups.get(key) ?? [];
+    for (const difficulty of DIFFICULTIES) {
+      const need = MEMORY_CONTRIBUTOR_QUOTA[difficulty] - have[difficulty];
+      if (need <= 0) continue;
+      const bucket = available.filter((q) => q.difficulty === difficulty);
+      for (const q of drawFresh(bucket, lastAsked, need, false)) {
+        if (picked.length >= count) return picked;
+        picked.push(q);
+      }
+    }
+  }
+
+  const maisonAlready = already.filter((q) => isMaisonContributor(q.contributor)).length;
+  const maisonNeed = Math.min(Math.max(0, MEMORY_HOUSE_SIZE - maisonAlready), count - picked.length);
+  if (maisonNeed > 0) {
+    const maisonPool = pool.filter((q) => isMaisonContributor(q.contributor));
+    picked.push(...drawSpread(maisonPool, lastAsked, maisonNeed));
+  }
+  return picked;
+}
+
+function contributorKey(contributor: string | null): string | null {
+  if (isMaisonContributor(contributor)) return null;
+  return nameKey(contributor!);
+}
+
+function groupContributors(items: QuestionRec[]): Map<string, QuestionRec[]> {
+  const groups = new Map<string, QuestionRec[]>();
+  for (const q of items) {
+    const key = contributorKey(q.contributor);
+    if (!key) continue;
+    const list = groups.get(key) ?? [];
+    list.push(q);
+    groups.set(key, list);
+  }
+  return groups;
+}
+
+function tally(items: QuestionRec[]): Record<Difficulty, number> {
+  const counts: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
+  for (const q of items) counts[q.difficulty] += 1;
+  return counts;
+}
+
+function freshest(list: QuestionRec[], lastAsked: ReadonlyMap<number, number>): QuestionRec {
+  return [...list].sort(byFreshness(lastAsked))[0];
+}
+
+/** People already on the plan, then the freshest newcomers, up to the slot cap. */
+function seatedContributors(
+  already: QuestionRec[],
+  poolGroups: Map<string, QuestionRec[]>,
+  lastAsked: ReadonlyMap<number, number>,
+): string[] {
+  const seated: string[] = [];
+  const seen = new Set<string>();
+  for (const q of already) {
+    const key = contributorKey(q.contributor);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    seated.push(key);
+  }
+  const fresh = [...poolGroups.keys()].filter((key) => !seen.has(key));
+  fresh.sort((a, b) => byFreshness(lastAsked)(freshest(poolGroups.get(a)!, lastAsked), freshest(poolGroups.get(b)!, lastAsked)));
+  for (const key of fresh) {
+    if (seated.length >= MEMORY_CONTRIBUTOR_SLOTS) break;
+    seated.push(key);
+  }
+  return seated;
+}
+
+/** Round-robin across themes, freshest question of each theme first. Then shuffled. */
 function drawSpread(items: QuestionRec[], lastAsked: ReadonlyMap<number, number>, count: number): QuestionRec[] {
   const groups = new Map<string, QuestionRec[]>();
   for (const q of items) {
