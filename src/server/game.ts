@@ -6,6 +6,7 @@ import {
   ESTIMATE_CLOSEST_BONUS,
   MEMORY_LEECH_MS,
   MEMORY_POINTS,
+  MEMORY_TURNS,
   POINTS,
   PREDICTION_BONUS,
   SPRINT_ANSWER_MS,
@@ -15,6 +16,7 @@ import {
   memoryActivePayout,
   memoryCurrentValue,
   memoryMaxHints,
+  nameKey,
   snapEstimate,
 } from '../shared/types';
 import type {
@@ -128,6 +130,8 @@ export interface Game {
     /** Options currently shown on TV (native MCQ or after a format-drop hint). */
     displayOptions: string[] | null;
     clueRevealed: boolean;
+    /** Resolves taken by player id. Skip does not count. */
+    turnsTaken: Record<string, number>;
   };
   climax: {
     candidates: number[];
@@ -254,6 +258,7 @@ function emptyMemory(): Game['memory'] {
     hintsUsed: 0,
     displayOptions: null,
     clueRevealed: false,
+    turnsTaken: {},
   };
 }
 
@@ -282,6 +287,7 @@ export function hydrateGame(g: Game): Game {
   if (m.hintsUsed === undefined) m.hintsUsed = 0;
   if (m.displayOptions === undefined) m.displayOptions = null;
   if (m.clueRevealed === undefined) m.clueRevealed = false;
+  if (!m.turnsTaken) m.turnsTaken = {};
   if ('previewUntil' in m) delete m.previewUntil;
   if ((m.status as string) === 'preview') m.status = 'playing';
   for (const t of m.tiles) {
@@ -304,7 +310,7 @@ export function hydrateGame(g: Game): Game {
 // ---------------------------------------------------------------------------
 
 export function nameKeyOf(name: string): string {
-  return name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  return nameKey(name);
 }
 
 export function cleanName(raw: string): string {
@@ -374,7 +380,12 @@ function removePlayer(g: Game, playerId: string, emit: Emit) {
   playerOf(g, playerId); // throws if unknown
   if (g.memory.turnPlayerId === playerId) advanceTurn(g, emit);
   g.players = g.players.filter((x) => x.id !== playerId);
+  delete g.memory.turnsTaken[playerId];
   if (g.memory.turnPlayerId === playerId) g.memory.turnPlayerId = null;
+  if (g.phase === 'memory' && g.memory.status === 'playing' && !g.players.some((p) => inRotation(g, p.id))) {
+    g.memory.status = 'finished';
+    g.memory.turnPlayerId = null;
+  }
   g.sprint.lockedOut = g.sprint.lockedOut.filter((id) => id !== playerId);
   if (g.sprint.buzzPlayerId === playerId) {
     g.sprint.buzzPlayerId = null;
@@ -502,8 +513,10 @@ export function applyCommand(g: Game, cmd: HostCommand, emit: Emit): void {
     case 'memory.resolve':
       return memoryResolve(g, cmd.correct, cmd.leechIds ?? [], emit);
     case 'memory.setTurn':
+      if (g.memory.status !== 'playing') throw new GameError('La grille n’est pas en jeu.');
       if (g.memory.askingCoord) throw new GameError('Termine d’abord la question en cours.');
       playerOf(g, cmd.playerId);
+      if (!inRotation(g, cmd.playerId)) throw new GameError('Cette personne a déjà joué ses 7 tours.');
       g.memory.turnPlayerId = cmd.playerId;
       return emit('memory.turn', { playerId: cmd.playerId });
     case 'memory.skipTurn':
@@ -648,6 +661,9 @@ function memoryFlip(g: Game, rawCoord: string, emit: Emit) {
   const m = g.memory;
   if (m.status !== 'playing') throw new GameError('La grille n’est pas encore en jeu.');
   if (m.askingCoord) throw new GameError('Termine d’abord la question en cours.');
+  if (m.turnPlayerId && !inRotation(g, m.turnPlayerId)) {
+    throw new GameError('Cette personne a déjà joué ses 7 tours.');
+  }
   const coord = String(rawCoord).trim().toUpperCase();
   const tile = m.tiles.find((t) => t.coord === coord);
   if (!tile) throw new GameError(`Il n’y a pas de case ${coord}.`);
@@ -777,6 +793,7 @@ function memoryResolve(g: Game, correct: boolean, leechIds: string[], emit: Emit
 
   tile.face = 'consumed';
   tile.result = correct ? 'hit' : 'miss';
+  if (m.turnPlayerId) m.turnsTaken[m.turnPlayerId] = turnsOf(m, m.turnPlayerId) + 1;
   emit('memory.consumed', {
     coord: tile.coord,
     result: tile.result,
@@ -786,21 +803,41 @@ function memoryResolve(g: Game, correct: boolean, leechIds: string[], emit: Emit
     leechIds: validLeechIds,
   });
   clearAsk(m);
-  if (m.tiles.every((t) => t.face === 'consumed')) m.status = 'finished';
-  advanceTurn(g, emit);
-}
-
-/** Round-robin: each player after the other, in join order. */
-function advanceTurn(g: Game, emit: Emit) {
-  const m = g.memory;
-  if (g.players.length === 0) {
+  const openLeft = m.tiles.some((t) => t.face !== 'consumed');
+  const anyone = g.players.some((p) => inRotation(g, p.id));
+  if (!openLeft || !anyone) {
+    m.status = 'finished';
     m.turnPlayerId = null;
     return;
   }
-  const i = g.players.findIndex((p) => p.id === m.turnPlayerId);
-  const next = g.players[(i + 1) % g.players.length];
-  m.turnPlayerId = next.id;
-  emit('memory.turn', { playerId: next.id });
+  advanceTurn(g, emit);
+}
+
+function turnsOf(m: Game['memory'], playerId: string): number {
+  return m.turnsTaken[playerId] ?? 0;
+}
+
+function inRotation(g: Game, playerId: string): boolean {
+  return turnsOf(g.memory, playerId) < MEMORY_TURNS;
+}
+
+/** Round-robin in join order, skipping anyone who has used their 7 turns. */
+function advanceTurn(g: Game, emit: Emit) {
+  const m = g.memory;
+  const all = g.players;
+  if (all.length === 0 || !all.some((p) => inRotation(g, p.id))) {
+    m.turnPlayerId = null;
+    if (m.status === 'playing') m.status = 'finished';
+    return;
+  }
+  const start = all.findIndex((p) => p.id === m.turnPlayerId);
+  for (let step = 1; step <= all.length; step++) {
+    const candidate = all[(start + step + all.length) % all.length];
+    if (!inRotation(g, candidate.id)) continue;
+    m.turnPlayerId = candidate.id;
+    emit('memory.turn', { playerId: candidate.id });
+    return;
+  }
 }
 
 /** Called about once a second: ends the leech window / climax typing timer / sprint answer window. */
@@ -1321,6 +1358,7 @@ export function viewFor(g: Game, role: Role, playerId: string | null): GameView 
           })
         : null,
     remaining: m.tiles.filter((t) => t.face !== 'consumed').length,
+    turnsTaken: m.turnsTaken,
     askStatus: m.askStatus,
     leechUntil: m.askStatus === 'leeching' ? m.leechUntil : null,
     hintsUsed: m.hintsUsed,

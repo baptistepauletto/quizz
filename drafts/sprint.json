@@ -554,7 +554,7 @@
       "prompt": "Quel trophée sportif international est-ce ?",
       "answer": "La Coupe du monde de la FIFA",
       "difficulty": "easy",
-      "notes": "Accepter « trophée de la Coupe du monde » / « FIFA World Cup Trophy ». Photo Wikimedia : FIFA_World_Cup_Trophy_photo_by_Djuradj_Vujcic.jpg.",
+      "notes": "Accepter « trophée de la Coupe du monde » / « FIFA World Cup Trophy ».",
       "image": "sports/coupe-monde-fifa.jpg"
     },
     {
@@ -595,7 +595,7 @@
     {
       "id": "s_077",
       "theme": "Maison",
-      "prompt": "Quelle est la dimension de cette télévision ?",
+      "prompt": "Quelles sont les dimensions de la télévision que vous regardez ?",
       "answer": "65 pouces",
       "difficulty": "easy",
       "image": "random/pouce.webp"
@@ -639,6 +639,68 @@
       "answer": "Sabrina Carpenter et Tate McRae",
       "difficulty": "easy",
       "image": "ai/tate-carpenter.jpg"
-    }
+    },
+    {
+      "id": "s_083",
+      "theme": "Orthographe",
+      "prompt": "Dans le verbe « akomodé » à l'infinitif, double-t-on la lettre C, la lettre M, ou les deux ?",
+      "answer": "Les deux (accommoder) ",
+      "difficulty": "medium",
+      "notes": "Accommoder"
+    },
+    {
+      "id": "s_084",
+      "theme": "Orthographe",
+      "prompt": "Parmi ces quatre mots, lequel contient une faute d'orthographe : Cauchemar, Parmi, Malgré, Hormi ?",
+      "answer": "Hormi",
+      "difficulty": "medium",
+      "notes": "Il prend toujours un S à la fin (« Hormis »), contrairement à « parmi »."
+    },
+    {
+      "id": "s_085",
+      "theme": "Orthographe",
+      "prompt": "Le nom « tentacule » est-il un mot masculin ou féminin ?",
+      "answer": "Masculin",
+      "difficulty": "easy",
+      "notes": "On dit bien « un tentacule » (comme un pétale, un haltère ou un ovule)."
+    },
+    {
+      "id": "s_086",
+      "theme": "Orthographe",
+      "prompt": "Lorsqu'on écrit « un chef-d'œuvre » au pluriel, quel est le seul mot qui prend la marque du pluriel avec un S ?",
+      "answer": "Des chefs-d'œuvre",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_087",
+      "theme": "Langue française",
+      "prompt": "Quel adjectif qualifie une année qui compte 366 jours au lieu de 365 ?",
+      "answer": "Bissextile",
+      "difficulty": "easy"
+    },
+    {
+      "id": "s_088",
+      "theme": "Vocabulaire",
+      "prompt": "Entre « habileté » et « habilité », quel est le mot exact qui désigne la qualité d'une personne adroite de ses mains ?",
+      "answer": "Habileté",
+      "difficulty": "medium",
+      "notes": "Le joueur doit bien prononcer le « e » (« a-bi-le-té »). « Habilité » est le participe passé du verbe habiliter (être autorisé à)."
+    },
+    {
+      "id": "s_089",
+      "theme": "Orthographe",
+      "prompt": "Lorsqu'on met « un gratte-ciel » au pluriel (selon l'orthographe traditionnelle), lequel des deux mots prend un « S » ?",
+      "answer": "Aucun, « des gratte-ciel » est le pluriel correct",
+      "difficulty": "medium",
+      "notes": "Il est traditionnellement invariable : « des gratte-ciel » (même si la réforme de 1990 tolère gratte-ciels)."
+    },
+    {
+      "id": "s_090",
+      "theme": "Langue française",
+      "prompt": "Entre « prodige » et « prodigue », quel adjectif qualifie une personne qui dépense son argent sans compter ?",
+      "answer": "Prodigue",
+      "difficulty": "medium",
+      "notes": "Comme dans la parabole de « l'enfant prodigue » religieuse (souvent confondu avec un enfant prodige)."
+      }
   ]
 }

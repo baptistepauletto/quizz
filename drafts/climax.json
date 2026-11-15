@@ -181,6 +181,39 @@
       "difficulty": "hard",
       "notes": "Source officielle : Rapport annuel 2024 du SPVM présenté par Fady Dagher (taux de résolution de 81 %).",
       "estimate": { "min": 0, "max": 80, "step": 1, "value": 31, "tolerance": 4 }
+    },
+    {
+      "id": "c_025",
+      "theme": "Vocabulaire",
+      "prompt": "Quel terme composé officiel l'OQLF recommande-t-il au Québec pour remplacer le mot anglais « hashtag » ?",
+      "answer": "Mot-clic",
+      "difficulty": "medium"
+    },
+    {
+      "id": "c_026",
+      "theme": "Orthographe",
+      "prompt": "Citez un des seuls mots (verbe) de la langue française qui comporte 5 voyelles consécutives différentes sans aucun Y ?",
+      "answer": "Jouaient",
+      "difficulty": "hard",
+      "notes": "Accepter tout verbe en -ouer à l'imparfait (jouaient, louaient, nouaient, vouaient, etc. -> O-U-A-I-E). Si le joueur dit « oiseau » (O-I-E-A-U est séparé par le S)."
+    },
+    {
+      "id": "c_027",
+      "theme": "Aviation civile",
+      "prompt": "Combien coûte un départ à 21:20 ce soir pour Séoul en business class pour un retour dans 2 semaines (Air Canada, 18h25 de vol avec une escale d'une heure, taxes incluses) ?",
+      "answer": "11384.31 $",
+      "difficulty": "hard",
+      "notes": "Source officielle : Air Canada.",
+      "estimate": { "min": 0, "max": 20000, "step": 100, "value": 11384, "tolerance": 500 }
+    },
+    {
+      "id": "c_028",
+      "theme": "Aviation civile",
+      "prompt": "Si j'étais parti ce matin à 8:30 pour Québec en Economy Latitude, pour revenir à l'heure pour Quizz In ce soir (16:07), combien m'aurait coûté l'aller-retour?",
+      "answer": "2594.90 $",
+      "difficulty": "hard",
+      "notes": "Source officielle : Air Canada, taxes incluses. le vol dure 1h01 lol",
+      "estimate": { "min": 0, "max": 10000, "step": 100, "value": 2594, "tolerance": 250 }
     }
   ]
 }

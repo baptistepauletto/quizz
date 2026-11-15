@@ -5,11 +5,12 @@ import { ConnectionPill, DifficultyChip, OptionsList, nameOf, useNow } from '../
 import { api, getToken, setToken } from '../lib/api';
 import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
-import { parseCoord } from '../../shared/grid';
 import type { HostCommand } from '../../shared/protocol';
+import { HostBoard } from '../components/MemoryGrid';
 import {
   ESTIMATE_CLOSEST_BONUS,
   MEMORY_FLOOR,
+  MEMORY_TURNS,
   PREDICTION_BONUS,
   climaxWinDelta,
   estimateBand,
@@ -19,6 +20,8 @@ import type { EstimateSpec } from '../../shared/types';
 import type { Difficulty, GameView, Phase, PileSummary, QuestionView } from '../../shared/types';
 
 const PHASES: Phase[] = ['lobby', 'predictions', 'sprint', 'memory', 'climax', 'reveal', 'results'];
+
+const DIFF_LONG = { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' } as const;
 
 const PHASE_LABEL: Record<Phase, string> = {
   lobby: 'salon',
@@ -522,6 +525,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
   const correctPayout = asking
     ? Math.max(floor, asking.points - checkedLeechIds.length)
     : 0;
+  const selectedTile = selected ? m.tiles.find((t) => t.coord === selected) : undefined;
 
   return (
     <div className="stack">
@@ -531,6 +535,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
             <div className="grow">
               <div className="muted" style={{ fontSize: '0.8rem' }}>
                 Au tour de
+                {m.turnPlayerId ? ` · ${(m.turnsTaken[m.turnPlayerId] ?? 0) + 1}/${MEMORY_TURNS}` : ''}
               </div>
               <b style={{ fontSize: '1.3rem' }}>{nameOf(state.players, m.turnPlayerId) || '—'}</b>
             </div>
@@ -542,11 +547,13 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
               onChange={(e) => e.target.value && send({ t: 'memory.setTurn', playerId: e.target.value })}
             >
               <option value="">Changer…</option>
-              {state.players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+              {state.players
+                .filter((p) => (m.turnsTaken[p.id] ?? 0) < MEMORY_TURNS)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
             </select>
             <button className="btn small" disabled={!!m.askingCoord} onClick={() => send({ t: 'memory.skipTurn' })}>
               Passer
@@ -557,7 +564,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
 
       {asking && (
         <>
-          <QuestionCard q={asking} label={m.askingCoord ?? undefined} clue={m.clue} />
+          <QuestionCard q={asking} clue={m.clue} />
 
           {m.askStatus === 'leeching' && (
             <div className="card stack">
@@ -670,7 +677,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
           disabled={!selected}
           onClick={() => selected && send({ t: 'memory.flip', coord: selected })}
         >
-          {selected ? `Ouvrir ${selected}` : 'Touche la case annoncée'}
+          {selectedTile ? `Ouvrir ${DIFF_LONG[selectedTile.difficulty ?? 'medium']} · ${selectedTile.theme}` : 'Touche une carte'}
         </button>
       )}
 
@@ -680,37 +687,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
         </button>
       )}
 
-      <HostGrid state={state} selected={selected} onSelect={setSelected} />
-    </div>
-  );
-}
-
-function HostGrid({ state, selected, onSelect }: { state: GameView; selected: string | null; onSelect: (c: string) => void }) {
-  const m = state.memory;
-  const cells = Array.from({ length: m.cols * m.rows }, () => null as (typeof m.tiles)[number] | null);
-  for (const t of m.tiles) {
-    const pos = parseCoord(t.coord);
-    if (pos) cells[pos.row * m.cols + pos.col] = t;
-  }
-  const diffShort: Record<string, string> = { easy: 'F', medium: 'M', hard: 'D' };
-  return (
-    <div className="host-grid" style={{ gridTemplateColumns: `repeat(${m.cols}, minmax(0, 1fr))` }}>
-      {cells.map((t, i) =>
-        t ? (
-          <button
-            key={t.coord}
-            className={['host-tile', t.face, t.difficulty ?? '', t.result ?? '', selected === t.coord ? 'selected' : ''].join(' ')}
-            disabled={t.face !== 'open' || m.status !== 'playing' || !!m.askingCoord}
-            onClick={() => onSelect(t.coord)}
-          >
-            <span className="host-tile-coord">{t.coord}</span>
-            <span className="host-tile-theme">{t.theme}</span>
-            {t.difficulty && <span className={`host-tile-diff ${t.difficulty}`}>{diffShort[t.difficulty]}</span>}
-          </button>
-        ) : (
-          <div key={`e${i}`} />
-        ),
-      )}
+      <HostBoard memory={m} players={state.players} selected={selected} onSelect={setSelected} />
     </div>
   );
 }
