@@ -598,8 +598,47 @@
       "prompt": "Quelle est la dimension de cette télévision ?",
       "answer": "65 pouces",
       "difficulty": "easy",
-      "notes": "Accepter « 65 pouces ».",
-      "image": "random/pouce.jpg"
+      "image": "random/pouce.webp"
+    },
+    {
+      "id": "s_078",
+      "theme": "AI mashup",
+      "prompt": "Qui sont les deux sportifs sur cette photo ?",
+      "answer": "Messi et Jordan",
+      "difficulty": "easy",
+      "image": "ai/messi-jordan.jpg"
+    },
+    {
+      "id": "s_079",
+      "theme": "AI mashup",
+      "prompt": "De qui est composé ce couple super mignon ?",
+      "answer": "Drake et Bieber",
+      "difficulty": "easy",
+      "image": "ai/drake-bieber.jpg"
+    },
+    {
+      "id": "s_080",
+      "theme": "AI mashup",
+      "prompt": "Qui sont ces deux valereux combattans de MMA ?",
+      "answer": "Elon et Zuckerberg",
+      "difficulty": "easy",
+      "image": "ai/elon-zuck.jpg"
+    },
+    {
+      "id": "s_081",
+      "theme": "AI mashup",
+      "prompt": "Qui sont ces deux meilleures amies ?",
+      "answer": "Ruba G(h)aza(l) et Christine Fréchette",
+      "difficulty": "easy",
+      "image": "ai/gazal-frechette.jpg"
+    },
+    {
+      "id": "s_082",
+      "theme": "AI mashup",
+      "prompt": "Qui sont ces deux stratèges géopolotiques?",
+      "answer": "Sabrina Carpenter et Tate McRae",
+      "difficulty": "easy",
+      "image": "ai/tate-carpenter.jpg"
     }
   ]
 }
