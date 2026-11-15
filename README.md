@@ -35,7 +35,7 @@ Results are kept for stats across nights (no screen for them yet): `games` (one 
 - **Sprint**: first buzz (server arrival time) wins. Host says Correct / Wrong. Wrong reopens the buzzer, the previous buzzer is locked out for that question.
 - **Memory Grid**: cards stay face-up. Eight contributor columns (1 easy, 2 medium, 2 hard — points 2 / 4 / 6) and a house shelf of 30. Players take turns round-robin, 7 turns each, and the host opens the card they call. A hit or a miss consumes the card. The phase ends after those turns, so a full board leaves 14 cards unplayed.
 - **Winner prediction** (optional, before Sprint): everyone secretly picks who will finish first. Revealed after the finale; correct picks get +5 (can still reshuffle the podium). Ties for #1 all count.
-- **Finale**: players with 0 points sit out. Secret wager up to your score. Correct pays by difficulty — easy ≈1.5× total (`+round(wager/2)`), medium 2× (`+wager`), hard 3× (`+2×wager`). Wrong = full wager lost.
+- **Finale**: players with 0 points sit out. Secret wager up to your score. Correct pays by difficulty — easy ≈1.5× total (`+round(wager/2)`), medium 2× (`+wager`), hard 3× (`+2×wager`). Wrong = full wager lost. On an estimate, anyone inside the band wins at that rate. The closest guess (ties share) wins one multiplier higher: easy ≈2.5×, medium 3×, hard 4×. Outside the band, the stake is lost.
 - Guest list (optional, top of `/prep/night`, one name per line): phones then pick their name from buttons instead of typing it, and other names are refused. Names already in the room and connected are greyed out; kick a player from `/host` to free their name.
 - Reconnect by retyping your name (or picking it again from the guest list).
 

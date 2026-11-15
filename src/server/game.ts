@@ -3,7 +3,6 @@ import { computeGrid, coordsFor } from '../shared/grid';
 import { mediaUrl } from './pictures';
 import type { HostCommand, PlayerMessage } from '../shared/protocol';
 import {
-  ESTIMATE_CLOSEST_BONUS,
   MEMORY_LEECH_MS,
   MEMORY_POINTS,
   MEMORY_TURNS,
@@ -11,6 +10,7 @@ import {
   PREDICTION_BONUS,
   SPRINT_ANSWER_MS,
   climaxWinDelta,
+  estimateClosestBoost,
   estimateDistance,
   estimateInRange,
   memoryActivePayout,
@@ -1047,12 +1047,8 @@ function climaxEstimateAdvance(g: Game, emit: Emit) {
   const closest = c.estimateClosest.includes(playerId);
   const difficulty = c.questionId !== null ? question(g, c.questionId).difficulty : 'hard';
 
-  let delta = correct ? climaxWinDelta(wager, difficulty) : -wager;
+  const delta = correct ? climaxWinDelta(wager, difficulty, estimateClosestBoost(closest, correct)) : -wager;
   addScore(g, playerId, delta, emit, 'climax');
-  if (closest) {
-    addScore(g, playerId, ESTIMATE_CLOSEST_BONUS, emit, 'climax-closest');
-    delta += ESTIMATE_CLOSEST_BONUS;
-  }
   c.results.push({ playerId, wager, correct, closest });
   emit('climax.estimate_revealed', {
     playerId,

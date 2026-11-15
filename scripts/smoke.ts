@@ -544,6 +544,7 @@ try {
       await host.cmd({ t: 'memory.hint' });
       check(host.errors.length > 0, 'hints are locked during the leech window');
       turn1 = host.state!.memory.turnPlayerId!;
+      const turnsBefore = host.state!.memory.turnsTaken[turn1] ?? 0;
       const leecher = [players.ann, players.bob, players.cy].find((p) => p.playerId !== turn1)!;
       await leecher.cmd({ t: 'answer', text: 'leech-ok' });
       check(host.state!.memory.leeches.some((l) => l.playerId === leecher.playerId && l.text === 'leech-ok'), 'host sees live leech submissions');
@@ -563,7 +564,7 @@ try {
       );
       check(host.state!.memory.tiles.find((t) => t.coord === next.coord)!.face === 'consumed', 'tile consumed after a hit');
       check(host.state!.memory.turnPlayerId !== turn1, 'turn moved to the next player (round-robin)');
-      check(host.state!.memory.turnsTaken[turn1!] === 1, 'a resolve counts as that player’s turn');
+      check(host.state!.memory.turnsTaken[turn1!] === turnsBefore + 1, 'a resolve counts as that player’s turn');
       scoredCoord = next.coord;
       sawPhoto = true;
       continue;
@@ -705,21 +706,21 @@ try {
   check(host.state!.climax.status === 'resolved', 'revealAll finishes the estimate round');
   const annEst = host.state!.climax.results.find((r) => r.playerId === players.ann.playerId);
   const bobEst = host.state!.climax.results.find((r) => r.playerId === players.bob.playerId);
-  check(!!annEst?.correct && annEst.closest === true, 'closest in-range guess wins the wager and +1');
+  check(!!annEst?.correct && annEst.closest === true, 'closest in-range guess wins at one multiplier higher');
   check(bobEst?.correct === false && bobEst.closest !== true, 'far out-of-range guess loses the wager');
-  // Ann was 27; + climaxWinDelta(2, easy)=1 + closest 1 → 29. Bob was 5; -2 → 3.
-  check(scoreOf('ann') === 29, 'estimate scoring: Ann 27 → 29');
+  // Ann was 27; easy wager 2 is +1, plus one extra ×wager for being closest → +3 → 30. Bob was 5; -2 → 3.
+  check(scoreOf('ann') === 30, 'estimate scoring: Ann 27 → 30');
   check(scoreOf('bob') === 3, 'estimate scoring: Bob 5 → 3');
 
   console.log('\nReveal predictions');
-  // Ann leads with 29; she picked herself earlier → +5. Bob picked himself (wrong). Cy picked Ann (correct).
+  // Ann leads with 30; she picked herself earlier → +5. Bob picked himself (wrong). Cy picked Ann (correct).
   await host.cmd({ t: 'phase.set', phase: 'reveal' });
   check(host.state!.predictions.winnerIds.includes(players.ann.playerId!), 'Ann is frozen as #1 for the bet');
   check(tv.state!.predictions.picks.length === 0 && tv.state!.predictions.revealIndex === -1, 'TV starts on the teaser');
   await host.cmd({ t: 'reveal.all' });
   check(tv.state!.predictions.picks.length === 3, 'TV shows every pick after reveal.all');
   await host.cmd({ t: 'reveal.award' });
-  check(scoreOf('ann') === 29 + 5, 'correct prediction awards +5 to Ann');
+  check(scoreOf('ann') === 30 + 5, 'correct prediction awards +5 to Ann');
   check(scoreOf('cy') === 5, 'correct prediction awards +5 to Cy');
   check(scoreOf('bob') === 3, 'wrong prediction awards nothing');
   check(host.state!.predictions.awarded === true, 'bonus flagged as awarded');
@@ -752,7 +753,7 @@ try {
   await tv2.connect({ t: 'hello', role: 'tv' });
   clients.push(tv2);
   check(tv2.state?.joinCode === joinCode && tv2.state.seq === seq && tv2.state.phase === 'results', 'game resumed from the snapshot after a restart');
-  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 34, 'scores survived the restart');
+  check(tv2.state?.players.find((p) => p.name === 'Ann')?.score === 35, 'scores survived the restart');
   const ann3 = new Client('Ann3');
   await ann3.connect({ t: 'hello', role: 'play', code: joinCode, name: 'ann' });
   clients.push(ann3);
@@ -772,7 +773,7 @@ try {
     score: number;
     rank: number;
   }[];
-  check(finals[0]?.name === 'Ann' && finals[0].score === 34 && finals[0].rank === 1 && finals.length === 3, 'final scores and ranks are kept');
+  check(finals[0]?.name === 'Ann' && finals[0].score === 35 && finals[0].rank === 1 && finals.length === 3, 'final scores and ranks are kept');
   const sums = new Map(
     (statsDb.prepare('SELECT player, SUM(points) AS pts FROM plays WHERE player IS NOT NULL GROUP BY player').all() as {
       player: string;

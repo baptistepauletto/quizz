@@ -13,7 +13,7 @@ import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
 import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
-import { ESTIMATE_CLOSEST_BONUS, MEMORY_TURNS, climaxStackAmount, climaxWinDelta } from '../../shared/types';
+import { MEMORY_TURNS, climaxStackAmount, climaxWinDelta, estimateClosestBoost } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
 
 const HELLO = { t: 'hello', role: 'tv' } as const;
@@ -492,7 +492,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
           {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
           {c.status === 'revealing' && (
             <div className="tv-sub">
-              Du plus loin au plus proche · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
+              Du plus loin au plus proche · le plus proche gagne un × de plus · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
             </div>
           )}
           <Table
@@ -508,14 +508,16 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
               const r = c.results.find((x) => x.playerId === p.id);
               const wager = s?.wager ?? 0;
               const diff = c.difficulty ?? 'hard';
-              return r ? climaxStackAmount(wager, r.correct, diff) : wager;
+              const boost = r ? estimateClosestBoost(r.closest, r.correct) : 0;
+              return r ? climaxStackAmount(wager, r.correct, diff, boost) : wager;
             }}
             caption={(p) => {
               const r = c.results.find((x) => x.playerId === p.id);
               if (!r) return null;
               const diff = c.difficulty ?? 'hard';
-              const base = r.correct ? `+${climaxWinDelta(r.wager, diff)}` : `-${r.wager}`;
-              return r.closest ? `${base} · +${ESTIMATE_CLOSEST_BONUS}` : base;
+              const boost = estimateClosestBoost(r.closest, r.correct);
+              const base = r.correct ? `+${climaxWinDelta(r.wager, diff, boost)}` : `-${r.wager}`;
+              return r.closest ? `${base} · proche` : base;
             }}
             answer={(p) => {
               const s = c.submissions.find((x) => x.playerId === p.id);

@@ -60,23 +60,28 @@ export function memoryActivePayout(
 
 /**
  * Net points gained on a correct climax wager (stake stays in the score).
- * Easy ≈ 1.5× total, medium 2×, hard 3×. Wrong answers always lose the full wager.
+ * Easy ≈ 1.5× total, medium 2×, hard 3×.
+ * `boost` adds that many extra ×wager: the closest in-range estimate pays +1×.
+ * Wrong answers always lose the full wager.
  */
-export function climaxWinDelta(wager: number, difficulty: Difficulty): number {
+export function climaxWinDelta(wager: number, difficulty: Difficulty, boost = 0): number {
   const w = Math.max(0, Math.floor(wager));
-  if (difficulty === 'easy') return Math.round(w / 2);
-  if (difficulty === 'medium') return w;
-  return 2 * w;
+  const extra = Math.max(0, Math.floor(boost)) * w;
+  if (difficulty === 'easy') return Math.round(w / 2) + extra;
+  if (difficulty === 'medium') return w + extra;
+  return 2 * w + extra;
 }
 
 /** Chip-stack amount shown after a climax judgment (won stack = stake + net). */
-export function climaxStackAmount(wager: number, correct: boolean, difficulty: Difficulty): number {
+export function climaxStackAmount(wager: number, correct: boolean, difficulty: Difficulty, boost = 0): number {
   const w = Math.max(0, Math.floor(wager));
-  return correct ? w + climaxWinDelta(w, difficulty) : w;
+  return correct ? w + climaxWinDelta(w, difficulty, boost) : w;
 }
 
-/** Bonus for the closest estimate guess (ties share). */
-export const ESTIMATE_CLOSEST_BONUS = 1;
+/** Extra ×wager for the closest in-range estimate. Ties share it; a miss still loses the stake. */
+export function estimateClosestBoost(closest: boolean | undefined, correct: boolean): number {
+  return closest && correct ? 1 : 0;
+}
 
 /** Climax numeric estimate (slider) — target stays server/host-side until resolve. */
 export interface EstimateSpec {

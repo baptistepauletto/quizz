@@ -8,7 +8,7 @@ import type { UseGame } from '../lib/useGame';
 import type { HostCommand } from '../../shared/protocol';
 import { HostBoard } from '../components/MemoryGrid';
 import {
-  ESTIMATE_CLOSEST_BONUS,
+  estimateClosestBoost,
   MEMORY_FLOOR,
   MEMORY_TURNS,
   PREDICTION_BONUS,
@@ -707,8 +707,10 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
               <div key={r.playerId} className="card row">
                 <b className="grow">{nameOf(state.players, r.playerId)}</b>
                 <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
-                  {r.correct ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard')}` : `-${r.wager}`}
-                  {r.closest ? ` · +${ESTIMATE_CLOSEST_BONUS}` : ''}
+                  {r.correct
+                    ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
+                    : `-${r.wager}`}
+                  {r.closest ? ' · proche' : ''}
                 </span>
               </div>
             ))}
@@ -836,7 +838,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             <b>
               Révélation {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
             </b>
-            <p className="muted">Du plus loin au plus proche · dans la fourchette = mise gagnée · +{ESTIMATE_CLOSEST_BONUS} au plus proche</p>
+            <p className="muted">Du plus loin au plus proche · dans la fourchette = mise gagnée · le plus proche gagne un × de plus</p>
             {c.submissions.map((s) => {
               const r = c.results.find((x) => x.playerId === s.playerId);
               return (
@@ -848,8 +850,10 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                   </span>
                   {r ? (
                     <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
-                      {r.correct ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard')}` : `-${r.wager}`}
-                      {r.closest ? ` · +${ESTIMATE_CLOSEST_BONUS}` : ''}
+                      {r.correct
+                        ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
+                        : `-${r.wager}`}
+                      {r.closest ? ' · proche' : ''}
                     </span>
                   ) : (
                     <span className="chip">…</span>

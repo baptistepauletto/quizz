@@ -7,7 +7,7 @@ import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
-import { ESTIMATE_CLOSEST_BONUS, MEMORY_TURNS, climaxStackAmount, climaxWinDelta, snapEstimate } from '../../shared/types';
+import { MEMORY_TURNS, climaxStackAmount, climaxWinDelta, estimateClosestBoost, snapEstimate } from '../../shared/types';
 import type { GameView, JoinOptionsDto, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
@@ -663,7 +663,7 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     return (
       <div className="play-body">
         {header}
-        <p className="muted">Révélation sur la TV · du plus loin au plus proche</p>
+        <p className="muted">Révélation sur la TV · du plus loin au plus proche · le plus proche gagne un × de plus</p>
         {c.question?.prompt && <div className="prompt">{c.question.prompt}</div>}
         {wager > 0 ? (
           <p>
@@ -699,13 +699,18 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             <div className={`bet-pile ${result.correct ? 'won' : 'lost'}`}>
               <ChipStack
                 mode={result.correct ? 'won' : 'lost'}
-                amount={climaxStackAmount(result.wager, result.correct, c.difficulty ?? 'hard')}
+                amount={climaxStackAmount(
+                  result.wager,
+                  result.correct,
+                  c.difficulty ?? 'hard',
+                  estimateClosestBoost(result.closest, result.correct),
+                )}
               />
             </div>
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct
-                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard')}${result.closest ? ` · +${ESTIMATE_CLOSEST_BONUS} proche` : ''}`
-                : `-${result.wager}${result.closest ? ` · +${ESTIMATE_CLOSEST_BONUS} proche` : ''}`}
+                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard', estimateClosestBoost(result.closest, result.correct))}${result.closest ? ' · proche' : ''}`
+                : `-${result.wager}${result.closest ? ' · proche' : ''}`}
             </div>
             <p>
               {result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}
