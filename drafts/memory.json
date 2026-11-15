@@ -595,7 +595,9 @@
       "prompt": "Quelle particule porte une charge électrique négative dans l’atome ?",
       "answer": "L’électron",
       "difficulty": "medium",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["Le proton", "Le neutron", "L’électron", "Le photon"]
     },
     {
       "id": "m_053",
@@ -603,7 +605,10 @@
       "prompt": "Quel est le numéro atomique du carbone ?",
       "answer": "6",
       "difficulty": "hard",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "context_hint": "Juste après le bore dans le tableau périodique.",
+      "is_mcq": false,
+      "options": ["4", "6", "8", "12"]
     },
     {
       "id": "m_054",
@@ -611,7 +616,9 @@
       "prompt": "Dans quel pays se trouve le désert d’Atacama ?",
       "answer": "Au Chili",
       "difficulty": "medium",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["Au Pérou", "Au Chili", "En Argentine", "En Bolivie"]
     },
     {
       "id": "m_055",
@@ -620,7 +627,10 @@
       "answer": "Astana",
       "difficulty": "hard",
       "notes": "A aussi porté le nom Noursoultan (2019–2022). Accepter Astana / Noursoultan.",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "context_hint": "Entre 2019 et 2022, elle a porté le nom de l’ancien président.",
+      "is_mcq": false,
+      "options": ["Almaty", "Astana", "Tachkent", "Bichkek"]
     },
     {
       "id": "m_056",
@@ -646,7 +656,9 @@
       "answer": "Ludwig van Beethoven",
       "difficulty": "medium",
       "notes": "Accepter Beethoven.",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["Wolfgang Amadeus Mozart", "Ludwig van Beethoven", "Johann Sebastian Bach", "Franz Schubert"]
     },
     {
       "id": "m_059",
@@ -655,7 +667,10 @@
       "answer": "Maurice Ravel",
       "difficulty": "hard",
       "notes": "Accepter Ravel.",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "context_hint": "Ida Rubinstein le lui a commandé (évident, non?).",
+      "is_mcq": false,
+      "options": ["Claude Debussy", "Maurice Ravel", "Camille Saint-Saëns", "Erik Satie"]
     },
     {
       "id": "m_060",
@@ -664,7 +679,9 @@
       "answer": "Le curcuma",
       "difficulty": "medium",
       "notes": "Pas le safran (plus cher, autre profil).",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["Le safran", "Le curcuma", "Le paprika", "Le curry"]
     },
     {
       "id": "m_061",
@@ -680,16 +697,20 @@
       "prompt": "Quel nageur a remporté 8 médailles d’or aux JO de Pékin en 2008 ?",
       "answer": "Michael Phelps",
       "difficulty": "medium",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["Michael Phelps", "Ryan Lochte", "Ian Thorpe", "Mark Spitz"]
     },
     {
       "id": "m_063",
       "theme": "Sciences",
-      "prompt": "Quelle est approximativement la vitesse de la lumière dans le vide (km/s) ?",
+      "prompt": "Quelle est approximativement la vitesse de la lumière dans le vide (km/s) (+3pts pour la valeur exacte)?",
       "answer": "300 000 km/s",
       "difficulty": "medium",
       "notes": "Accepter ~299 792 km/s ou « 3×10⁸ m/s ».",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["300 km/s", "30 000 km/s", "300 000 km/s", "3 000 000 km/s"]
     },
     {
       "id": "m_064",
@@ -698,7 +719,9 @@
       "answer": "L’ornithorynque",
       "difficulty": "medium",
       "notes": "Un monotrème est un mammifère qui pond des œufs.",
-      "contributor": "Maison"
+      "contributor": "Maison",
+      "is_mcq": false,
+      "options": ["L’échidné", "Le kangourou", "L’ornithorynque", "Le koala"]
     },
     {
       "id": "m_065",
@@ -721,7 +744,7 @@
       "id": "m_067",
       "contributor": "Maison",
       "theme": "Histoire",
-      "prompt": "Qui était le premier empereur de Rome ?",
+      "prompt": "Qui était le premier empereur de Rome ? (+1pt pour le lien de parenté)",
       "answer": "Auguste",
       "difficulty": "medium",
       "is_mcq": true,
@@ -731,7 +754,7 @@
         "Néron",
         "Caligula"
       ],
-      "notes": "Auguste (Octave) ; César n’a jamais porté le titre d’empereur."
+      "notes": "Auguste (Octave) ; César n’a jamais porté le titre d’empereur, il était dictateur. Auguste a été adopté par Jules César et fonde l'Empire romain."
     },
     {
       "id": "m_068",
@@ -739,7 +762,9 @@
       "theme": "Histoire",
       "prompt": "Quel traité a mis fin à la Première Guerre mondiale en 1919 ?",
       "answer": "Le traité de Versailles",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "is_mcq": false,
+      "options": ["Le traité de Versailles", "Le traité de Trianon", "L’armistice de Rethondes", "Le traité de Brest-Litovsk"]
     },
     {
       "id": "m_069",
@@ -763,6 +788,138 @@
         "Persée",
         "Ulysse"
       ]
+    },
+    {
+      "id": "m_071",
+      "contributor": "Maison",
+      "theme": "Orthographe",
+      "prompt": "Le nom « anagramme » est-il un mot masculin ou féminin ?",
+      "answer": "Féminin",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_072",
+      "contributor": "Maison",
+      "theme": "Orthographe",
+      "prompt": "Lorsqu'on écrit le verbe « appeler » au présent à la première personne du pluriel, combien y a-t-il de « P » et combien de « L » ?",
+      "answer": "Deux P et un L (nous appelons)",
+      "difficulty": "easy",
+      "notes": "On ne double le L que devant un E muet (j'appelle, mais nous appelons)."
+    },
+    {
+      "id": "m_073",
+      "theme": "Orthographe",
+      "prompt": "Parmi ces six mots, lequel est mal orthographié : Connexion, Réflexion, Annexion, Inflexion, Exposition, Excursion ?",
+      "answer": "Aucun d'entre eux",
+      "difficulty": "hard",
+      "notes": "Question piège ! Tous s'écrivent avec un X en français (contrairement à l'anglais « connection » ou « reflection »).",
+      "contributor": "Maison",
+      "context_hint": "En anglais, deux d'entre eux sont orthographiés avec 'CT'.",
+      "is_mcq": false,
+      "options":[
+        "Réflexion",
+        "Annexion",
+        "Connexion",
+        "Aucun d'entre eux"
+      ]
+    },
+    {
+      "id": "m_074",
+      "theme": "Vocabulaire",
+      "contributor": "Maison",
+      "prompt": "Quel nom donne-t-on à l'emploi involontaire d'un mot à la place d'un autre qui lui ressemble par la sonorité, comme dire « aréoport » au lieu de « aéroport » ?",
+      "answer": "Un barbarisme",
+      "difficulty": "hard",
+      "context_hint": "On l'appelle aussi un 'malapropisme' ou un 'pataquès'.",
+      "notes": "Accepter « une impropriété », « une paronymie ».",
+      "is_mcq": false,
+      "options":[
+        "Un zeugma",
+        "Un barbarisme",
+        "Un homonyme",
+        "Une confaçon"
+      ]
+    },
+    {
+      "id": "m_075",
+      "theme": "Stranger Things",
+      "contributor": "Maison",
+      "prompt": "Quel acteur joue Eddie Munson dans Stranger Things ?",
+      "answer": "Joseph Quinn",
+      "difficulty": "hard",
+      "notes": "Accepter Quinn.",
+      "context_hint": "Sa reprise de Master of Puppets, dans le monde à l’envers, a relancé le morceau de Metallica.",
+      "is_mcq": false,
+      "options": ["Jamie Campbell Bower", "Dacre Montgomery", "Joseph Quinn", "Charlie Heaton"]
+    },
+    {
+      "id": "m_076",
+      "theme": "Taylor Swift",
+      "contributor": "Maison",
+      "prompt": "Sur quel album de Taylor Swift figure le titre « Anti-Hero » ?",
+      "answer": "Midnights",
+      "difficulty": "hard",
+      "context_hint": "Sorti en octobre 2022, il s’ouvre sur « Lavender Haze ».",
+      "is_mcq": false,
+      "options": ["1989", "Midnights", "Reputation", "The Tortured Poets Department"]
+    },
+    {
+      "id": "m_077",
+      "theme": "Oscars",
+      "contributor": "Maison",
+      "prompt": "Quel film français a reçu l’Oscar du meilleur scénario original en 2024 ?",
+      "answer": "Anatomie d’une chute",
+      "difficulty": "hard",
+      "notes": "Accepter le titre anglais Anatomy of a Fall.",
+      "context_hint": "Justine Triet et Arthur Harari l’ont écrit, et le film avait déjà eu la Palme d’or.",
+      "is_mcq": false,
+      "options": ["La Passion de Dodin Bouffant", "Saint Omer", "La Nuit du 12", "Anatomie d’une chute"]
+    },
+    {
+      "id": "m_078",
+      "theme": "Euro 2024",
+      "contributor": "Maison",
+      "prompt": "Qui a marqué le but de la victoire de l’Espagne en finale de l’Euro 2024 ?",
+      "answer": "Mikel Oyarzabal",
+      "difficulty": "hard",
+      "notes": "Accepter Oyarzabal.",
+      "context_hint": "Entré en jeu, il bat Pickford à la 86e minute.",
+      "is_mcq": true,
+      "options": ["Nico Williams", "Mikel Oyarzabal", "Lamine Yamal", "Álvaro Morata"]
+    },
+    {
+      "id": "m_079",
+      "theme": "Beyoncé",
+      "contributor": "Maison",
+      "prompt": "Quel album Beyoncé a-t-elle sorti en juillet 2022 ?",
+      "answer": "Renaissance",
+      "difficulty": "hard",
+      "context_hint": "Un disque de house, premier volet, avant l’album country.",
+      "is_mcq": true,
+      "options": ["Lemonade", "Cowboy Carter", "Renaissance", "4"]
+    },
+    {
+      "id": "m_080",
+      "theme": "Friends",
+      "contributor": "Maison",
+      "prompt": "Comment s’appelle le singe capucin que Ross adopte dans Friends ?",
+      "answer": "Marcel",
+      "difficulty": "hard",
+      "context_hint": "Il finit dans un zoo, après avoir un peu trop collé Rachel.",
+      "is_mcq": false,
+      "options": ["Gunther", "Eddie", "Marcel", "Hugsy"]
+    },
+    {
+      "id": "m_081",
+      "theme": "Jeux vidéo",
+      "contributor": "Maison",
+      "prompt": "Dans quel jeu incarne-t-on le hors-la-loi Arthur Morgan ?",
+      "answer": "Red Dead Redemption 2",
+      "difficulty": "hard",
+      "notes": "Accepter RDR2.",
+      "context_hint": "Un western de Rockstar, sorti en 2018.",
+      "is_mcq": true,
+      "options": ["Red Dead Redemption 2", "Ghost of Tsushima", "Red Dead Redemption", "The Last of Us Part II"]
     }
   ]
 }
