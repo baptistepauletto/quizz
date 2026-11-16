@@ -7,7 +7,7 @@ import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
-import { MEMORY_TURNS, climaxStackAmount, climaxWinDelta, estimateClosestBoost, snapEstimate } from '../../shared/types';
+import { MEMORY_TURNS, climaxMultipleLabel, climaxStackAmount, climaxWinDelta, estimateClosestBoost, snapEstimate } from '../../shared/types';
 import type { GameView, JoinOptionsDto, PlayerView } from '../../shared/types';
 import type { UseGame } from '../lib/useGame';
 
@@ -709,12 +709,14 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             </div>
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct
-                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard', estimateClosestBoost(result.closest, result.correct))}${result.closest ? ' · proche' : ''}`
-                : `-${result.wager}${result.closest ? ' · proche' : ''}`}
+                ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard', estimateClosestBoost(result.closest, result.correct))}${estimateClosestBoost(result.closest, result.correct) ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}` : ''}`
+                : `-${result.wager}`}
             </div>
             <p>
               {result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}
-              {result.closest ? ' Plus proche !' : ''}
+              {estimateClosestBoost(result.closest, result.correct)
+                ? ` Plus proche, ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)} !`
+                : ''}
             </p>
           </>
         ) : (

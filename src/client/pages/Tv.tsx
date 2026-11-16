@@ -13,7 +13,7 @@ import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
 import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
-import { MEMORY_TURNS, climaxStackAmount, climaxWinDelta, estimateClosestBoost } from '../../shared/types';
+import { MEMORY_TURNS, climaxMultipleLabel, climaxStackAmount, climaxWinDelta, estimateClosestBoost } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
 
 const HELLO = { t: 'hello', role: 'tv' } as const;
@@ -492,7 +492,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
           {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
           {c.status === 'revealing' && (
             <div className="tv-sub">
-              Du plus loin au plus proche · le plus proche gagne un × de plus · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
+              Du plus loin au plus proche · le plus proche passe au multiple au-dessus · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
             </div>
           )}
           <Table
@@ -517,7 +517,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
               const diff = c.difficulty ?? 'hard';
               const boost = estimateClosestBoost(r.closest, r.correct);
               const base = r.correct ? `+${climaxWinDelta(r.wager, diff, boost)}` : `-${r.wager}`;
-              return r.closest ? `${base} · proche` : base;
+              return boost ? `${base} · ${climaxMultipleLabel(diff, boost)}` : base;
             }}
             answer={(p) => {
               const s = c.submissions.find((x) => x.playerId === p.id);

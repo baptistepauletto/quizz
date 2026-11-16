@@ -3,7 +3,7 @@ import {
   DIFFICULTIES,
   MEMORY_CONTRIBUTOR_QUOTA,
   MEMORY_CONTRIBUTOR_SLOTS,
-  MEMORY_HOUSE_SIZE,
+  MEMORY_HOUSE_QUOTA,
   NIGHT_SIZE,
   isMaisonContributor,
   nameKey,
@@ -22,8 +22,8 @@ export { NIGHT_SIZE };
  * asked ones come back.
  *
  * Sprint keeps a mix of easy / medium / hard. Memory seats up to eight
- * contributors at 1 easy / 2 medium / 2 hard, then up to 30 Maison spread
- * across house themes. A short difficulty stays short.
+ * contributors at 1 easy / 2 medium / 2 hard, then 10 easy, 10 medium and
+ * 10 hard Maison, spread across house themes. A short difficulty stays short.
  */
 export function drawNight(questions: QuestionRec[], lastAsked: ReadonlyMap<number, number>): QuestionRec[] {
   return (['sprint', 'memory', 'climax'] as const).flatMap((bank) =>
@@ -131,11 +131,15 @@ export function drawMemory(
     }
   }
 
-  const maisonAlready = already.filter((q) => isMaisonContributor(q.contributor)).length;
-  const maisonNeed = Math.min(Math.max(0, MEMORY_HOUSE_SIZE - maisonAlready), count - picked.length);
-  if (maisonNeed > 0) {
-    const maisonPool = pool.filter((q) => isMaisonContributor(q.contributor));
-    picked.push(...drawSpread(maisonPool, lastAsked, maisonNeed));
+  const maisonHave = tally(already.filter((q) => isMaisonContributor(q.contributor)));
+  const maisonPool = pool.filter((q) => isMaisonContributor(q.contributor));
+  for (const difficulty of DIFFICULTIES) {
+    const need = MEMORY_HOUSE_QUOTA[difficulty] - maisonHave[difficulty];
+    if (need <= 0) continue;
+    const room = count - picked.length;
+    if (room <= 0) break;
+    const bucket = maisonPool.filter((q) => q.difficulty === difficulty);
+    picked.push(...drawSpread(bucket, lastAsked, Math.min(need, room)));
   }
   return picked;
 }

@@ -8,6 +8,7 @@ import type { UseGame } from '../lib/useGame';
 import type { HostCommand } from '../../shared/protocol';
 import { HostBoard } from '../components/MemoryGrid';
 import {
+  climaxMultipleLabel,
   estimateClosestBoost,
   MEMORY_FLOOR,
   MEMORY_TURNS,
@@ -710,7 +711,9 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                   {r.correct
                     ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
                     : `-${r.wager}`}
-                  {r.closest ? ' · proche' : ''}
+                  {estimateClosestBoost(r.closest, r.correct)
+                    ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}`
+                    : ''}
                 </span>
               </div>
             ))}
@@ -838,7 +841,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
             <b>
               Révélation {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
             </b>
-            <p className="muted">Du plus loin au plus proche · dans la fourchette = mise gagnée · le plus proche gagne un × de plus</p>
+            <p className="muted">Du plus loin au plus proche · dans la fourchette = mise gagnée · le plus proche passe au multiple au-dessus (×2,5 / ×3 / ×4)</p>
             {c.submissions.map((s) => {
               const r = c.results.find((x) => x.playerId === s.playerId);
               return (
@@ -846,14 +849,22 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                   <span className="grow">
                     <b>{s.name}</b>
                     <span className="muted"> · {s.text || '(vide)'}</span>
-                    {s.closest && <span className="chip ok">proche</span>}
+                    {s.closest && (
+                      <span className="chip ok">
+                        {r && estimateClosestBoost(r.closest, r.correct)
+                          ? climaxMultipleLabel(c.difficulty ?? 'hard', 1)
+                          : 'proche'}
+                      </span>
+                    )}
                   </span>
                   {r ? (
                     <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
                       {r.correct
                         ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
                         : `-${r.wager}`}
-                      {r.closest ? ' · proche' : ''}
+                      {estimateClosestBoost(r.closest, r.correct)
+                        ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}`
+                        : ''}
                     </span>
                   ) : (
                     <span className="chip">…</span>

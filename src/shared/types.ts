@@ -83,6 +83,14 @@ export function estimateClosestBoost(closest: boolean | undefined, correct: bool
   return closest && correct ? 1 : 0;
 }
 
+/** Total return multiple, stake included. Easy 1.5×, medium 2×, hard 3×, plus any closest boost. */
+export function climaxMultipleLabel(difficulty: Difficulty, boost = 0): string {
+  const base = difficulty === 'easy' ? 1.5 : difficulty === 'medium' ? 2 : 3;
+  const n = base + Math.max(0, Math.floor(boost));
+  const text = Number.isInteger(n) ? String(n) : n.toLocaleString('fr-FR');
+  return `×${text}`;
+}
+
 /** Climax numeric estimate (slider) — target stays server/host-side until resolve. */
 export interface EstimateSpec {
   min: number;
@@ -134,8 +142,12 @@ export const MEMORY_CONTRIBUTOR_QUOTA: Record<Difficulty, number> = { easy: 1, m
 /** Contributor columns the automatic deal seats. Hand-picking may include more. */
 export const MEMORY_CONTRIBUTOR_SLOTS = 8;
 
+/** House shelf: 10 of each difficulty. A short bucket stays short. */
+export const MEMORY_HOUSE_QUOTA: Record<Difficulty, number> = { easy: 10, medium: 10, hard: 10 };
+
 /** House questions on the shelf. */
-export const MEMORY_HOUSE_SIZE = 30;
+export const MEMORY_HOUSE_SIZE =
+  MEMORY_HOUSE_QUOTA.easy + MEMORY_HOUSE_QUOTA.medium + MEMORY_HOUSE_QUOTA.hard;
 
 /** Resolves each player gets. Skip does not count. 8 × 7 leaves cards on a full board of 70. */
 export const MEMORY_TURNS = 7;

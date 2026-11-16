@@ -9,7 +9,7 @@ import {
   DIFFICULTIES,
   MEMORY_CONTRIBUTOR_QUOTA,
   MEMORY_CONTRIBUTOR_SLOTS,
-  MEMORY_HOUSE_SIZE,
+  MEMORY_HOUSE_QUOTA,
   NIGHT_SIZE,
   isMaisonContributor,
   nameKey,
@@ -213,12 +213,12 @@ function NightPlanner() {
         rows.set(key, { name: q.contributor!, theme: q.theme, picked: { easy: 0, medium: 0, hard: 0 } });
       }
     }
-    let maison = 0;
+    const maison: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
     for (const id of picked) {
       const q = byId.get(id);
       if (!q || q.bank !== 'memory') continue;
       if (isMaisonContributor(q.contributor)) {
-        maison += 1;
+        maison[q.difficulty] += 1;
         continue;
       }
       const row = rows.get(nameKey(q.contributor!));
@@ -330,7 +330,7 @@ function NightPlanner() {
             <p className="muted" style={{ margin: 0 }}>
               {picked.length === 0
                 ? bank === 'memory'
-                  ? `Rien de choisi : le tirage prend 1 facile, 2 moyennes et 2 difficiles par personne (jusqu’à ${MEMORY_CONTRIBUTOR_SLOTS}), puis ${MEMORY_HOUSE_SIZE} Maison.`
+                  ? `Rien de choisi : le tirage prend 1 facile, 2 moyennes et 2 difficiles par personne (jusqu’à ${MEMORY_CONTRIBUTOR_SLOTS}), puis 10 faciles, 10 moyennes et 10 difficiles Maison.`
                   : `Rien de choisi : ${Math.min(target, available)} questions seront tirées au hasard au lancement.`
                 : picked.length < target
                   ? `La manche se jouera avec ces ${picked.length} questions. Il en faut ${target} pour une manche complète.`
@@ -349,8 +349,8 @@ function NightPlanner() {
             {memoryQuota && (
               <div className="stack" style={{ gap: 6 }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  Tirage automatique : 1 facile, 2 moyennes, 2 difficiles par personne, puis {MEMORY_HOUSE_SIZE}{' '}
-                  Maison. Choisir à la main peut dépasser.
+                  Tirage automatique : 1 facile, 2 moyennes, 2 difficiles par personne, puis 10 faciles, 10
+                  moyennes et 10 difficiles Maison. Choisir à la main peut dépasser.
                 </p>
                 {memoryQuota.rows.map((row) => (
                   <div key={row.key} className="row wrap">
@@ -368,9 +368,14 @@ function NightPlanner() {
                 ))}
                 <div className="row wrap">
                   <b className="grow">Maison</b>
-                  <span className={`chip${memoryQuota.maison > MEMORY_HOUSE_SIZE ? ' bad' : ''}`}>
-                    {memoryQuota.maison}/{MEMORY_HOUSE_SIZE}
-                  </span>
+                  {DIFFICULTIES.map((d) => (
+                    <span
+                      key={d}
+                      className={`chip ${d}${memoryQuota.maison[d] > MEMORY_HOUSE_QUOTA[d] ? ' bad' : ''}`}
+                    >
+                      {memoryQuota.maison[d]}/{MEMORY_HOUSE_QUOTA[d]}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}

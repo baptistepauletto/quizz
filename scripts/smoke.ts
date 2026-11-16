@@ -183,17 +183,30 @@ console.log('\nNight draw');
   );
 
   const maison = ['Space', 'Cinema', 'Food', 'Histoire'].flatMap((theme, ti) =>
-    Array.from({ length: 10 }, (_, i) => sampleQuestion(400 + ti * 10 + i, 'memory', theme, 'easy', 'Maison')),
+    (['easy', 'medium', 'hard'] as const).flatMap((difficulty, di) =>
+      Array.from({ length: 4 }, (_, i) =>
+        sampleQuestion(400 + ti * 30 + di * 4 + i, 'memory', theme, difficulty, 'Maison'),
+      ),
+    ),
   );
   const shelf = drawBank('memory', maison, new Map(), NIGHT_SIZE.memory);
+  const shelfMix = { easy: 0, medium: 0, hard: 0 };
   const shelfTally: Record<string, number> = {};
-  for (const q of shelf) shelfTally[q.theme] = (shelfTally[q.theme] ?? 0) + 1;
-  const fair = Math.floor(MEMORY_HOUSE_SIZE / 4);
+  for (const q of shelf) {
+    shelfMix[q.difficulty] += 1;
+    shelfTally[q.theme] = (shelfTally[q.theme] ?? 0) + 1;
+  }
   check(
     shelf.length === MEMORY_HOUSE_SIZE &&
-      ['Space', 'Cinema', 'Food', 'Histoire'].every((theme) => shelfTally[theme] >= fair),
-    'the house shelf is 30 cards spread across its themes',
+      shelfMix.easy === 10 &&
+      shelfMix.medium === 10 &&
+      shelfMix.hard === 10 &&
+      ['Space', 'Cinema', 'Food', 'Histoire'].every((theme) => shelfTally[theme] >= 6),
+    'the house shelf is 10 easy, 10 medium and 10 hard, spread across its themes',
   );
+  const easyOnly = Array.from({ length: 40 }, (_, i) => sampleQuestion(900 + i, 'memory', 'Space', 'easy', 'Maison'));
+  const shortShelf = drawBank('memory', easyOnly, new Map(), NIGHT_SIZE.memory);
+  check(shortShelf.length === 10 && shortShelf.every((q) => q.difficulty === 'easy'), 'a short Maison difficulty stays short');
 
   const capGame = createGame(
     1,
