@@ -573,6 +573,808 @@
       "difficulty": "hard"
     },
     {
+      "id": "m_101",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Combien de paires de côtes possède normalement la cage thoracique humaine ?",
+      "answer": "12",
+      "difficulty": "easy",
+      "notes": "Accepter '12 paires' ou '24 côtes'."
+    },
+    {
+      "id": "m_102",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Quel est le plus petit os du corps humain, situé dans l'oreille moyenne ?",
+      "answer": "L'étrier",
+      "difficulty": "medium",
+      "image": "bones/etrier-oreille.jpg",
+      "is_mcq": true,
+      "options": [
+        "L'étrier",
+        "Le marteau",
+        "L'enclume",
+        "Le vomer"
+      ],
+      "notes": "Accepter 'étrier' ou 'stapès'."
+    },
+    {
+      "id": "m_103",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Combien d'os compte le squelette d'un être humain adulte en moyenne (+1 pour le nombre exact) ?",
+      "answer": "200",
+      "difficulty": "medium",
+      "is_mcq": false,
+      "options": [
+        "240",
+        "160",
+        "200",
+        "120"
+      ],
+      "notes": "'206 os' exactement."
+    },
+    {
+      "id": "m_104",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Quel muscle masticateur, l'un des plus puissants du corps proportionnellement à sa taille, relie la pommette à la mâchoire inférieure ?",
+      "answer": "Le masséter",
+      "image": "muscles/masseter.jpg",
+      "difficulty": "hard",
+      "is_mcq": false,
+      "options": [
+        "Le masséter",
+        "Le temporal",
+        "Le buccinateur",
+        "Le zygomatique"
+      ],
+      "context_hint": "C'est lui qui se contracte quand on serre fort les dents (et qui nous empêche de les casser!)."
+    },
+    {
+      "id": "m_105",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Quel muscle long et fin, qui traverse en diagonale la face avant de la cuisse, est le plus long du corps humain ?",
+      "answer": "Le sartorius",
+      "image": "muscles/sartorius.png",
+      "difficulty": "hard",
+      "is_mcq": true,
+      "options": [
+        "Le sartorius",
+        "Le gracile",
+        "Le droit fémoral",
+        "Le psoas"
+      ],
+      "context_hint": "Son ancien nom français évoque la position assise jambes croisées d'un artisan textile, le couturier."
+    },
+    {
+      "id": "m_106",
+      "theme": "Anatomie",
+      "contributor": "Laulo",
+      "prompt": "Quel est l'unique os du corps humain qui n'est articulé avec aucun autre os ?",
+      "answer": "L'os hyoïde",
+      "image": "bones/os-hyoide.jpg",
+      "difficulty": "hard",
+      "is_mcq": true,
+      "options": [
+        "L'os hyoïde",
+        "Le vomer",
+        "Le coccyx",
+        "L'os pisiforme"
+      ],
+      "context_hint": "Situé dans le cou au-dessus du larynx, il est uniquement maintenu par des muscles et des ligaments."
+    },
+    {
+      "id": "m_107",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "Quel est le nom du bar fétiche où la bande d'amis passe le plus clair de son temps à New York ?",
+      "answer": "Le MacLaren's Pub",
+      "difficulty": "easy",
+      "image": "places/maclarens.jpg",
+      "notes": "Accepter MacLaren's, Maclarens."
+    },
+    {
+      "id": "m_108",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "De quelle couleur est le parapluie emblématique de Tracy, la fameuse « Mother » ?",
+      "answer": "Jaune",
+      "difficulty": "medium",
+      "image": "people/tracy.jpg",
+      "is_mcq": false,
+      "options": [
+        "Jaune",
+        "Rouge",
+        "Bleu",
+        "Vert"
+      ]
+    },
+    {
+      "id": "m_109",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "Quel jeu de société absurde, créé dans l'épisode 15 de la saison 1, possède des règles obscures et incompréhensibles ?",
+      "answer": "Marshgammon",
+      "difficulty": "medium",
+      "is_mcq": false,
+      "options": [
+        "Le Slap Bet",
+        "Marshgammon",
+        "Risk",
+        "Settlers of Catan"
+      ]
+    },
+    {
+      "id": "m_110",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "Quel livre de drague légendaire écrit par Barney contient des techniques infaillibles comme 'The Scuba Diver' ?",
+      "answer": "The Playbook",
+      "difficulty": "hard",
+      "image": "random/playbook.webp",
+      "context_hint": "C'est la bible de séduction de Barney pleine de stratagèmes absurdes, réellement publié en 2010 suite au succès de la série.",
+      "is_mcq": false,
+      "options": [
+        "The Bro Code",
+        "The Playbook",
+        "The Robin Sparkles Diary",
+        "The Naked Man Manifesto"
+      ]
+    },
+    {
+      "id": "m_111",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "Quel chanson du groupe The Proclaimers tourne en boucle dans la vieille Pontiac Fiero de Marshall (+1 pour la distance) ?",
+      "answer": "I'm Gonna Be",
+      "difficulty": "hard",
+      "notes": "Accepter '500 Miles' ou 'I'm Gonna Be'.",
+      "is_mcq": true,
+      "options": [
+        "I'm Gonna Be",
+        "Letter from America",
+        "I'm on My Way",
+        "Sunshine on Leith"
+      ],
+      "context_hint": "La cassette est bloquée dans le lecteur et le refrain parle de marcher une longue distance."
+    },
+    {
+      "id": "m_112",
+      "theme": "How I Met Your Mother",
+      "contributor": "Corentin",
+      "prompt": "Quel est l'intitulé officiel du poste que Barney occupe à la Goliath National Bank, qu'il résume toujours par « Please » ?",
+      "answer": "Provide Legal Exculpation And Sign Everything",
+      "difficulty": "hard",
+      "notes": "Accepter une traduction française fidèle comme 'Fournir une disculpation légale et tout signer'.",
+      "is_mcq": false,
+      "options": [
+        "Provide Legal Exculpation And Sign Everything",
+        "Protect Legal Entities And Sign Everything",
+        "Prepare Legal Evidence And Secure Earnings",
+        "Process Liability Exceptions And Sign Equities"
+      ],
+      "context_hint": "Les initiales de chaque mot en anglais forment exactement son célèbre soupir agacé."
+    },
+    {
+      "id": "m_113",
+      "theme": "Lozère (48 tu connais)",
+      "contributor": "Guilhem",
+      "prompt": "Quel célèbre plateau calcaire lozérien, grand site de paysages karstiques et de moutons, porte le nom d'un célèbre fromage ou d'une région naturelle ?",
+      "answer": "Le causse Méjean",
+      "difficulty": "easy",
+      "image": "places/grandes-causses.webp",
+      "is_mcq": true,
+      "options": [
+        "Le causse Méjean",
+        "Le plateau de Millevaches",
+        "Le causse du Larzac",
+        "Le massif de l'Aubrac"
+      ],
+      "notes": "Accepter causse de Sauveterre et Grandes Causses par extension."
+    },
+    {
+      "id": "m_114",
+      "theme": "Lozère (48 tu connais)",
+      "contributor": "Guilhem",
+      "prompt": "Quel fromage au lait cru de vache, à pâte pressée non cuite et au goût caractéristique de beurre et de crème, est emblématique du plateau de l'Aubrac en Lozère ?",
+      "answer": "Le Laguiole",
+      "image": "food/laguiole.jpg",
+      "difficulty": "medium",
+      "is_mcq": true,
+      "options": [
+        "Le Roquefort",
+        "Le Pélardon",
+        "Le Laguiole",
+        "Le Salers"
+      ],
+      "notes": "Accepter Laguiole, comme le couteau."
+    },
+    {
+      "id": "m_115",
+      "theme": "Lozère (48 tu connais)",
+      "contributor": "Guilhem",
+      "prompt": "Quel est le point culminant de la Lozère, s'élevant à environ 1 699 mètres d'altitude ?",
+      "answer": "Le pic de Finiels",
+      "difficulty": "medium",
+      "is_mcq": false,
+      "options": [
+        "Le signal de Mailhebiau",
+        "Le pic de Finiels",
+        "Le mont Aigoual",
+        "Le plomb du Cantal"
+      ],
+      "notes": "Accepter aussi le mont Lozère. Le signal de Mailhebiau n'est qu'à 1469 mètres d'altitude, point culminant de l'Aubrac."
+    },
+    {
+      "id": "m_116",
+      "theme": "Lozère (48 tu connais)",
+      "contributor": "Guilhem",
+      "prompt": "Quel petit hameau pittoresque de Lozère, accroché aux gorges du Tarn, est célèbre pour ses maisons troglodytes et son château ?",
+      "answer": "Castelbouc",
+      "difficulty": "hard",
+      "context_hint": "Son nom évoquerait une légende d'un animal ensorcelé dans les gorges.",
+      "image": "places/castelbouc.jpg",
+      "is_mcq": false,
+      "options": [
+        "Sainte-Enimie",
+        "La Malène",
+        "Castelbouc",
+        "Ispagnac"
+      ]
+    },
+    {
+      "id": "m_117",
+      "theme": "Lozère (48 tu connais)",
+      "contributor": "Guilhem",
+      "prompt": "Quelle célèbre grotte souterraine de Lozère, découverte au XIXe siècle, possède une impressionnante forêt vierge de 400 stalagmites calcaires géants ?",
+      "answer": "L'aven Armand",
+      "difficulty": "hard",
+      "context_hint": "Située sur le Causse Méjean, il porte le nom du spéléologue qui l'a explorée pour la première fois en 1897.",
+      "image": "places/aven-armand.jpg",
+      "is_mcq": true,
+      "options": [
+        "Le gouffre de Padirac",
+        "L'abîme de Bramabiau",
+        "L'aven Armand",
+        "La grotte de Dargilan"
+      ],
+      "notes": "Dargilan est la grotte rose. Louis Armand l'a découvert."
+    },
+    {
+      "id": "m_118",
+      "theme": "Grand Theft Auto 6",
+      "contributor": "Nino",
+      "prompt": "Quel est le prénom de la protagoniste féminine du duo jouable de GTA 6 ?",
+      "answer": "Lucia",
+      "image":"games/gta6/lucia.webp",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_119",
+      "theme": "Grand Theft Auto 6",
+      "contributor": "Nino",
+      "prompt": "Quel est le nom de l'État fictif inspiré de la Floride dans lequel se trouve Vice City ?",
+      "answer": "Leonida",
+      "difficulty": "medium",
+      "is_mcq": false,
+      "options": [
+        "San Andreas",
+        "New Austin",
+        "Leonida",
+        "Lemoyne"
+      ]
+    },
+    {
+      "id": "m_120",
+      "theme": "Grand Theft Auto 6",
+      "contributor": "Nino",
+      "prompt": "Quel objet électronique Lucia porte-t-elle à la cheville sur l'illustration officielle principale du jeu ?",
+      "answer": "Un bracelet électronique",
+      "difficulty": "medium",
+      "is_mcq": true,
+      "options": [
+        "Un bracelet électronique",
+        "Une chaîne en or",
+        "Un étui de couteau",
+        "Un foulard rouge"
+      ],
+      "notes": "Marine a le même (et Nico aussi)."
+    },
+    {
+      "id": "m_121",
+      "theme": "Grand Theft Auto 6",
+      "contributor": "Nino",
+      "prompt": "Quel duo français de musique électronique a composé la bande originale du jeu ainsi qu'un morceau phare de la bande-annonce de lancement ?",
+      "answer": "Justice",
+      "difficulty": "hard",
+      "image":"games/gta6/bo.jpg",
+      "is_mcq": false,
+      "options": [
+        "Daft Punk",
+        "Justice",
+        "Air",
+        "Kavinsky"
+      ],
+      "context_hint": "Ce duo parisien du label Ed Banger est célèbre pour son logo en forme de croix lumineuse."
+    },
+    {
+      "id": "m_122",
+      "theme": "Grand Theft Auto 6",
+      "contributor": "Nino",
+      "prompt": "Quelle chanson de Tom Petty accompagne la toute première bande-annonce officielle de GTA 6 publiée en décembre 2023 ? (j'accepte si tu chantes)",
+      "answer": "Love Is a Long Road",
+      "difficulty": "medium",
+      "context_hint": "Accepter si le joueur chante ou donne le titre en anglais.",
+      "is_mcq": true,
+      "options": [
+        "Runnin' Down a Dream",
+        "I Won't Back Down",
+        "Love Is a Long Road",
+        "Free Fallin'"
+      ]
+    },
+    {
+      "id": "m_123",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quel protocole de chiffrement est aujourd'hui le standard indispensable pour sécuriser les échanges web derrière le cadenas HTTPS ? (+1pt pour l'ancêtre)",
+      "answer": "TLS",
+      "difficulty": "easy",
+      "notes": "Accepter 'TLS' ou 'Transport Layer Security' (SSL est son ancêtre obsolète)."
+    },
+    {
+      "id": "m_124",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quel ver informatique sophistiqué, découvert en 2010, a saboté les centrifugeuses d'enrichissement d'uranium du programme nucléaire iranien ?",
+      "answer": "Stuxnet",
+      "image": "cybersec/stuxnet.webp",
+      "difficulty": "medium",
+      "is_mcq": true,
+      "options": [
+        "Stuxnet",
+        "WannaCry",
+        "NotPetya",
+        "Mirai"
+      ]
+    },
+    {
+      "id": "m_125",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Comment s'appelle l'attaque de type 'man in the middle' qui exploite les messages ARP non authentifiés d'un réseau local pour détourner le trafic ?",
+      "answer": "L'ARP spoofing",
+      "difficulty": "medium",
+      "notes": "L'attaquant associe sa propre adresse MAC à l'adresse IP de la passerelle sur le réseau local. Accepter ARP poisoning.",
+      "is_mcq": false,
+      "options": [
+        "Le DNS cache poisoning",
+        "Le BGP hijacking",
+        "L'ARP spoofing",
+        "Le MAC flooding"
+      ]
+    },
+    {
+      "id": "m_126",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quel mécanisme de défense des systèmes d'exploitation modernise l'espace mémoire en plaçant aléatoirement la pile, le tas et les bibliothèques à chaque exécution ?",
+      "answer": "L'ASLR",
+      "image": "cybersec/aslr.jpg",
+      "difficulty": "hard",
+      "notes": "Accepter 'ASLR' ou 'Address Space Layout Randomization'.",
+      "is_mcq": false,
+      "options": [
+        "L'ASLR",
+        "Le DEP",
+        "Le Stack Canary",
+        "Le NX bit"
+      ],
+      "context_hint": "Cet acronyme anglais de quatre lettres signifie littéralement randomisation de la disposition de l'espace d'adressage."
+    },
+    {
+      "id": "m_127",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quel outil de test d'intrusion réseau créé par Gentilkiwi permet d'extraire des mots de passe en clair et des hachages NTLM directement depuis la mémoire du processus LSASS sous Windows ?",
+      "answer": "Mimikatz",
+      "image": "cybersec/gentil-kiwi.jpg",
+      "difficulty": "hard",
+      "is_mcq": true,
+      "options": [
+        "Mimikatz",
+        "BloodHound",
+        "Responder",
+        "Impacket"
+      ],
+      "context_hint": "Développé par le chercheur français Benjamin Delpy (gentilkiwi), son nom fait référence à des chats mignons."
+    },
+    {
+      "id": "m_128",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quel type de vulnérabilité logique se produit lorsqu'un serveur accepte des jetons JWT signés avec « alg:none » ou permet de remplacer RS256 par HS256 ? (CVE-2024-54150)",
+      "answer": "La confusion d'algorithme",
+      "image": "cybersec/assumptions.jpg",
+      "difficulty": "hard",
+      "notes": "Accepter 'algorithm confusion' ou 'attaque par confusion d'algorithme JWT'.",
+      "is_mcq": true,
+      "options": [
+        "La désérialisation non sécurisée",
+        "La confusion d'algorithme",
+        "La fixation de session",
+        "L'assomption de sous-domaine"
+      ],
+      "context_hint": "Elle trompe le serveur en lui faisant vérifier une signature symétrique avec la clé publique asymétrique."
+    },
+    {
+      "id": "m_129",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Comment désigne-t-on la famille de logiciels malveillants déjà présents dans la mémoire ou le système d'exploitation, capable de masquer son existence aux outils d'administration ?",
+      "answer": "Un rootkit",
+      "difficulty": "hard",
+      "notes": "Accepter 'rootkit' sans l'article.",
+      "is_mcq": false,
+      "options": [
+        "Un rootkit",
+        "Un dropper",
+        "Un wiper",
+        "Un booter"
+      ],
+      "context_hint": "Son nom combine le terme désignant le super-utilisateur sous Unix et le mot anglais pour trousse à outils."
+    },
+    {
+      "id": "m_130",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Quelle attaque sur les mémoires vives DRAM consiste à accéder répétitivement à une rangée de cellules mémoire pour provoquer une inversion de bits dans les rangées voisines ?",
+      "answer": "Rowhammer",
+      "image": "cybersec/rowhammer.jpg",
+      "difficulty": "hard",
+      "notes": "Accepter 'Row hammer' en deux mots.",
+      "is_mcq": true,
+      "options": [
+        "Rowhammer",
+        "Cold Boot Attack",
+        "Cache Poisoning",
+        "Bit Flipping"
+      ],
+      "context_hint": "Son nom anglais évoque l'action de marteler une rangée de mémoire."
+    },
+    {
+      "id": "m_131",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Comment s'appelle l'attaque matérielle révélée en 2018 qui exploite l'exécution spéculative des processeurs modernes pour lire la mémoire protégée du noyau ?",
+      "answer": "Meltdown",
+      "image": "cybersec/meltdown.jpg",
+      "difficulty": "hard",
+      "notes": "Accepter 'Meltdown' (préciser qu'elle a été dévoilée en même temps que Spectre).",
+      "is_mcq": false,
+      "options": [
+        "Meltdown",
+        "Rowhammer",
+        "Heartbleed",
+        "Foreshadow"
+      ],
+      "context_hint": "Dévoilée conjointement avec Spectre, son nom anglais désigne la fusion du cœur d'un réacteur nucléaire."
+    },
+    {
+      "id": "m_132",
+      "theme": "Cybersécurité",
+      "contributor": "Captain titi",
+      "prompt": "Comment appelle-t-on une attaque par canal auxiliaire mesurant précisément les infimes variations de temps d'exécution d'un algorithme cryptographique pour en déduire la clé secrète ?",
+      "answer": "Une attaque temporelle",
+      "image": "cybersec/timing-attack.png",
+      "difficulty": "hard",
+      "notes": "Accepter 'timing attack' ou 'attaque par analyse temporelle'.",
+      "is_mcq": true,
+      "options": [
+        "Une attaque temporelle",
+        "Une attaque par fautes",
+        "Une attaque par rejeu",
+        "Une attaque par dictionnaire"
+      ],
+      "context_hint": "En anglais, elle porte le nom d'attaque de chronométrage."
+    },
+    {
+      "id": "m_133",
+      "theme": "Skaven",
+      "contributor": "Hugo",
+      "prompt": "Comment s'appelle le dieu unique, cruel et vénéré par l'ensemble de la race Skaven ?",
+      "answer": "Le Rat Cornu",
+      "difficulty": "easy",
+      "notes": "Accepter 'Rat Cornu' ou 'Grand Rat Cornu'.",
+      "image": "games/aos/rat-cornu.png"
+    },
+    {
+      "id": "m_134",
+      "theme": "Skaven",
+      "contributor": "Hugo",
+      "prompt": "Quel minerai radioactif vert vif sert à la fois de monnaie, de carburant et de source de magie aux Skavens ?",
+      "answer": "La malepierre",
+      "image": "games/aos/malepierre.jpg",
+      "difficulty": "medium",
+      "notes": "Accepter 'warpstone'.",
+      "is_mcq": false,
+      "options": [
+        "Le gromril",
+        "L'ithilmar",
+        "La malepierre",
+        "La pierre de royaume"
+      ]
+    },
+    {
+      "id": "m_135",
+      "theme": "Skaven",
+      "contributor": "Hugo",
+      "prompt": "Quel grand clan skaven est spécialisé dans l'espionnage, l'infiltration et les assassinats furtifs ?",
+      "answer": "Le clan Eshin",
+      "difficulty": "medium",
+      "notes": "Accepter 'Eshin'.",
+      "is_mcq": true,
+      "options": [
+        "Le clan Skryre",
+        "Le clan Eshin",
+        "Le clan Pestilens",
+        "Le clan Moulder"
+      ]
+    },
+    {
+      "id": "m_136",
+      "theme": "Skaven",
+      "contributor": "Hugo",
+      "prompt": "Quel seigneur de guerre skaven légendaire, célèbre pour les crânes de ses ennemis empalés sur son trophée dorsal, est le bras droit du clan Mors ?",
+      "answer": "Queek Coupe-Têtes",
+      "difficulty": "hard",
+      "image": "games/aos/queek-headtaker.jpg",
+      "notes": "Accepter 'Queek' ou 'Queek Headtaker'.",
+      "is_mcq": true,
+      "options": [
+        "Snikch",
+        "Ikit la Griffe",
+        "Skrolk",
+        "Queek Coupe-Têtes"
+      ],
+      "context_hint": "Son surnom fait directement référence à sa manie de décapiter ses adversaires au combat."
+    },
+    {
+      "id": "m_137",
+      "theme": "Skaven",
+      "contributor": "Hugo",
+      "prompt": "Quel prophète gris célèbre régulièrement au dos de son garde du corps Rat-Ogre, Vorax (Bone-Ripper) est considéré comme l'un des plus puissants et exceptionnellement dangereux des Skavens ? ",
+      "answer": "Thanquol",
+      "difficulty": "hard",
+      "image": "games/aos/thanquol.webp",
+      "is_mcq": false,
+      "options": [
+        "Kritislik",
+        "Thanquol",
+        "Verminking",
+        "Rasknitt"
+      ],
+      "context_hint": "Il est l'ennemi juré récurrent du duo d'aventuriers Gotrek et Félix."
+    },
+    {
+      "id": "m_138",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel actif naturel extrait du bois de saule est la star des soins anti-imperfections pour désincruster les pores en profondeur ? (+1pt pour l'acronyme)",
+      "answer": "L'acide salicylique",
+      "difficulty": "easy",
+      "notes": "Accepter 'BHA'."
+    },
+    {
+      "id": "m_139",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quelle famille de lipides naturellement présents à 50 % dans notre épiderme forme le ciment qui maintient la barrière cutanée ?",
+      "answer": "Les céramides",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_140",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel acide antioxydant d'origine végétale est souvent associé aux vitamines C et E dans les sérums pour doubler leur photoprotection et stabiliser la formule ?",
+      "answer": "L'acide férulique",
+      "image": "science/acide-ferulique.webp",
+      "difficulty": "medium",
+      "notes": "C'est le troisième ingrédient phare du célèbre trio antioxydant CE Ferulic.",
+      "is_mcq": true,
+      "options": [
+        "L'acide kojique",
+        "L'acide férulique",
+        "L'acide tranexamique",
+        "L'acide polyglutamique"
+      ]
+    },
+    {
+      "id": "m_141",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel peptide signal célèbre, composé de cuivre et d'acides aminés, donne une couleur bleu vif aux sérums régénérants ?",
+      "answer": "Le GHK-Cu",
+      "image": "science/ghk-cu.jpg",
+      "difficulty": "medium",
+      "notes": "Son symbole chimique final correspond à celui du métal qui teinte naturellement la solution en bleu. Peptides de cuivre sera refusé.",
+      "is_mcq": false,
+      "options": [
+        "L'Argireline",
+        "Le Matrixyl",
+        "Le GHK-Cu",
+        "Le Syn-Ake"
+      ]
+    },
+    {
+      "id": "m_142",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Comment appelle-t-on la nouvelle génération d'acides exfoliants (comme la gluconolactone) qui hydratent tout en exfoliant sans irriter les peaux sensibles grâce à leurs grosses molécules ? (+1pt pour le nom complet)",
+      "answer": "Les PHA",
+      "difficulty": "hard",
+      "notes": "Accepter 'PHA' ou 'polyhydroxyacides'.",
+      "is_mcq": true,
+      "options": [
+        "Les LHA",
+        "Les BHA",
+        "Les PHA",
+        "Les EHA"
+      ],
+      "context_hint": "Cet acronyme à trois lettres remplace la première lettre d'AHA par un préfixe particulier."
+    },
+    {
+      "id": "m_143",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quel neuropeptide synthétique, souvent surnommé « Botox en flacon », inhibe la libération des neurotransmetteurs responsables des contractions musculaires d'expression ?",
+      "answer": "L'Argireline",
+      "image": "science/argireline.jpg",
+      "difficulty": "hard",
+      "notes": "Accepter 'Argireline' ou 'acétyl hexapeptide-8'.",
+      "is_mcq": true,
+      "options": [
+        "Le Matrixyl 3000",
+        "Le Leuphasyl",
+        "L'Argireline",
+        "L'Eyeliss"
+      ],
+      "context_hint": "C'est le nom commercial déposé de l'acétyl hexapeptide-8, anciennement appelé acétyl hexapeptide-3."
+    }, 
+    {
+      "id": "m_144",
+      "theme": "Actifs beauté",
+      "contributor": "Anaïs",
+      "prompt": "Quelle molécule extrêmophile découverte en 1985 dans des bactéries vivant dans les lacs salés du désert égyptien Wadi El Natrun protège les cellules cutanées contre la déshydratation et les UV ?",
+      "answer": "L'ectoïne",
+      "image": "science/Ectoine.webp",
+      "difficulty": "hard",
+      "notes": "Bactérie halophile Halorhodospira halochloris (anciennement Ectothiorhodospira halochloris). Si elle donne la description de chacune des molécules, +10pts.",
+      "is_mcq": false,
+      "options": [
+        "L'ergothionéine",
+        "L'ectoïne",
+        "L'allantoïne",
+        "La bétaïne"
+      ],
+      "context_hint": "Cet acide aminé cyclique forme une coquille d'hydratation autour des protéines pour stabiliser les micro-organismes halophiles."
+    },
+    {
+      "id": "m_145",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quelle éponge de maquillage rose en forme d'œuf, inventée par Rea Ann Silva, est devenue incontournable pour estomper le fond de teint ?",
+      "answer": "Le Beautyblender",
+      "difficulty": "easy"
+    },
+    {
+      "id": "m_146",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quelle poudre libre fixatrice et floutante signée Huda Beauty, dont la teinte la plus célèbre se nomme « Pound Cake », est devenue un incontournable du baking moderne ?",
+      "answer": "Easy Bake",
+      "image": "cosmectics/easy-bake.webp",
+      "difficulty": "medium",
+      "notes": "Accepter 'Easy Bake Loose Baking & Setting Powder'.",
+      "is_mcq": true,
+      "options": [
+        "Easy Bake",
+        "FauxFilter",
+        "GloWish",
+        "Baby Bake"
+      ]
+    },
+    {
+      "id": "m_147",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quel stylo illuminateur iconique de la maison Yves Saint Laurent, lancé en 1992, efface les zones d'ombre du visage d'un simple clic ?",
+      "answer": "Touche Éclat",
+      "image": "cosmectics/touche-eclat.png",
+      "difficulty": "medium",
+      "notes": "Accepter 'Touche Eclat' sans accent.",
+      "is_mcq": true,
+      "options": [
+        "Touche Éclat",
+        "Éclat Minute", 
+        "Teint Idole",
+        "Lumi Magique"
+      ]
+    },
+    {
+      "id": "m_148",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quelle huile sèche française multi-usages de la marque Nuxe, reconnaissable à son flacon en verre et son parfum solaire, est un best-seller mondial ?",
+      "answer": "L'Huile Prodigieuse",
+      "image": "cosmectics/huile-prodigieuse.webp",
+      "difficulty": "medium",
+      "notes": "Accepter 'Huile Prodigieuse' sans l'article.",
+      "is_mcq": false,
+      "options": [
+        "L'Huile Prodigieuse",
+        "L'Huile Divine",
+        "L'Huile Souveraine",
+        "L'Huile Précieuse"
+      ]
+    },
+    {
+      "id": "m_149",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quelle teinte de blush rose pêche aux reflets dorés de la marque NARS est l'un des produits de maquillage les plus vendus au monde ?",
+      "answer": "Orgasm",
+      "image": "cosmectics/orgasm.webp",
+      "difficulty": "hard",
+      "is_mcq": false,
+      "options": [
+        "Orgasm",
+        "Laguna",
+        "Dolce Vita",
+        "Deep Throat"
+      ],
+      "context_hint": "Son nom provocateur évoque l'apogée du plaisir sexuel."
+    },
+    {
+      "id": "m_150",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quel baume à lèvres brillant en tube de la marque Rhode, fondée par Hailey Bieber, s'accompagne d'une célèbre coque de téléphone en silicone conçue pour le transporter ?",
+      "answer": "Peptide Lip Treatment",
+      "image": "cosmectics/peptide-lip.webp",
+      "difficulty": "hard",
+      "notes": "Accepter 'Peptide Lip Tint' ou simplement 'Peptide Lip'.",
+      "is_mcq": true,
+      "options": [
+        "Peptide Lip Treatment",
+        "Glazing Milk",
+        "Pocket Blush",
+        "Barrier Restore Cream"
+      ],
+      "context_hint": "Son nom anglais met en avant la famille d'acides aminés star de la marque."
+    },
+    {
+      "id": "m_151",
+      "theme": "Produits de beauté",
+      "contributor": "Romane",
+      "prompt": "Quel masque de nuit pour les lèvres de la marque coréenne Laneige, reconnaissable à son petit pot rose et sa spatule, s'écoule à un exemplaire toutes les deux secondes dans le monde ?",
+      "answer": "Lip Sleeping Mask",
+      "image": "cosmectics/lip-sleeping-mask.webp",
+      "difficulty": "hard",
+      "notes": "Accepter 'masque de nuit pour les lèvres Laneige' ou 'Berry Lip Sleeping Mask'.",
+      "is_mcq": false,
+      "options": [
+        "Lip Sleeping Mask",
+        "Water Sleeping Mask",
+        "Lip Glowy Balm",
+        "Cica Sleeping Mask"
+      ],
+      "context_hint": "Sa version originale la plus vendue est parfumée aux fruits rouges (Berry)."
+    },
+    {
       "id": "m_050",
       "theme": "Histoire",
       "prompt": "En quelle année Christophe Colomb a-t-il atteint les Amériques ?",
@@ -781,6 +1583,7 @@
       "prompt": "Quel héros grec a tué le Minotaure ?",
       "answer": "Thésée",
       "difficulty": "medium",
+      "image": "mythology/thesee.jpg",
       "is_mcq": true,
       "options": [
         "Héraclès",
@@ -846,6 +1649,7 @@
       "contributor": "Maison",
       "prompt": "Quel acteur joue Eddie Munson dans Stranger Things ?",
       "answer": "Joseph Quinn",
+      "image": "people/eddie-munson.webp",
       "difficulty": "hard",
       "notes": "Accepter Quinn.",
       "context_hint": "Sa reprise de Master of Puppets, dans le monde à l’envers, a relancé le morceau de Metallica.",
