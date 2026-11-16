@@ -7,7 +7,7 @@
  */
 var HOST_PIN = '1234';
 
-var THEME_MAX = 28;
+var THEME_MAX = 80;
 var DISPLAY_MAX = 32;
 var INVITE_MAX = 40;
 var HEADERS = ['id', 'inviteName', 'displayName', 'coming', 'theme', 'updatedAt'];

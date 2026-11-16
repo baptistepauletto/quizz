@@ -3,70 +3,113 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#140e22" />
+    <meta name="theme-color" content="#0a1128" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap" rel="stylesheet" />
     <title>Quizz In</title>
     <style>
       :root {
-        --bg: #140e22;
-        --panel: #1c1430;
-        --panel-2: #271c3c;
-        --line: #3d3158;
+        --bg: #0a1128;
+        --panel: #111c3d;
+        --panel-2: #182754;
+        --line: #2e3d6b;
         --text: #f4efe4;
         --ivory: #f4efe4;
-        --ink: #1a1230;
-        --indigo: #241848;
-        --muted: #b3a7c9;
-        --spot: #e7a23a;
-        --ok: #1d7a45;
-        --bad: #a33b4a;
+        --ink: #0a1128;
+        --indigo: #13204a;
+        --muted: #a9b3d1;
+        --copper: #b87333;
+        --copper-hi: #e0a878;
+        --copper-lo: #6e3d1a;
+        --neon: #ff2e88;
+        --felt-deep: #0b1534;
+        --ok: #1d8a5c;
+        --bad: #c4224f;
+        --display: 'Abril Fatface', Didot, 'Bodoni MT', Georgia, serif;
+        --copper-metal: linear-gradient(180deg, #f0c08e 0%, #d08a4e 28%, #a5602a 62%, #c8814a 100%);
+        --houndstooth: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23b87333' fill-opacity='0.07' d='M0 0h4v1H0zM6 0h2v1H6zM0 1h4v1H0zM5 1h2v1H5zM0 2h6v1H0zM0 3h5v1H0zM7 3h1v1H7zM0 4h2v1H0zM0 5h1v1H0zM3 5h1v1H3zM2 6h2v1H2zM1 7h2v1H1z'/%3E%3C/svg%3E");
+        --deco-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23b87333' stroke-width='1.6'%3E%3Cpath d='M6 120V6h114M13 120V13h107M13 44h11V24h20V13'/%3E%3Cpath d='M56 24a32 32 0 0 1-32 32M80 24a56 56 0 0 1-56 56'/%3E%3Cpath d='M54.9 32.3l23.2 6.2M51.7 40l20.8 12M46.6 46.6l17 17M40 51.7l12 20.8M32.3 54.9l6.2 23.2'/%3E%3Cpath d='M6 0l6 6-6 6-6-6z' fill='%23ff2e88' stroke='none'/%3E%3C/svg%3E");
         font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
         color-scheme: dark;
       }
       * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-      html, body { margin: 0; background: var(--bg); color: var(--text); }
-      body { min-height: 100%; }
-      button, input { font: inherit; color: inherit; }
+      html, body { margin: 0; }
+      body {
+        min-height: 100%;
+        background: var(--houndstooth) 0 0 / 24px 24px, var(--bg);
+        color: var(--text);
+      }
+      button, input, textarea { font: inherit; color: inherit; }
       button { cursor: pointer; touch-action: manipulation; }
       button:disabled { opacity: 0.45; cursor: not-allowed; }
       h1, h2, p { margin: 0; }
-      .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 28px 64px; display: flex; flex-direction: column; gap: 18px; }
-      .brand { display: inline-flex; align-items: baseline; gap: 0.35em; font-weight: 800; }
-      .brand-q { letter-spacing: 0.28em; text-transform: uppercase; font-size: 0.72em; color: var(--ivory); }
-      .brand-in {
-        color: var(--spot);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        font-size: 1.15em;
-        line-height: 0.85;
-        border: 2px solid var(--spot);
-        padding: 0.04em 0.14em 0.08em;
+      .corners { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+      .corners i {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        background: var(--deco-corner) no-repeat 0 0 / contain;
+        opacity: 0.7;
       }
-      .mast { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 28px; }
-      .mast-copy { display: flex; flex-direction: column; gap: 4px; max-width: 42rem; }
+      .corners i:nth-child(1) { top: 0; left: 0; }
+      .corners i:nth-child(2) { top: 0; right: 0; transform: scaleX(-1); }
+      .corners i:nth-child(3) { bottom: 0; left: 0; transform: scaleY(-1); }
+      .corners i:nth-child(4) { bottom: 0; right: 0; transform: scale(-1); }
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 28px 20px calc(48px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .logo { display: block; line-height: 0; }
+      .logo svg { height: 58px; width: auto; max-width: 100%; }
+      .logo-neon { animation: neon-flicker 7s steps(1) infinite; }
+      @keyframes neon-flicker {
+        0%, 91%, 93%, 95%, 100% { opacity: 1; }
+        92%, 94% { opacity: 0.55; }
+      }
+      .mast { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 28px; }
+      .mast-copy { display: flex; flex-direction: column; gap: 6px; max-width: 40rem; }
+      .kicker {
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+        letter-spacing: 0.02em;
+        line-height: 1.05;
+      }
       .muted { color: var(--muted); }
-      .small { font-size: 0.95rem; line-height: 1.4; }
-      .warn { color: var(--spot); }
+      .small { font-size: 0.95rem; line-height: 1.45; }
+      .warn { color: var(--copper-hi); }
       .error {
-        background: rgba(227, 93, 106, 0.14);
+        background: rgba(239, 74, 107, 0.16);
         color: #ffd0da;
+        border: 1px solid rgba(239, 74, 107, 0.4);
         border-radius: 10px;
         padding: 10px 12px;
       }
       .banner, .host {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 14px;
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        border: 1px solid color-mix(in srgb, var(--copper) 40%, var(--line));
+        border-radius: 12px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 4px color-mix(in srgb, var(--copper) 22%, transparent);
+      }
+      .host h2 {
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: 1.45rem;
+        letter-spacing: 0.03em;
       }
       .layout { display: grid; gap: 18px; align-items: start; }
-      .board {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 18px;
-      }
+      .board { display: grid; grid-template-columns: 1fr; gap: 16px; }
       @media (min-width: 760px) {
         .board { grid-template-columns: 1fr 1fr; }
       }
@@ -74,71 +117,135 @@
         .layout { grid-template-columns: minmax(0, 1fr) 280px; }
       }
       .card {
-        background: var(--ivory);
+        background: linear-gradient(165deg, #fffaf0, var(--ivory) 58%, #ebe2cf);
         color: var(--ink);
-        border: 1px solid var(--indigo);
-        box-shadow: inset 0 0 0 5px var(--ivory), inset 0 0 0 6px var(--indigo);
-        border-radius: 6px;
-        padding: 28px 24px 22px;
+        border: 2px solid var(--copper);
+        box-shadow: inset 0 0 0 5px #f4efe4, inset 0 0 0 6px var(--copper), 0 10px 22px rgba(0, 0, 0, 0.38);
+        border-radius: 12px;
+        padding: 26px 22px 20px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        min-height: 168px;
+        gap: 12px;
+        min-height: 176px;
       }
-      .card form {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin: 8px 0 0;
-      }
+      .card form { display: flex; flex-direction: column; gap: 14px; margin: 4px 0 0; }
       .card.editing { grid-column: 1 / -1; }
-      .card.out { opacity: 0.55; }
+      .card.out { opacity: 0.5; }
       .card.needs { border-style: dashed; }
-      .card.shared { box-shadow: inset 0 0 0 5px var(--ivory), inset 0 0 0 7px var(--spot); }
-      .card .muted { color: #6b5c84; }
+      .card.shared {
+        box-shadow: inset 0 0 0 5px #f4efe4, inset 0 0 0 7px var(--neon), 0 10px 22px rgba(0, 0, 0, 0.38);
+      }
+      .card .muted { color: #7a5a44; }
+      .card .warn { color: #8a3418; }
       .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-      .who { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; }
-      .theme { font-size: clamp(1.7rem, 2.6vw, 2.35rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: auto; }
+      .who { font-size: 1rem; font-weight: 700; letter-spacing: 0.03em; }
+      .theme {
+        font-size: clamp(1.7rem, 2.6vw, 2.35rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        margin-top: auto;
+        overflow-wrap: anywhere;
+      }
+      .theme.mid { font-size: clamp(1.35rem, 2vw, 1.7rem); }
+      .theme.long { font-size: clamp(1.12rem, 1.55vw, 1.35rem); line-height: 1.22; letter-spacing: -0.02em; }
+      .theme.empty { font-weight: 600; font-size: 1.2rem; letter-spacing: 0; color: #7a5a44; }
       .chip {
         border-radius: 999px;
-        padding: 3px 8px;
+        padding: 3px 10px;
         font-size: 0.75rem;
+        font-weight: 700;
         background: #efe6d4;
         color: var(--ink);
         white-space: nowrap;
       }
-      .chip.in { background: rgba(46, 204, 113, 0.22); color: var(--ok); }
-      .chip.out { background: rgba(227, 93, 106, 0.16); color: var(--bad); }
-      .row { display: flex; gap: 12px; flex-wrap: wrap; }
+      .chip.in { background: #d9f3e6; color: var(--ok); }
+      .chip.unsure { background: #f3e6d4; color: var(--copper-lo); }
+      .chip.out { background: #fde2e7; color: var(--bad); }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
       .grow { flex: 1; min-width: 0; }
       .btn, .input {
-        border: 0;
-        border-radius: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
         background: var(--panel-2);
         min-height: 44px;
         padding: 10px 12px;
       }
-      .board .btn { background: var(--indigo); color: var(--ivory); }
-      .board .btn.primary { background: var(--spot); color: var(--ink); font-weight: 800; }
-      .board .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--indigo); }
-      .board .input { background: #fff; color: var(--ink); border: 1px solid var(--indigo); }
-      .host .btn.primary, .banner .btn { background: var(--spot); color: var(--ink); font-weight: 800; }
-      .btn.ghost { background: transparent; border: 1px solid var(--line); }
-      .btn.bad { background: rgba(227, 93, 106, 0.18); color: #ffd0da; }
-      .seg { display: flex; gap: 12px; }
-      .seg button { flex: 1; border: 1px solid var(--indigo); background: transparent; color: var(--ink); border-radius: 10px; min-height: 42px; }
-      .seg button.on { background: var(--spot); border-color: transparent; font-weight: 800; }
-      label { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: #6b5c84; }
+      .btn.primary {
+        background: var(--copper-metal);
+        color: var(--ink);
+        border-color: var(--copper-hi);
+        font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255, 240, 220, 0.55), 0 2px 0 var(--copper-lo);
+      }
+      .btn.ghost { background: transparent; border: 1px solid var(--line); box-shadow: none; }
+      .btn.bad {
+        background: rgba(239, 74, 107, 0.16);
+        color: #ffd0da;
+        border-color: rgba(239, 74, 107, 0.45);
+        box-shadow: none;
+      }
+      .card > .btn {
+        width: 100%;
+        background: var(--indigo);
+        color: var(--ivory);
+        border-color: color-mix(in srgb, var(--copper) 45%, transparent);
+        font-weight: 700;
+        box-shadow: none;
+      }
+      .board .btn.ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--copper);
+      }
+      .board .input, .theme-input {
+        background: #fff;
+        color: var(--ink);
+        border: 1px solid color-mix(in srgb, var(--copper) 55%, var(--indigo));
+      }
+      .host .input, .banner .input {
+        background: var(--felt-deep);
+        color: var(--ivory);
+        border: 1px solid var(--line);
+      }
+      .input:focus, .theme-input:focus { outline: 2px solid var(--copper-hi); outline-offset: 1px; }
+      textarea.theme-input {
+        resize: vertical;
+        min-height: 76px;
+        line-height: 1.35;
+        font-family: inherit;
+      }
+      .seg { display: flex; gap: 10px; }
+      .seg button {
+        flex: 1;
+        border: 1px solid var(--copper);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 8px;
+        min-height: 42px;
+        font-weight: 700;
+      }
+      .seg button.on {
+        background: var(--copper-metal);
+        border-color: transparent;
+        color: var(--ink);
+        font-weight: 800;
+      }
+      label { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: #7a5a44; }
       .host label { color: var(--muted); }
       .field { width: 100%; }
       .person { display: flex; align-items: center; gap: 8px; }
       .person b { flex: 1; }
+      @media (prefers-reduced-motion: reduce) {
+        .logo-neon { animation: none; }
+      }
     </style>
   </head>
   <body>
+    <div class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div id="app" class="wrap"></div>
     <script>
-      var THEME_MAX = 28;
+      var THEME_MAX = 80;
       var DISPLAY_MAX = 32;
       var PREVIEW_PIN = '1234';
       var COMING_LABEL = { in: 'Coming', unsure: 'Not sure', out: "Can't" };
@@ -393,6 +500,42 @@
         render();
       }
 
+      function logo() {
+        var el = document.createElement('span');
+        el.className = 'logo';
+        el.innerHTML =
+          '<svg viewBox="0 0 300 80" role="img" aria-label="Quizz In">' +
+          '<defs><filter id="qi-glow" x="-30%" y="-30%" width="160%" height="160%">' +
+          '<feGaussianBlur stdDeviation="2.4" result="blur"/>' +
+          '<feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+          '</filter></defs>' +
+          '<g>' +
+          '<circle cx="40" cy="40" r="35" fill="#6e3d1a"/>' +
+          '<circle cx="40" cy="38" r="35" fill="#b87333"/>' +
+          '<circle cx="40" cy="38" r="30" fill="none" stroke="#f4efe4" stroke-width="8" stroke-dasharray="9 14.56"/>' +
+          '<circle cx="40" cy="38" r="23" fill="#0a1128" stroke="#e0a878" stroke-width="1.5"/>' +
+          '<circle cx="40" cy="38" r="19" fill="none" stroke="#e0a878" stroke-width="1" stroke-dasharray="2 2.5" opacity="0.8"/>' +
+          '<text x="40" y="49" text-anchor="middle" font-family="Abril Fatface, Didot, Georgia, serif" font-size="31" fill="#f4efe4">Q</text>' +
+          '</g>' +
+          '<g font-family="Abril Fatface, Didot, Georgia, serif" font-size="46">' +
+          '<text x="88" y="56" textLength="124" lengthAdjust="spacingAndGlyphs" fill="#6e3d1a">Quizz</text>' +
+          '<text x="86" y="54" textLength="124" lengthAdjust="spacingAndGlyphs" fill="#b87333">Quizz</text>' +
+          '<text x="84" y="52" textLength="124" lengthAdjust="spacingAndGlyphs" fill="#f4efe4">Quizz</text>' +
+          '</g>' +
+          '<path d="M84 66h54M154 66h54" stroke="#b87333" stroke-width="1.5"/>' +
+          '<path d="M146 61l5 5-5 5-5-5z" fill="#ff2e88"/>' +
+          '<g class="logo-neon" filter="url(#qi-glow)">' +
+          '<rect x="222" y="14" width="70" height="52" rx="10" fill="#1c0a0c" fill-opacity="0.55" stroke="#ff2e88" stroke-width="3"/>' +
+          '<text x="257" y="53" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-weight="800" font-size="36" textLength="44" lengthAdjust="spacingAndGlyphs" fill="none" stroke="#ff2e88" stroke-width="3" stroke-linejoin="round">IN</text>' +
+          '</g>' +
+          '<g class="logo-neon">' +
+          '<rect x="222" y="14" width="70" height="52" rx="10" fill="none" stroke="#ffd1e6" stroke-width="1"/>' +
+          '<text x="257" y="53" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-weight="800" font-size="36" textLength="44" lengthAdjust="spacingAndGlyphs" fill="none" stroke="#ffe6f1" stroke-width="1">IN</text>' +
+          '</g>' +
+          '</svg>';
+        return el;
+      }
+
       function render() {
         var root = document.getElementById('app');
         root.textContent = '';
@@ -409,7 +552,7 @@
         }).length;
 
         var intro = [
-          $('p', { text: 'Pick your theme' }),
+          $('p', { class: 'kicker', text: 'Pick your theme' }),
           $('p', { class: 'small muted', text: 'One each. If a friend already has it, yours is a weaker pick, so the more specific the better. The name you set here is the one you’ll join the game with.' }),
         ];
         if (board.locked) intro.push($('p', { class: 'warn small', text: 'Locked since ' + formatDay(board.lockAt) + '. Picks are final.' }));
@@ -421,10 +564,7 @@
           intro.push($('p', { class: 'small', text: stats }));
         }
         root.appendChild($('header', { class: 'mast' }, [
-          $('h1', { class: 'brand' }, [
-            $('span', { class: 'brand-q', text: 'Quizz' }),
-            $('span', { class: 'brand-in', text: 'In' }),
-          ]),
+          logo(),
           $('div', { class: 'mast-copy' }, intro),
         ]));
 
@@ -483,8 +623,14 @@
         if (nameKey(shown.displayName) !== nameKey(player.inviteName)) {
           kids.push($('p', { class: 'small muted', text: 'Invited as ' + player.inviteName }));
         }
+        var themeClass = 'theme empty';
+        if (nameKey(shown.theme)) {
+          themeClass = 'theme';
+          if (shown.theme.length > 52) themeClass += ' long';
+          else if (shown.theme.length > 32) themeClass += ' mid';
+        }
         kids.push($('div', {
-          class: nameKey(shown.theme) ? 'theme' : 'theme muted',
+          class: themeClass,
           text: nameKey(shown.theme) ? shown.theme : 'No theme yet',
         }));
         if (shared.length) kids.push($('p', { class: 'small warn', text: 'Also picked by ' + listNames(shared) }));
@@ -555,10 +701,11 @@
             });
           })),
           $('label', { text: 'Theme (' + draft.theme.length + '/' + THEME_MAX + ')' }, [
-            $('input', {
+            $('textarea', {
               id: 'theme-input',
-              class: 'input field',
+              class: 'input field theme-input',
               maxlength: THEME_MAX,
+              rows: 3,
               value: draft.theme,
               placeholder: 'Track and field',
               oninput: function (event) { set('theme', event.target.value); },
