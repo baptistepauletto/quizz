@@ -300,7 +300,7 @@ function PredictWinner({
       <p className="muted">
         {locked
           ? 'Paris verrouillés — on verra après la finale.'
-          : `Tape un prénom. Tu peux changer jusqu’au verrouillage. +${pred.bonus} pts si tu as raison (peut changer le podium).`}
+          : `Choisis un joueur. Tu peux changer jusqu’au verrouillage. +${pred.bonus} pts si tu as raison (peut changer le podium).`}
       </p>
       <div className="predict-pick-grid">
         {state.players.map((p) => {
@@ -587,7 +587,11 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
     return (
       <div className="play-body">
         {header}
-        <p className="muted">Tu n’as plus de points à miser, tu passes ce tour.</p>
+        <p className="muted">
+          {me.score > 0
+            ? 'Les paris étaient déjà clos, tu passes ce tour.'
+            : 'Tu n’as plus de points à miser, tu passes ce tour.'}
+        </p>
       </div>
     );
   }

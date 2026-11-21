@@ -89,10 +89,6 @@ p {
 .btn:active {
   filter: brightness(1.2);
 }
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 .btn.primary {
   background: var(--copper-metal);
   border-color: var(--copper-hi);
@@ -127,6 +123,14 @@ p {
 }
 .btn.block {
   width: 100%;
+}
+/* after the variants so it overrides them; dimmed by colour, not opacity, so the label stays readable */
+.btn:disabled {
+  background: var(--panel);
+  border: 1px dashed color-mix(in srgb, var(--ivory) 32%, transparent);
+  color: color-mix(in srgb, var(--ivory) 72%, transparent);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .field {
@@ -379,6 +383,10 @@ textarea.input {
   pointer-events: none;
   z-index: 30;
   font-size: clamp(10px, 1.6vh, 22px);
+}
+/* inside the TV centre column it stays off the scoreboard */
+.tv-main > .confetti {
+  position: absolute;
 }
 .confetti i {
   position: absolute;
@@ -882,11 +890,7 @@ textarea.input {
   box-shadow: inset 0 0 0 2px var(--copper), inset 0 0 1.5rem rgba(0, 0, 0, 0.5);
 }
 
-/* copper fans in the top corners of every phone page */
-.page::before,
-.page::after,
-.play::before,
-.play::after,
+/* copper fans in the top corners of the centred entry screens; in-game and host pages put their header in those corners */
 .home::before,
 .home::after {
   content: '';
@@ -899,18 +903,12 @@ textarea.input {
   pointer-events: none;
   z-index: -1;
 }
-.page,
-.play,
 .home {
   isolation: isolate;
 }
-.page::before,
-.play::before,
 .home::before {
   left: 0;
 }
-.page::after,
-.play::after,
 .home::after {
   right: 0;
   transform: scaleX(-1);
@@ -1056,16 +1054,19 @@ input[type='range'] {
 
 /* ---------- host ---------- */
 
+/* wrapping flex: the last row stretches too, so no tab is left on its own */
 .phase-tabs {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 .phase-tabs button {
+  flex: 1 1 4.8rem;
   border: 1px solid var(--line);
   background: var(--panel);
   border-radius: 10px;
-  padding: 10px 2px;
+  padding: 10px 6px;
+  min-height: 44px;
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: capitalize;
@@ -1318,8 +1319,8 @@ input[type='range'] {
 }
 .deco-corners i {
   position: absolute;
-  width: 15vh;
-  height: 15vh;
+  width: 12vh;
+  height: 12vh;
   background: var(--deco-corner) no-repeat 0 0 / contain;
   opacity: 0.85;
 }
@@ -1342,8 +1343,16 @@ input[type='range'] {
   right: 0;
   transform: scale(-1);
 }
-.tv[data-flood] .deco-corners {
+/* The fans only go where nothing sits on them: the scoreboard column covers the right edge, and the memory board is full-bleed. */
+.tv[data-flood] .deco-corners,
+.tv[data-phase='memory'] .deco-corners {
   display: none;
+}
+.tv:has(> .tv-body:not(.full)) .deco-corners i:nth-child(2n) {
+  display: none;
+}
+.tv:has(> .tv-body:not(.full)) .tv-head {
+  padding-right: 2vw;
 }
 .tv > .stage-lights {
   position: absolute;
@@ -1407,7 +1416,7 @@ input[type='range'] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.2vh 2vw 1.2vh 14vh;
+  padding: 1.2vh 14vh;
 }
 .tv-head .logo {
   font-size: 2.2em;
@@ -1421,7 +1430,6 @@ input[type='range'] {
   font-size: 1.7em;
   font-weight: 400;
   letter-spacing: 0.16em;
-  margin-right: 5vh;
   padding: 0.05em 0.6em 0.1em;
   border: 0.06em solid var(--copper);
   border-radius: 0.2em;
@@ -1475,6 +1483,12 @@ input[type='range'] {
 .tv-sub {
   font-size: 1.6em;
   color: var(--muted);
+}
+.lobby-url {
+  color: var(--copper-hi);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 .tv-prompt {
   font-size: 3em;
@@ -1620,7 +1634,7 @@ input[type='range'] {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  padding-bottom: 0.06em;
+  padding-bottom: 0.14em;
 }
 .reel.easy b {
   color: color-mix(in srgb, var(--easy) 75%, #000);
@@ -1727,8 +1741,9 @@ input[type='range'] {
   border: 3px solid var(--ivory);
   line-height: 0;
   width: min(72vw, 70vh);
-  background: #0c1736;
+  background: var(--letterbox);
   isolation: isolate;
+  --letterbox: color-mix(in srgb, var(--ivory) 86%, var(--copper-lo));
 }
 .reveal-photo,
 .reveal-canvas {
@@ -1738,7 +1753,7 @@ input[type='range'] {
   height: 100%;
   min-height: 0;
   object-fit: contain;
-  background: #0c1736;
+  background: var(--letterbox);
 }
 /* filter and transform are written every frame from JS (blur, zoom in, zoom out) */
 .reveal-live {
@@ -2391,7 +2406,7 @@ input[type='range'] {
   display: grid;
   place-items: center;
   z-index: 5;
-  animation: fade 0.25s ease-out;
+  animation: backdrop-in 0.15s ease-out;
 }
 .modal-card {
   background: linear-gradient(160deg, #fffaf0, var(--ivory) 55%, #ebe2cf);
@@ -2413,7 +2428,8 @@ input[type='range'] {
   width: min(92%, 1700px);
   max-height: calc(100% - 4vh);
   display: flex;
-  animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+  /* waits for the backdrop so the grid never shows through the card */
+  animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.12s both;
 }
 .modal-marquee .modal-card {
   width: 100%;
@@ -2699,10 +2715,14 @@ input[type='range'] {
 .scoreboard.strip .score-row .pts {
   font-size: 1.2em;
 }
+/* pops in place over the pill: there is no room above the strip, the board rail sits there */
 .scoreboard.strip .score-row .delta {
-  right: 0;
+  right: 0.3em;
   margin-right: 0;
-  top: -0.8em;
+  padding: 0 0.3em;
+  border-radius: 999px;
+  background: rgba(6, 11, 30, 0.92);
+  animation-name: delta-pop;
 }
 .scoreboard.strip .score-row.turn {
   box-shadow: inset 0 0 0 0.14em var(--pc);
@@ -2871,6 +2891,7 @@ input[type='range'] {
   animation: neon-flicker 6s steps(1) infinite;
 }
 .climax-title {
+  margin-top: 2vh;
   font-family: var(--display);
   font-size: 3.2em;
   line-height: 1;
@@ -3183,6 +3204,11 @@ input[type='range'] {
     opacity: 0;
   }
 }
+@keyframes backdrop-in {
+  from {
+    background-color: rgba(4, 8, 22, 0);
+  }
+}
 @keyframes pulse {
   50% {
     transform: scale(1.03);
@@ -3295,6 +3321,25 @@ input[type='range'] {
 @keyframes rise {
   from {
     transform: scaleY(0);
+  }
+}
+@keyframes delta-pop {
+  0% {
+    transform: translateY(-50%) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(-50%) scale(1.2);
+    opacity: 1;
+  }
+  30%,
+  80% {
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50%);
+    opacity: 0;
   }
 }
 @keyframes delta-float {

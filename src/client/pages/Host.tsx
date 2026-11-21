@@ -225,18 +225,21 @@ function QuestionCard({
   q,
   label,
   clue,
+  withPoints = true,
 }: {
   q: QuestionView;
   label?: string;
   /** Extra clue line already revealed on TV (Hard hint 1). */
   clue?: string | null;
+  /** False in the finale, where the bet sets the stakes. */
+  withPoints?: boolean;
 }) {
   return (
     <div className="qcard">
       <div className="row wrap">
         {label && <span className="chip">{label}</span>}
         <span className="chip">{q.theme}</span>
-        <DifficultyChip difficulty={q.difficulty} points={q.points} />
+        <DifficultyChip difficulty={q.difficulty} points={q.points} withPoints={withPoints} />
       </div>
       {q.image && <img className="q-photo" src={q.image} alt="" />}
       <div className="prompt">{q.prompt}</div>
@@ -704,7 +707,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
       <div className="stack">
         {c.status === 'resolved' && c.question && (
           <>
-            <QuestionCard q={c.question} label="Manche terminée" />
+            <QuestionCard q={c.question} label="Manche terminée" withPoints={false} />
             {c.results.map((r) => (
               <div key={r.playerId} className="card row">
                 <b className="grow">{nameOf(state.players, r.playerId)}</b>
@@ -749,7 +752,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
   const eligible = state.players.filter((p) => !p.sitOut);
   return (
     <div className="stack">
-      {c.question && <QuestionCard q={c.question} label={c.status === 'asking' ? 'Révélée' : 'Cachée aux joueurs'} />}
+      {c.question && <QuestionCard q={c.question} label={c.status === 'asking' ? 'Révélée' : 'Cachée aux joueurs'} withPoints={false} />}
 
       {c.status === 'announce' && (
         <>

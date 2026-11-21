@@ -374,6 +374,17 @@ function addScore(g: Game, playerId: string, delta: number, emit: Emit, reason: 
   const p = playerOf(g, playerId);
   p.score = Math.max(0, p.score + delta);
   emit('score.updated', { playerId, delta, score: p.score, reason });
+  syncBettingEligibility(g);
+}
+
+/** While bets are open, who may bet follows the live scores (the host can still adjust points). */
+function syncBettingEligibility(g: Game) {
+  const c = g.climax;
+  if (g.phase !== 'climax' || c.status !== 'betting') return;
+  c.eligible = g.players.filter((p) => p.score > 0).map((p) => p.id);
+  for (const id of Object.keys(c.bets)) {
+    if (!c.eligible.includes(id)) delete c.bets[id];
+  }
 }
 
 function removePlayer(g: Game, playerId: string, emit: Emit) {
@@ -913,10 +924,10 @@ function climaxOpenBetting(g: Game, emit: Emit) {
   const c = g.climax;
   if (c.status !== 'announce') throw new GameError('Annonce d’abord une question.');
   // Players with no points left sit this round out.
-  c.eligible = g.players.filter((p) => p.score > 0).map((p) => p.id);
   c.bets = {};
   c.answers = {};
   c.status = 'betting';
+  syncBettingEligibility(g);
   emit('climax.betting_open', { eligible: c.eligible.length });
 }
 

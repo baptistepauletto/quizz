@@ -242,9 +242,7 @@ function Lobby({ state, joinUrl, colors }: { state: GameView; joinUrl: string; c
         <div>
           <div className="big-code">{state.joinCode}</div>
           <div className="tv-sub">Scanne pour monter sur le plateau</div>
-          <div className="tv-sub" style={{ fontSize: '0.85em' }}>
-            {joinUrl.replace(/^https?:\/\//, '')}
-          </div>
+          <div className="tv-sub lobby-url">{joinUrl.replace(/^https?:\/\//, '')}</div>
           <div className="player-chips">
             {state.players.length === 0 && <span className="tv-sub">En attente des joueurs…</span>}
             {state.players.map((p) => (
@@ -460,7 +458,7 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
       {!compact && <div className="climax-title">Quitte ou double</div>}
       <div className="tv-badges">
         <span className="chip theme-chip">{c.theme}</span>
-        {c.difficulty && <DifficultyChip difficulty={c.difficulty} />}
+        {c.difficulty && <DifficultyChip difficulty={c.difficulty} withPoints={false} />}
       </div>
 
       {c.status === 'announce' && (
@@ -713,9 +711,9 @@ function Results({ state, colors }: { state: GameView; colors: Map<string, strin
             })}
           </div>
         </div>
+        <Confetti colors={confettiColors} count={160} duration={4.5} />
       </div>
       <Scoreboard players={state.players} chips />
-      <Confetti colors={confettiColors} count={160} duration={4.5} />
     </div>
   );
 }

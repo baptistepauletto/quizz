@@ -37,7 +37,7 @@ export function Logo({ autoSpin = true, className = '' }: { autoSpin?: boolean; 
         </defs>
 
         {/* casino chip with the Q */}
-        <g className="logo-chip">
+        <g className="logo-chip" aria-hidden="true">
           <circle cx="40" cy="40" r="35" fill="#6e3d1a" />
           <circle cx="40" cy="38" r="35" fill="#b87333" />
           <circle cx="40" cy="38" r="30" fill="none" stroke="#f4efe4" strokeWidth="8" strokeDasharray="9 14.56" />
@@ -49,7 +49,7 @@ export function Logo({ autoSpin = true, className = '' }: { autoSpin?: boolean; 
         </g>
 
         {/* "Quizz" with a stepped copper shadow */}
-        <g fontFamily={DISPLAY} fontSize="46">
+        <g fontFamily={DISPLAY} fontSize="46" aria-hidden="true">
           <text x="88" y="56" textLength="124" lengthAdjust="spacingAndGlyphs" fill="#6e3d1a">
             Quizz
           </text>
@@ -64,7 +64,7 @@ export function Logo({ autoSpin = true, className = '' }: { autoSpin?: boolean; 
         <path d="M146 61l5 5-5 5-5-5z" fill="#ff2e88" />
 
         {/* neon "IN" sign */}
-        <g className="logo-neon" filter={`url(#${glow})`}>
+        <g className="logo-neon" filter={`url(#${glow})`} aria-hidden="true">
           <rect x="222" y="14" width="70" height="52" rx="10" fill="#1c0a0c" fillOpacity="0.55" stroke="#ff2e88" strokeWidth="3" />
           <text
             x="257"
@@ -83,7 +83,7 @@ export function Logo({ autoSpin = true, className = '' }: { autoSpin?: boolean; 
             IN
           </text>
         </g>
-        <g className="logo-neon" pointerEvents="none">
+        <g className="logo-neon" pointerEvents="none" aria-hidden="true">
           <rect x="222" y="14" width="70" height="52" rx="10" fill="none" stroke="#ffd1e6" strokeWidth="1" />
           <text
             x="257"
