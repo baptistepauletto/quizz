@@ -907,7 +907,7 @@
       "contributor": "Nino",
       "prompt": "Quelle chanson de Tom Petty accompagne la toute première bande-annonce officielle de GTA 6 publiée en décembre 2023 ? (j'accepte si tu chantes)",
       "answer": "Love Is a Long Road",
-      "difficulty": "medium",
+      "difficulty": "hard",
       "context_hint": "Accepter si le joueur chante ou donne le titre en anglais.",
       "is_mcq": true,
       "options": [
