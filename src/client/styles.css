@@ -3304,3 +3304,309 @@ input[type='range'] {
     transition: none !important;
   }
 }
+
+/* ---------- sound lab ---------- */
+
+.lab {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.lab-head {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.lab-head h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 2.6rem;
+  color: var(--copper-hi);
+}
+.lab-head p {
+  max-width: 70ch;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.lab-logo {
+  font-size: 1.6rem;
+  flex: none;
+}
+.lab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lab-section h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--copper) 40%, transparent);
+  padding-bottom: 6px;
+}
+.lab-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lab-palettes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.lab-palette {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--copper) 35%, var(--line));
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  line-height: 1.35;
+}
+.lab-palette strong {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: var(--ivory);
+}
+.lab-palette.on {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 22px color-mix(in srgb, var(--neon) 35%, transparent);
+}
+.lab-pitch {
+  font-size: 0.9rem;
+}
+.lab-instr {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lab-variance {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lab-variance i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px dashed color-mix(in srgb, var(--ivory) 35%, transparent);
+}
+.lab-variance i.lit {
+  border: 2px dashed var(--ivory);
+  background: var(--copper);
+}
+.lab-variance small {
+  margin-left: 6px;
+  color: var(--muted);
+}
+.lab-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.lab-tr {
+  display: grid;
+  grid-template-columns: minmax(260px, 2.4fr) repeat(5, 1fr) 110px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+.lab-tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--panel) 60%, transparent);
+}
+.lab-th {
+  border-top: 0;
+  background: var(--panel-2) !important;
+  font-weight: 700;
+}
+.lab-colhead {
+  background: none;
+  border: 0;
+  padding: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.lab-colhead.on {
+  color: var(--neon);
+}
+.lab-cue {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+.lab-cue strong {
+  font-size: 1rem;
+}
+.lab-cue code,
+.lab code {
+  font-size: 0.72rem;
+  color: var(--copper-hi);
+}
+.lab-play {
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.9rem;
+}
+.lab-play.col {
+  border-color: color-mix(in srgb, var(--neon) 60%, var(--line));
+}
+.lab-play:hover {
+  background: var(--panel-2);
+}
+.lab-play.now {
+  background: var(--neon);
+  color: var(--ink);
+  border-color: var(--neon);
+  box-shadow: 0 0 16px var(--neon);
+}
+.lab-scenes {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.lab-scene-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lab-scene-list .btn {
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.lab-scene-list .btn small {
+  white-space: nowrap;
+}
+.btn.on {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon);
+}
+.lab-timeline {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 200px;
+  max-height: 520px;
+  overflow: auto;
+}
+.lab-timeline li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.2s, background 0.2s;
+}
+.lab-timeline li .chip {
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+}
+.lab-timeline li.done {
+  opacity: 0.8;
+}
+.lab-timeline li.now {
+  opacity: 1;
+  background: color-mix(in srgb, var(--neon) 18%, transparent);
+  box-shadow: inset 3px 0 0 var(--neon);
+}
+.lab-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--copper-hi);
+}
+.lab-progress {
+  display: block !important;
+  height: 4px;
+  padding: 0 !important;
+  opacity: 1 !important;
+  background: linear-gradient(90deg, var(--copper) calc(var(--p) * 100%), var(--line) 0);
+}
+.lab-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lab-stems {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.lab-stem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.lab-stem.off {
+  opacity: 0.5;
+}
+.lab-meter {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.lab-meter i {
+  display: block;
+  height: 100%;
+  background: var(--copper-metal);
+  transition: width 1.5s ease;
+}
+.lab-sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.lab-sliders label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lab-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .lab-palettes,
+  .lab-stems {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lab-scenes,
+  .lab-sliders {
+    grid-template-columns: 1fr;
+  }
+  .lab-tr {
+    grid-template-columns: 1fr repeat(5, 44px);
+  }
+  .lab-tr > .btn {
+    grid-column: 1 / -1;
+  }
+}

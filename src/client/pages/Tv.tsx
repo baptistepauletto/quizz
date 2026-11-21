@@ -11,7 +11,7 @@ import { ConnectionPill, DifficultyChip, OptionsList, nameOf } from '../componen
 import { fetchInfo, lanOrigin } from '../lib/api';
 import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
-import { audioReady, isMuted, onAudioChange, playSfx, toggleMute, unlockAudio } from '../lib/sfx';
+import { audioReady, isMuted, onAudioChange, playSfx, setMusicPhase, toggleMusic, toggleMute, unlockAudio } from '../lib/sfx';
 import { useGame } from '../lib/useGame';
 import { MEMORY_TURNS, climaxMultipleLabel, climaxStackAmount, climaxWinDelta, estimateClosestBoost } from '../../shared/types';
 import type { GameEvent, GameView, Phase, PlayerView } from '../../shared/types';
@@ -64,10 +64,12 @@ export function Tv() {
       const k = e.key.toLowerCase();
       if (k === 'i') setIpIndex((i) => i + 1);
       if (k === 'm') toggleMute();
+      if (k === 'b') toggleMusic();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+  useEffect(() => setMusicPhase(state?.phase ?? 'lobby'), [state?.phase]);
 
   const phaseCard = usePhaseCard(state?.phase ?? null);
   const fxOn = useFlash(fx?.key ?? null, 1400);

@@ -71,4 +71,6 @@ Before a game night, friends open one page, set a nickname, and claim a theme. T
 - `npm run bots -- <CODE> <N>` – N fake players join room `<CODE>` and buzz/bet randomly.
 - `npm run typecheck`
 
-Sound effects are synthesized in the browser (`src/client/lib/sfx.ts`, no audio files). Browsers keep audio locked until the page gets a key press or a click, so press any key on the TV once; `m` mutes and unmutes.
+The TV plays the "Orchestre 1925" sound palette and the adaptive "Riviera 1925" score, whose stems crossfade with each game phase (`src/client/lib/sfx.ts`). Browsers keep audio locked until the page gets a key press or a click, so press any key on the TV once; `m` mutes everything, `b` turns the music alone on and off.
+
+The audio is rendered offline. `/sound-lab` auditions all five palettes and the score, in isolation or in scripted game scenes. `npm run sounds` renders them into `public/audio` (`npm run sounds -- sfx noir` for one palette, `-- music` for the score, `--png` to also write spectrograms to the temp folder). The renderer lives in `scripts/sound/`; the catalogue (moments, palettes, per-phase music mix) is `src/shared/soundbank.ts`.

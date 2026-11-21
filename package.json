@@ -12,7 +12,8 @@
     "start": "tsx src/server/index.ts",
     "typecheck": "tsc --noEmit",
     "smoke": "tsx scripts/smoke.ts",
-    "bots": "tsx scripts/bots.ts"
+    "bots": "tsx scripts/bots.ts",
+    "sounds": "tsx scripts/sound/render.ts"
   },
   "dependencies": {
     "@fastify/websocket": "^11.3.3",
@@ -28,6 +29,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.4",
     "@types/qrcode": "^1.5.6",

@@ -4,6 +4,7 @@ import { Host } from './pages/Host';
 import { NightPage } from './pages/Night';
 import { Play } from './pages/Play';
 import { PilePage, PrepHome } from './pages/Prep';
+import { SoundLab } from './pages/SoundLab';
 import { Swipe } from './pages/Swipe';
 import { Tv } from './pages/Tv';
 
@@ -26,6 +27,9 @@ function Home() {
       <Link className="btn big" to="/play">
         /play · Joueur
       </Link>
+      <Link className="btn big ghost" to="/sound-lab">
+        /sound-lab · Salon d’écoute
+      </Link>
     </div>
   );
 }
@@ -41,6 +45,7 @@ export function App() {
       <Route path="/prep/pile" element={<PilePage />} />
       <Route path="/prep/night" element={<NightPage />} />
       <Route path="/prep/swipe" element={<Swipe />} />
+      <Route path="/sound-lab" element={<SoundLab />} />
       <Route path="*" element={<Home />} />
     </Routes>
   );
