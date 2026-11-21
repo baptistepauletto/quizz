@@ -83,6 +83,10 @@ function difficultyRank(difficulty: Difficulty | undefined): number {
   return difficulty ? DIFFICULTIES.indexOf(difficulty) : DIFFICULTIES.length;
 }
 
+function longestWord(text: string): number {
+  return Math.max(1, ...text.split(/\s+/).map((w) => w.length));
+}
+
 function slotsFor(cards: TileView[], difficulty: Difficulty): Array<TileView | null> {
   const mine = cards.filter((card) => card.difficulty === difficulty);
   const count = Math.max(ROW_SLOTS[difficulty], mine.length);
@@ -188,7 +192,7 @@ function HouseCard({ tile }: { tile: TileView }) {
         )}
       </span>
       <span className="t-theme">
-        <span>{tile.theme}</span>
+        <span style={{ '--word': longestWord(tile.theme ?? '') } as CSSProperties}>{tile.theme}</span>
       </span>
     </CardShell>
   );

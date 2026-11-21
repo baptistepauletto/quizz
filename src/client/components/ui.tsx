@@ -38,6 +38,24 @@ export function useNow(ms = 500): number {
   return now;
 }
 
+/**
+ * French number formatting: 11384.31 → "11 384,31", keeping the decimals that were given.
+ * Four-digit numbers stay ungrouped (French convention) so years read "1992", not "1 992".
+ */
+export function formatNumber(n: number, decimals = 0): string {
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+    useGrouping: Math.abs(n) >= 10000,
+  });
+}
+
+/** Reformats the bare numbers inside an estimate answer ("2594.90 $" → "2594,90 $"); other text is left alone. */
+export function formatNumbersIn(text: string): string {
+  return text.replace(/\d+(?:\.\d+)?/g, (m) => formatNumber(Number(m), m.split('.')[1]?.length ?? 0));
+}
+
 export function nameOf(players: PlayerView[], id: string | null | undefined): string {
   return players.find((p) => p.id === id)?.name ?? '';
 }

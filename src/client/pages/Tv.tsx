@@ -7,7 +7,7 @@ import { PhotoReveal } from '../components/PhotoReveal';
 import { Scoreboard } from '../components/Scoreboard';
 import { ChipStack, Confetti, CountUp, CountdownRing, DecoCorners, Die, Marquee, Token, useFlash } from '../components/stage';
 import type { StackMode } from '../components/stage';
-import { ConnectionPill, DifficultyChip, OptionsList, nameOf } from '../components/ui';
+import { ConnectionPill, DifficultyChip, OptionsList, formatNumbersIn, nameOf } from '../components/ui';
 import { fetchInfo, lanOrigin } from '../lib/api';
 import type { LanInfo } from '../lib/api';
 import { PLAYER_COLORS, playerColors } from '../lib/colors';
@@ -313,16 +313,22 @@ function Sprint({ state, colors }: { state: GameView; colors: Map<string, string
           )}
         </div>
       </div>
-      {q && s.status === 'locked' && s.buzzPlayerId && (
-        <div className="buzz-banner" key={s.buzzPlayerId}>
-          <Token name={nameOf(state.players, s.buzzPlayerId)} color={colors.get(s.buzzPlayerId)} />
-          {nameOf(state.players, s.buzzPlayerId)} a buzzé !
-          {s.answerUntil !== null && <CountdownRing until={s.answerUntil} className="inline" />}
-        </div>
-      )}
-      {q && s.status === 'locked' && s.answerUntil === null && <div className="tv-sub">Temps écoulé</div>}
-      {q && s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
-      {q && s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
+      <div className="sprint-foot">
+        {q && s.status === 'locked' && s.buzzPlayerId && (
+          <div className="buzz-banner" key={s.buzzPlayerId}>
+            <Token name={nameOf(state.players, s.buzzPlayerId)} color={colors.get(s.buzzPlayerId)} />
+            <span className="buzz-name">{nameOf(state.players, s.buzzPlayerId)}</span>
+            <span>a buzzé !</span>
+            {s.answerUntil !== null ? (
+              <CountdownRing until={s.answerUntil} className="inline" />
+            ) : (
+              <span className="buzz-timeout">Temps écoulé</span>
+            )}
+          </div>
+        )}
+        {q && s.status === 'asking' && <div className="tv-sub">Buzz sur votre téléphone…</div>}
+        {q && s.status === 'resolved' && q.answer && <div className="tv-answer">{q.answer}</div>}
+      </div>
     </div>
   );
 }
@@ -493,7 +499,9 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
         <>
           {c.question.image && <img className="tv-photo" src={c.question.image} alt="" />}
           <div className="tv-prompt small">{c.question.prompt}</div>
-          {c.status === 'resolved' && c.question.answer && <div className="tv-answer">{c.question.answer}</div>}
+          {c.status === 'resolved' && c.question.answer && (
+            <div className="tv-answer">{c.question.estimate ? formatNumbersIn(c.question.answer) : c.question.answer}</div>
+          )}
           {c.status === 'revealing' && (
             <div className="tv-sub">
               Du plus loin au plus proche · le plus proche passe au multiple au-dessus · {Math.max(0, c.revealIndex + 1)}/{c.revealOrder.length}
@@ -520,13 +528,14 @@ function Climax({ state, colors }: { state: GameView; colors: Map<string, string
               if (!r) return null;
               const diff = c.difficulty ?? 'hard';
               const boost = estimateClosestBoost(r.closest, r.correct);
-              const base = r.correct ? `+${climaxWinDelta(r.wager, diff, boost)}` : `-${r.wager}`;
+              const base = r.correct ? `+${climaxWinDelta(r.wager, diff, boost)}` : `−${r.wager}`;
               return boost ? `${base} · ${climaxMultipleLabel(diff, boost)}` : base;
             }}
             answer={(p) => {
               const s = c.submissions.find((x) => x.playerId === p.id);
               if (!s) return '—';
-              return s.closest ? `${s.text || '—'} ★` : s.text || '—';
+              const text = s.text && c.question?.estimate ? formatNumbersIn(s.text) : s.text;
+              return s.closest ? `${text || '—'} ★` : text || '—';
             }}
           />
         </>
@@ -587,7 +596,7 @@ function PredictionsBoard({ state, colors }: { state: GameView; colors: Map<stri
           ? `Révélation après la finale · +${state.predictions.bonus} pts si vous avez vu juste`
           : `Choisissez sur votre téléphone · ${picked} / ${state.players.length}`}
       </div>
-      <div className="predict-grid">
+      <div className="predict-grid" style={{ '--cols': predictCols(state.players.length) } as CSSProperties}>
         {state.players.map((p) => (
           <div
             key={p.id}
@@ -602,6 +611,12 @@ function PredictionsBoard({ state, colors }: { state: GameView; colors: Map<stri
       </div>
     </div>
   );
+}
+
+/** At most 6 seats per row, spread evenly over as few rows as possible. */
+function predictCols(n: number): number {
+  if (n <= 4) return Math.max(1, n);
+  return Math.ceil(n / Math.ceil(n / 6));
 }
 
 // --- Reveal (post-climax) ------------------------------------------------------
@@ -631,7 +646,7 @@ function RevealBoard({ state, colors }: { state: GameView; colors: Map<string, s
   }
 
   return (
-    <div className="tv-center reveal-board">
+    <div className={`tv-center reveal-board ${pred.picks.length > 8 ? 'two-col' : ''}`}>
       <div className="tv-sub">
         En tête après la finale :{' '}
         {pred.winnerIds.map((id) => nameOf(state.players, id)).filter(Boolean).join(' · ') || '—'}

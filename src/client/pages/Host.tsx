@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PinGate } from '../components/PinGate';
-import { ConnectionPill, DifficultyChip, OptionsList, nameOf, useNow } from '../components/ui';
+import { ConnectionPill, DifficultyChip, OptionsList, formatNumber, formatNumbersIn, nameOf, useNow } from '../components/ui';
 import { api, getToken, setToken } from '../lib/api';
 import { useGame } from '../lib/useGame';
 import type { UseGame } from '../lib/useGame';
@@ -251,7 +251,7 @@ function QuestionCard({
           <div className="muted" style={{ fontSize: '0.8rem' }}>
             Réponse
           </div>
-          <b>{q.answer}</b>
+          <b>{q.estimate ? formatNumbersIn(q.answer) : q.answer}</b>
         </div>
       )}
       {q.contextHint && !clue && (
@@ -261,10 +261,11 @@ function QuestionCard({
       )}
       {q.estimate && 'value' in q.estimate && (
         <div className="muted" style={{ fontSize: '0.85rem' }}>
-          Estimation {q.estimate.min}–{q.estimate.max} (pas {q.estimate.step}) · cible {q.estimate.value}
+          Estimation {formatNumber(q.estimate.min)}–{formatNumber(q.estimate.max)} (pas {formatNumber(q.estimate.step)}) · cible{' '}
+          {formatNumbersIn(String(q.estimate.value))}
           {(() => {
             const band = estimateBand(q.estimate);
-            return ` · gagnant ${band.lo}→${band.hi}`;
+            return ` · gagnant ${formatNumbersIn(String(band.lo))}→${formatNumbersIn(String(band.hi))}`;
           })()}
         </div>
       )}
@@ -415,7 +416,7 @@ function SprintPanel({ state, send }: { state: GameView; send: Send }) {
         <>
           <div className="card center">
             <div className="muted">Premier à buzzer</div>
-            <h2 style={{ fontSize: '2rem' }}>{buzzer}</h2>
+            <h2 style={{ fontSize: '2rem', overflowWrap: 'anywhere' }}>{buzzer}</h2>
             {s.answerUntil !== null && <div className="bet-amount">{secondsLeft}s</div>}
             {timedOut && <div className="muted" style={{ marginTop: 4 }}>Temps écoulé — Correct / Faux</div>}
           </div>
@@ -710,7 +711,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                 <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
                   {r.correct
                     ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
-                    : `-${r.wager}`}
+                    : `−${r.wager}`}
                   {estimateClosestBoost(r.closest, r.correct)
                     ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}`
                     : ''}
@@ -823,7 +824,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                     Correct (+{climaxWinDelta(c.bets[id], c.difficulty ?? 'hard')})
                   </button>
                   <button className="btn bad grow" onClick={() => send({ t: 'climax.judge', playerId: id, correct: false })}>
-                    Faux (-{c.bets[id]})
+                    Faux (−{c.bets[id]})
                   </button>
                 </div>
               </div>
@@ -848,7 +849,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                 <div key={s.playerId} className="row">
                   <span className="grow">
                     <b>{s.name}</b>
-                    <span className="muted"> · {s.text || '(vide)'}</span>
+                    <span className="muted"> · {s.text ? formatNumbersIn(s.text) : '(vide)'}</span>
                     {s.closest && (
                       <span className="chip ok">
                         {r && estimateClosestBoost(r.closest, r.correct)
@@ -861,7 +862,7 @@ function ClimaxPanel({ state, send }: { state: GameView; send: Send }) {
                     <span className={`chip ${r.correct ? 'ok' : 'bad'}`}>
                       {r.correct
                         ? `+${climaxWinDelta(r.wager, c.difficulty ?? 'hard', estimateClosestBoost(r.closest, r.correct))}`
-                        : `-${r.wager}`}
+                        : `−${r.wager}`}
                       {estimateClosestBoost(r.closest, r.correct)
                         ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}`
                         : ''}
@@ -886,10 +887,10 @@ function EstimateHostBand({ estimate }: { estimate: EstimateSpec }) {
   const band = estimateBand(estimate);
   return (
     <div className="card">
-      <div className="muted">Cible {estimate.value}</div>
+      <div className="muted">Cible {formatNumbersIn(String(estimate.value))}</div>
       <div>
-        Fourchette gagnante : <b>{band.lo}</b> → <b>{band.hi}</b>
-        {estimate.tolerance !== undefined ? ` (±${estimate.tolerance})` : ' (±10 %)'}
+        Fourchette gagnante : <b>{formatNumbersIn(String(band.lo))}</b> → <b>{formatNumbersIn(String(band.hi))}</b>
+        {estimate.tolerance !== undefined ? ` (±${formatNumbersIn(String(estimate.tolerance))})` : ' (±10 %)'}
       </div>
     </div>
   );

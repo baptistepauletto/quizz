@@ -101,12 +101,13 @@ p {
   letter-spacing: 0.03em;
   box-shadow: inset 0 1px 0 rgba(255, 240, 220, 0.6), inset 0 0 0 3px rgba(10, 17, 40, 0.18), 0 3px 0 var(--copper-lo);
 }
+/* gradients kept dark enough for ivory text to stay above 4.5:1 */
 .btn.ok {
-  background: linear-gradient(180deg, #34b583, #1d8a5c);
+  background: linear-gradient(180deg, #12764d, #0b5a3a);
   border-color: #5fd6a2;
 }
 .btn.bad {
-  background: linear-gradient(180deg, #f0507a, #c4224f);
+  background: linear-gradient(180deg, #c42a55, #9a1b3f);
   border-color: #ff8aa8;
 }
 .btn.ghost {
@@ -209,7 +210,7 @@ textarea.input {
 }
 .chip.hard {
   background: color-mix(in srgb, var(--hard) 22%, transparent);
-  color: var(--hard);
+  color: color-mix(in srgb, var(--hard) 55%, #fff);
 }
 .chip.ok {
   background: color-mix(in srgb, var(--ok) 22%, transparent);
@@ -1228,13 +1229,19 @@ input[type='range'] {
   height: 10px;
 }
 .leech-row {
-  align-items: flex-start;
-  gap: 10px;
-  padding: 6px 0;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
 }
 .leech-row input {
-  margin-top: 4px;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--copper-hi);
 }
 .player-row {
   display: flex;
@@ -1274,7 +1281,7 @@ input[type='range'] {
   grid-template-rows: auto 1fr;
   background: var(--houndstooth) 0 0 / 2.4em 2.4em, var(--stage);
   overflow: hidden;
-  font-size: clamp(14px, 2.2vh, 32px);
+  font-size: clamp(14px, 2.2vh, 48px);
   cursor: none;
   transition: background-color 0.8s;
 }
@@ -1710,7 +1717,7 @@ input[type='range'] {
 .die i.on {
   background: radial-gradient(circle at 35% 35%, var(--copper-hi), var(--copper) 55%, var(--copper-lo));
 }
-/* Shrinks (rather than overflowing the screen) when the buzz banner shows up under it. */
+/* Shrinks (rather than overflowing the screen) when a long prompt needs the room. */
 .reveal-frame {
   flex: 0 1 48vh;
   min-height: 18vh;
@@ -1774,20 +1781,59 @@ input[type='range'] {
   font-size: 1.2em;
   padding: 0.3em 0.9em;
 }
+/* fixed-height footer under the slot machine, so the reels and photo never resize between states */
+.sprint-foot {
+  flex: none;
+  width: 100%;
+  height: 4.8em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.has-photo .sprint-foot {
+  height: 3.6em;
+}
 .buzz-banner {
   display: inline-flex;
   align-items: center;
   gap: 0.4em;
+  max-width: 96%;
+  min-width: 0;
   font-family: var(--display);
   font-size: 3.4em;
   font-weight: 400;
+  line-height: 1.2;
   color: var(--ink);
   letter-spacing: 0.03em;
+  white-space: nowrap;
   transform: rotate(-2deg);
   animation: pop 0.35s ease-out;
 }
+.buzz-banner > * {
+  flex: none;
+}
+.buzz-banner > .buzz-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.buzz-banner .ring.inline {
+  width: 1.1em;
+  height: 1.1em;
+}
+.buzz-banner .buzz-timeout {
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 0.45em;
+  color: var(--bad);
+}
 .has-photo .buzz-banner {
   font-size: 2.4em;
+}
+.has-photo .sprint-foot .tv-answer {
+  font-size: 2.2em;
 }
 .buzz-banner .token {
   font-size: 0.6em;
@@ -1921,6 +1967,9 @@ input[type='range'] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.scoreboard:not(.strip) .score-row .name {
+  font-size: 1.15em;
 }
 .score-row .pts {
   position: relative;
@@ -2138,7 +2187,9 @@ input[type='range'] {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   text-align: center;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
   max-width: 100%;
   /* Keep descenders (g, y, p) inside the clamp box. */
   padding-bottom: 0.08em;
@@ -2214,14 +2265,16 @@ input[type='range'] {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  gap: 0.45vw;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.35vh 0.45vw;
 }
+/* subgrid: every lane's header takes the tallest header's height, so card rows stay aligned */
 .lane {
   min-width: 0;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35vh;
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
 }
 .lane-head {
   flex: 0 0 auto;
@@ -2235,9 +2288,9 @@ input[type='range'] {
   text-align: center;
 }
 .lane-head .token {
-  width: 2.2vh;
-  height: 2.2vh;
-  font-size: 1.2vh;
+  width: 2.6vh;
+  height: 2.6vh;
+  font-size: 1.4vh;
 }
 .lane-name,
 .lane-theme {
@@ -2246,15 +2299,15 @@ input[type='range'] {
 }
 .lane-name {
   font-family: var(--display);
-  font-size: 1.7vh;
-  line-height: 1.05;
+  font-size: 2.2vh;
+  line-height: 1.25;
   color: var(--ivory);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .lane-theme {
-  font-size: 1.35vh;
-  line-height: 1.15;
+  font-size: 1.8vh;
+  line-height: 1.3;
   color: var(--copper-hi);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2324,9 +2377,10 @@ input[type='range'] {
   top: 8cqmin;
   right: 8cqmin;
 }
+/* --word keeps the longest word on one line; Chromium has no French hyphenation dictionary on every platform */
 .tile.house .t-theme > span:not(.t-maison) {
   -webkit-line-clamp: 2;
-  font-size: min(24cqh, 16cqw);
+  font-size: min(24cqh, 16cqw, calc(150cqw / var(--word, 1)));
 }
 
 /* fixed: the question gets the whole screen, not just the grid area */
@@ -3263,29 +3317,39 @@ input[type='range'] {
 }
 /* opening predictions + reveal */
 .predict-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
   gap: 1.2vh 1.5vw;
   margin-top: 2vh;
-  max-width: 70vw;
+  width: min(100%, 70vw);
+  font-size: 1.15em;
 }
+/* not ready yet: dashed, desaturated outline instead of fading the name */
 .predict-seat {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.35em;
-  min-width: 5.5em;
   padding: 0.8em 0.6em;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--pc) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pc) 35%, transparent);
-  opacity: 0.55;
-  transition: opacity 0.35s, background 0.35s;
+  background: color-mix(in srgb, var(--pc) 6%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--ivory) 22%, transparent);
+  transition: background 0.35s, border-color 0.35s;
+}
+.predict-seat > span:not(.token) {
+  max-width: 100%;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.predict-seat:not(.ready) .token {
+  filter: grayscale(0.8);
 }
 .predict-seat.ready {
-  opacity: 1;
   background: color-mix(in srgb, var(--pc) 28%, transparent);
+  border: 2px solid var(--pc);
 }
 .predict-seat small {
   color: var(--muted);
@@ -3331,7 +3395,11 @@ input[type='range'] {
   color: var(--muted);
 }
 .reveal-board {
-  width: min(720px, 92%);
+  align-self: center;
+  width: min(100%, 48vw);
+}
+.reveal-board .tv-sub {
+  text-wrap: balance;
 }
 .reveal-list {
   display: flex;
@@ -3340,7 +3408,17 @@ input[type='range'] {
   margin-top: 2vh;
   width: 100%;
 }
+/* past 8 picks the list splits into two columns so it never runs off the bottom */
+.reveal-board.two-col {
+  width: 100%;
+}
+.reveal-board.two-col .reveal-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1vh 1.2vw;
+}
 .reveal-row {
+  text-align: start;
   display: grid;
   grid-template-columns: auto 1fr auto auto 1fr auto;
   align-items: center;
@@ -3363,6 +3441,7 @@ input[type='range'] {
 }
 .reveal-voter,
 .reveal-target {
+  min-width: 0;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;

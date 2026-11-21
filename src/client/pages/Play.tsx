@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { ChipButton, ChipStack, Confetti, CountUp, CountdownRing, Token, useCountUp } from '../components/stage';
-import { ConnectionPill, DifficultyChip, nameOf, useNow } from '../components/ui';
+import { ConnectionPill, DifficultyChip, formatNumber, nameOf, useNow } from '../components/ui';
 import { api } from '../lib/api';
 import { playerColors } from '../lib/colors';
 import { useGame } from '../lib/useGame';
@@ -713,7 +713,7 @@ function ClimaxPlayer({ state, me, game }: { state: GameView; me: PlayerView; ga
             <div className="bet-amount" style={{ color: result.correct ? 'var(--ok)' : 'var(--bad)' }}>
               {result.correct
                 ? `+${climaxWinDelta(result.wager, c.difficulty ?? 'hard', estimateClosestBoost(result.closest, result.correct))}${estimateClosestBoost(result.closest, result.correct) ? ` · ${climaxMultipleLabel(c.difficulty ?? 'hard', 1)}` : ''}`
-                : `-${result.wager}`}
+                : `−${result.wager}`}
             </div>
             <p>
               {result.correct ? 'Bien joué !' : 'Ta mise est perdue.'}
@@ -819,6 +819,5 @@ function ClimaxAnswering({
 }
 
 function formatEstimate(n: number): string {
-  if (!Number.isFinite(n)) return '—';
-  return Number.isInteger(n) ? String(n) : String(n).replace('.', ',');
+  return formatNumber(n, Number.isInteger(n) ? 0 : (String(n).split('.')[1]?.length ?? 0));
 }
