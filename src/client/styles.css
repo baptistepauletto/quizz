@@ -2440,27 +2440,40 @@ input[type='range'] {
   gap: 2vh;
   animation: none;
 }
+/* topic | who answers | stakes: equal side columns keep the player on the card's centre line, above the prompt */
 .modal-head {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 1.5vw;
+  padding-bottom: 1.4vh;
+  border-bottom: 1px solid color-mix(in srgb, var(--copper) 45%, transparent);
 }
 .modal-marquee .modal-coord {
   justify-self: start;
   font-size: 2.6em;
 }
-.modal-tags {
+.modal-topic {
+  justify-self: start;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.3em 0.6em;
 }
-.modal-tags .chip {
+.modal-stakes {
+  justify-self: end;
+}
+.modal-topic .chip,
+.modal-stakes .chip {
   font-size: 1.2em;
   padding: 0.3em 0.9em;
+}
+.modal-topic .chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .modal-by {
   font-size: 1.1em;
@@ -2469,11 +2482,10 @@ input[type='range'] {
   color: #6e4a32;
 }
 .modal-who {
-  justify-self: end;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.45em;
-  font-size: 1.2em;
+  font-size: 1.3em;
   font-weight: 600;
   color: #6e4a32;
 }

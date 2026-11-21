@@ -356,16 +356,18 @@ function Memory({ state, colors }: { state: GameView; colors: Map<string, string
           <Marquee className="modal-marquee" key={m.askingCoord}>
             <div className="modal-card">
               <div className="modal-head">
-                <div className="modal-tags">
+                <div className="modal-topic">
                   <span className="chip">{q.theme}</span>
                   {q.contributor && <span className="modal-by">par {q.contributor}</span>}
-                  <DifficultyChip difficulty={q.difficulty} points={q.points} />
                 </div>
                 <div className="modal-who">
                   pour
                   <b style={{ '--pc': m.turnPlayerId ? colors.get(m.turnPlayerId) : undefined } as CSSProperties} className="modal-for">
                     {turnName}
                   </b>
+                </div>
+                <div className="modal-stakes">
+                  <DifficultyChip difficulty={q.difficulty} points={q.points} />
                 </div>
               </div>
               <div className={`modal-body ${q.image ? 'with-photo' : ''}`}>
