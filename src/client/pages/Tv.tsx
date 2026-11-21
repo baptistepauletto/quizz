@@ -306,7 +306,9 @@ function Sprint({ state, colors }: { state: GameView; colors: Map<string, string
                   phase={s.status === 'resolved' ? 'resolved' : s.status === 'locked' ? 'locked' : 'asking'}
                 />
               )}
-              <div className="tv-prompt">{q.prompt}</div>
+              <div className="tv-prompt" style={{ '--len': q.prompt.length } as CSSProperties}>
+                {q.prompt}
+              </div>
             </>
           )}
         </div>
@@ -549,8 +551,10 @@ function Table({
   caption?: (p: PlayerView) => string | null;
   answer?: (p: PlayerView) => string;
 }) {
+  const rows = players.length <= 4 ? 1 : players.length <= 10 ? 2 : 3;
+  const cols = Math.max(1, Math.ceil(players.length / rows));
   return (
-    <div className="felt">
+    <div className="felt" style={{ '--cols': cols, '--rows': rows } as CSSProperties}>
       {players.map((p) => {
         const m: StackMode = p.sitOut ? 'empty' : mode(p);
         const cap = p.sitOut ? 'passe' : caption?.(p);

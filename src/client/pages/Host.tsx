@@ -542,7 +542,7 @@ function MemoryPanel({ state, send }: { state: GameView; send: Send }) {
             </div>
             <select
               className="input"
-              style={{ width: 'auto' }}
+              style={{ width: 'auto', maxWidth: '9rem', minWidth: 0, flex: 'none' }}
               value=""
               disabled={!!m.askingCoord}
               onChange={(e) => e.target.value && send({ t: 'memory.setTurn', playerId: e.target.value })}

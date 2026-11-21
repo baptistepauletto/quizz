@@ -337,6 +337,7 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
   const [pressed, setPressed] = useState(false);
 
   let label = 'BUZZ';
+  let named = false;
   let hint = 'Attends la question…';
   if (s.status === 'asking') hint = lockedOut ? 'Tu es exclu de cette question' : 'Tape le plus vite possible !';
   else if (iWon) {
@@ -344,6 +345,7 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
     hint = 'Réponds à voix haute';
   } else if (s.status === 'locked') {
     label = nameOf(state.players, s.buzzPlayerId);
+    named = true;
     hint = 'a buzzé en premier';
   } else if (s.status === 'resolved') hint = 'Question terminée';
 
@@ -369,7 +371,8 @@ function Buzzer({ state, me, game }: { state: GameView; me: PlayerView; game: Us
           </div>
         )}
         <button
-          className={`buzzer ${iWon ? 'won' : ''} ${pressed && canBuzz ? 'pressed' : ''}`}
+          className={`buzzer ${iWon ? 'won' : ''} ${pressed && canBuzz ? 'pressed' : ''} ${named ? 'named' : ''}`}
+          style={named ? ({ '--len': label.length } as CSSProperties) : undefined}
           disabled={!canBuzz && !iWon}
           onPointerDown={buzz}
           onPointerUp={() => setPressed(false)}

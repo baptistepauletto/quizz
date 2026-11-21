@@ -176,6 +176,8 @@ textarea.input {
 }
 .grow {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .muted {
   color: var(--muted);
@@ -857,7 +859,9 @@ textarea.input {
   text-align: center;
 }
 .play-body h2 {
+  max-width: 100%;
   font-size: 1.8rem;
+  overflow-wrap: anywhere;
 }
 .play {
   --me: var(--spot);
@@ -973,6 +977,13 @@ textarea.input {
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
+}
+.buzzer.named {
+  padding: 0 14%;
+  font-size: clamp(1.3rem, calc(min(86vw, 62vh) * 1.5 / max(var(--len), 6)), 3.6rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 .buzzer::before {
   content: '';
@@ -1234,7 +1245,21 @@ input[type='range'] {
 }
 .player-row .name {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 600;
+}
+.player-row > :not(.name) {
+  flex: none;
+}
+.player-row > .chip {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 55%;
+  border-radius: 1em;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- TV ---------- */
@@ -1380,6 +1405,10 @@ input[type='range'] {
 .tv-head .logo {
   font-size: 2.2em;
 }
+.tv-head .logo,
+.tv-head .tv-code {
+  flex: none;
+}
 .tv-code {
   font-family: var(--display);
   font-size: 1.7em;
@@ -1404,7 +1433,7 @@ input[type='range'] {
 }
 .tv-body {
   display: grid;
-  grid-template-columns: 1fr minmax(18vw, 26vw);
+  grid-template-columns: minmax(0, 1fr) minmax(18vw, 26vw);
   gap: 2vw;
   padding: 0 2vw 2vh;
   min-height: 0;
@@ -1423,7 +1452,7 @@ input[type='range'] {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   align-items: center;
   text-align: center;
   gap: 2.5vh;
@@ -1627,6 +1656,9 @@ input[type='range'] {
 .slot-screen .tv-prompt {
   color: var(--ink);
 }
+.slot-screen .tv-prompt {
+  font-size: clamp(1.6em, calc(3em * 100 / max(var(--len, 100), 100)), 3em);
+}
 .sprint.has-photo .slot-crown {
   padding: 3vh 0 1vh;
 }
@@ -1652,7 +1684,7 @@ input[type='range'] {
   gap: 1.4vh;
 }
 .sprint.has-photo .tv-prompt {
-  font-size: 1.8em;
+  font-size: clamp(1.3em, calc(1.8em * 100 / max(var(--len, 100), 100)), 1.8em);
 }
 .slot-screen .reveal-frame {
   max-width: 100%;
@@ -2543,16 +2575,31 @@ input[type='range'] {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 0.45em;
   font-size: 1.5em;
   font-weight: 800;
   white-space: nowrap;
+  overflow: hidden;
+}
+.mem-status > * {
+  flex: none;
+}
+.mem-status > span:not(.muted, .token) {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mem-status .token {
   font-size: 0.8em;
 }
 .mem-status b {
+  display: inline-block;
+  max-width: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
   color: var(--pc, var(--warn));
 }
 .mem-status .muted {
@@ -2658,8 +2705,16 @@ input[type='range'] {
   animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 .podium .step .nm {
+  max-width: 100%;
+  min-width: 0;
   font-size: 2em;
   font-weight: 900;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   animation: fade 0.6s ease-out both;
 }
 /* each podium step is a tower of chips in the player's colour, with a copper-framed plaque */
@@ -2793,6 +2848,22 @@ input[type='range'] {
   min-width: 0;
   flex: 0 1 9em;
 }
+/* one row for everyone: the name gets the whole seat width and may wrap to two lines */
+.climax.compact .seat-who .token {
+  display: none;
+}
+.climax.compact .seat-who > span:not(.token) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 0.85em;
+  line-height: 1.15;
+  text-align: center;
+  border-bottom: 0.14em solid var(--pc);
+  padding-bottom: 0.1em;
+}
 .climax.compact .seat-cap.won,
 .climax.compact .seat-cap.lost {
   font-size: 1.4em;
@@ -2824,7 +2895,25 @@ input[type='range'] {
   align-items: center;
   gap: 0.6em;
   min-width: 7em;
+  max-width: 11em;
   font-size: 1.3em;
+}
+/* betting table: seats shrink with the head count so every row fits on screen */
+.climax:not(.compact) .felt {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), auto);
+  justify-content: center;
+  align-items: end;
+  column-gap: 2vw;
+}
+.climax:not(.compact) .seat {
+  width: 7.6em;
+  max-width: none;
+  font-size: min(
+    1.3em,
+    calc((52vw - (var(--cols) - 1) * 2vw) / var(--cols) / 7.6),
+    calc((44vh - (var(--rows) - 1) * 2.5vh) / var(--rows) / 8.4)
+  );
 }
 .seat .chip-stack {
   font-size: 1.15em;
@@ -2836,7 +2925,15 @@ input[type='range'] {
   display: inline-flex;
   align-items: center;
   gap: 0.4em;
+  max-width: 100%;
+  min-width: 0;
   font-weight: 800;
+}
+.seat-who > span:not(.token) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .seat-who .token {
   font-size: 0.75em;
@@ -3203,6 +3300,7 @@ input[type='range'] {
   width: 100%;
 }
 .predict-pick {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3222,6 +3320,10 @@ input[type='range'] {
 }
 .predict-pick:disabled {
   opacity: 0.7;
+}
+.predict-pick > span:not(.token) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .predict-pick small {
   font-size: 0.7rem;
