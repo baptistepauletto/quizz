@@ -635,7 +635,7 @@
       "id": "m_105",
       "theme": "Anatomie",
       "contributor": "Laulo",
-      "prompt": "Quel muscle long et fin, qui traverse en diagonale la face avant de la cuisse, est le plus long du corps humain ?",
+      "prompt": "Quel muscle long et fin, qui traverse en diagonale la face avant de la cuisse, est le plus long du corps humain ? (+1 point pour le nom français)",
       "answer": "Le sartorius",
       "image": "muscles/sartorius.png",
       "difficulty": "hard",
@@ -646,7 +646,8 @@
         "Le droit fémoral",
         "Le psoas"
       ],
-      "context_hint": "Son ancien nom français évoque la position assise jambes croisées d'un artisan textile, le couturier."
+      "context_hint": "Son ancien nom français évoque la position assise jambes croisées d'un artisan textile.",
+      "notes": "Le couturier."
     },
     {
       "id": "m_106",
@@ -846,58 +847,59 @@
       "id": "m_118",
       "theme": "Grand Theft Auto 6",
       "contributor": "Nino",
-      "prompt": "Quel est le prénom de la protagoniste féminine du duo jouable de GTA 6 ?",
-      "answer": "Lucia",
-      "image":"games/gta6/lucia.webp",
+      "prompt": "Quel est le nom de l'État fictif inspiré de la Floride dans lequel se trouve Vice City ?",
+      "answer": "Leonida",
       "difficulty": "easy"
     },
     {
       "id": "m_119",
       "theme": "Grand Theft Auto 6",
       "contributor": "Nino",
-      "prompt": "Quel est le nom de l'État fictif inspiré de la Floride dans lequel se trouve Vice City ?",
-      "answer": "Leonida",
+      "prompt": "Quel duo français de musique électronique a composé la bande originale du jeu ainsi qu'un morceau phare de la bande-annonce de lancement ?",
+      "answer": "Justice",
       "difficulty": "medium",
-      "is_mcq": false,
+      "image":"games/gta6/bo.jpg",
+      "is_mcq": true,
       "options": [
-        "San Andreas",
-        "New Austin",
-        "Leonida",
-        "Lemoyne"
+        "Daft Punk",
+        "Justice",
+        "Air",
+        "Kavinsky"
       ]
     },
     {
       "id": "m_120",
       "theme": "Grand Theft Auto 6",
       "contributor": "Nino",
-      "prompt": "Quel objet électronique Lucia porte-t-elle à la cheville sur l'illustration officielle principale du jeu ?",
-      "answer": "Un bracelet électronique",
+      "prompt": "Quel célèbre réseau social fictif, parodie d'Instagram et TikTok, permet de suivre les faits divers déjantés des habitants de Leonida directement en jeu ?",
+      "answer": "Snapmatic",
+      "image": "games/gta6/snapmatic.jpg",
       "difficulty": "medium",
-      "is_mcq": true,
+      "notes": "Accepter 'Lifeinvader' uniquement si évoqué comme ancien réseau, mais la plateforme vidéo/photo phare de Leonida est Snapmatic.",
+      "is_mcq": false,
       "options": [
-        "Un bracelet électronique",
-        "Une chaîne en or",
-        "Un étui de couteau",
-        "Un foulard rouge"
-      ],
-      "notes": "Marine a le même (et Nico aussi)."
+        "Snapmatic",
+        "Bleeter",
+        "Eyefind",
+        "Chatterbox"
+      ]
     },
     {
       "id": "m_121",
       "theme": "Grand Theft Auto 6",
       "contributor": "Nino",
-      "prompt": "Quel duo français de musique électronique a composé la bande originale du jeu ainsi qu'un morceau phare de la bande-annonce de lancement ?",
-      "answer": "Justice",
+      "prompt": "Quel ancien gangster devenu magnat de l'immobilier et de la nuit dirige la boîte de nuit Jack of Hearts ainsi que le label Only Raw Records à Vice City ?",
+      "answer": "Boobie Ike",
       "difficulty": "hard",
-      "image":"games/gta6/bo.jpg",
+      "notes": "Accepter 'Boobie'.",
       "is_mcq": false,
       "options": [
-        "Daft Punk",
-        "Justice",
-        "Air",
-        "Kavinsky"
+        "Boobie Ike",
+        "Dre'Quan Priest",
+        "Real Dimez",
+        "Ken Rosenberg"
       ],
-      "context_hint": "Ce duo parisien du label Ed Banger est célèbre pour son logo en forme de croix lumineuse."
+      "context_hint": "Son prénom sonne comme un surnom enfantin en anglais et il collabore étroitement avec Dre'Quan Priest."
     },
     {
       "id": "m_122",
@@ -1276,7 +1278,7 @@
       "contributor": "Romane",
       "prompt": "Quelle poudre libre fixatrice et floutante signée Huda Beauty, dont la teinte la plus célèbre se nomme « Pound Cake », est devenue un incontournable du baking moderne ?",
       "answer": "Easy Bake",
-      "image": "cosmectics/easy-bake.webp",
+      "image": "cosmetics/easy-bake.webp",
       "difficulty": "medium",
       "notes": "Accepter 'Easy Bake Loose Baking & Setting Powder'.",
       "is_mcq": true,
@@ -1293,7 +1295,7 @@
       "contributor": "Romane",
       "prompt": "Quel stylo illuminateur iconique de la maison Yves Saint Laurent, lancé en 1992, efface les zones d'ombre du visage d'un simple clic ?",
       "answer": "Touche Éclat",
-      "image": "cosmectics/touche-eclat.png",
+      "image": "cosmetics/touche-eclat.png",
       "difficulty": "medium",
       "notes": "Accepter 'Touche Eclat' sans accent.",
       "is_mcq": true,
@@ -1310,7 +1312,7 @@
       "contributor": "Romane",
       "prompt": "Quelle huile sèche française multi-usages de la marque Nuxe, reconnaissable à son flacon en verre et son parfum solaire, est un best-seller mondial ?",
       "answer": "L'Huile Prodigieuse",
-      "image": "cosmectics/huile-prodigieuse.webp",
+      "image": "cosmetics/huile-prodigieuse.webp",
       "difficulty": "medium",
       "notes": "Accepter 'Huile Prodigieuse' sans l'article.",
       "is_mcq": false,
@@ -1327,7 +1329,7 @@
       "contributor": "Romane",
       "prompt": "Quelle teinte de blush rose pêche aux reflets dorés de la marque NARS est l'un des produits de maquillage les plus vendus au monde ?",
       "answer": "Orgasm",
-      "image": "cosmectics/orgasm.webp",
+      "image": "cosmetics/orgasm.webp",
       "difficulty": "hard",
       "is_mcq": false,
       "options": [
@@ -1344,7 +1346,7 @@
       "contributor": "Romane",
       "prompt": "Quel baume à lèvres brillant en tube de la marque Rhode, fondée par Hailey Bieber, s'accompagne d'une célèbre coque de téléphone en silicone conçue pour le transporter ?",
       "answer": "Peptide Lip Treatment",
-      "image": "cosmectics/peptide-lip.webp",
+      "image": "cosmetics/peptide-lip.webp",
       "difficulty": "hard",
       "notes": "Accepter 'Peptide Lip Tint' ou simplement 'Peptide Lip'.",
       "is_mcq": true,
@@ -1362,7 +1364,7 @@
       "contributor": "Romane",
       "prompt": "Quel masque de nuit pour les lèvres de la marque coréenne Laneige, reconnaissable à son petit pot rose et sa spatule, s'écoule à un exemplaire toutes les deux secondes dans le monde ?",
       "answer": "Lip Sleeping Mask",
-      "image": "cosmectics/lip-sleeping-mask.webp",
+      "image": "cosmetics/lip-sleeping-mask.jpg",
       "difficulty": "hard",
       "notes": "Accepter 'masque de nuit pour les lèvres Laneige' ou 'Berry Lip Sleeping Mask'.",
       "is_mcq": false,
@@ -1379,6 +1381,7 @@
       "theme": "Histoire",
       "prompt": "En quelle année Christophe Colomb a-t-il atteint les Amériques ?",
       "answer": "1492",
+      "image": "people/christophe-colomb.jpg",
       "difficulty": "easy",
       "contributor": "Maison"
     },
@@ -1418,6 +1421,7 @@
       "prompt": "Dans quel pays se trouve le désert d’Atacama ?",
       "answer": "Au Chili",
       "difficulty": "medium",
+      "image": "places/atacama.jpg",
       "contributor": "Maison",
       "is_mcq": false,
       "options": ["Au Pérou", "Au Chili", "En Argentine", "En Bolivie"]
@@ -1438,6 +1442,7 @@
       "id": "m_056",
       "theme": "Cinéma",
       "prompt": "Qui a réalisé le film « Titanic » (1997) ?",
+      "image": "random/titanic.jpg",
       "answer": "James Cameron",
       "difficulty": "easy",
       "contributor": "Maison"
@@ -1477,7 +1482,7 @@
     {
       "id": "m_060",
       "theme": "Cuisine",
-      "prompt": "Quelle épice donne sa couleur jaune au curry et au riz au lait iranien ?",
+      "prompt": "Quelle épice donne sa couleur jaune au curry ?",
       "answer": "Le curcuma",
       "difficulty": "medium",
       "notes": "Pas le safran (plus cher, autre profil).",
@@ -1498,6 +1503,7 @@
       "theme": "Sport",
       "prompt": "Quel nageur a remporté 8 médailles d’or aux JO de Pékin en 2008 ?",
       "answer": "Michael Phelps",
+      "image": "people/phelps.jpg",
       "difficulty": "medium",
       "contributor": "Maison",
       "is_mcq": false,
@@ -1510,6 +1516,7 @@
       "answer": "300 000 km/s",
       "difficulty": "medium",
       "notes": "Accepter ~299 792 km/s ou « 3×10⁸ m/s ».",
+      "image": "random/multiplat.png",
       "contributor": "Maison",
       "is_mcq": false,
       "options": ["300 km/s", "30 000 km/s", "300 000 km/s", "3 000 000 km/s"]
@@ -1530,6 +1537,7 @@
       "theme": "Mythologie",
       "prompt": "Qui est le roi des dieux dans la mythologie grecque ?",
       "answer": "Zeus",
+      "image": "random/zeus.webp",
       "difficulty": "easy",
       "contributor": "Maison"
     },
@@ -1632,6 +1640,7 @@
       "contributor": "Maison",
       "prompt": "Quel nom donne-t-on à l'emploi involontaire d'un mot à la place d'un autre qui lui ressemble par la sonorité, comme dire « aréoport » au lieu de « aéroport » ?",
       "answer": "Un barbarisme",
+      "image": "random/comme-meme.png",
       "difficulty": "hard",
       "context_hint": "On l'appelle aussi un 'malapropisme' ou un 'pataquès'.",
       "notes": "Accepter « une impropriété », « une paronymie ».",
